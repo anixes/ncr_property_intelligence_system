@@ -18,14 +18,16 @@ SECTOR_PATTERNS = [
 ]
 
 # Known area names that can serve as pseudo-sectors
+# Rule: order from most specific → most generic to prevent partial matches
 KNOWN_AREAS = [
-    r'DLF\s+Phase\s+\d+',
-    r'Golf\s+Course\s+Road',
+    r'Dwarka\s+Expressway',      # specific: must match before generic "Dwarka"
     r'Noida\s+Extension',
     r'Greater\s+Noida\s+West',
+    r'DLF\s+Phase\s+\d+',
+    r'Golf\s+Course\s+Road',
     r'Sohna\s+Road',
     r'MG\s+Road',
-    r'Dwarka',
+    r'Dwarka',                   # generic: checked last
 ]
 
 
@@ -119,7 +121,7 @@ def parse_location(title, url=None):
         for area_pattern in KNOWN_AREAS:
             match = re.search(area_pattern, address_text, re.IGNORECASE)
             if match:
-                sector = match.group(0)
+                sector = match.group(0).strip()
                 
                 # If we have multiple tokens, first one might be society
                 if len(tokens) >= 3:
@@ -141,6 +143,28 @@ def parse_location(title, url=None):
                 society = tokens[0]
     
     return pd.Series([society, sector, locality])
+
+
+def normalize_city_name(city):
+    """
+    Standardize city naming to avoid split geo signals.
+    
+    Examples:
+        "New Delhi" → "Delhi"
+        "Gurgaon"  → "Gurugram"
+    """
+    if not isinstance(city, str):
+        return "Unknown"
+    
+    city_clean = city.strip().lower()
+    
+    mapping = {
+        "new delhi": "Delhi",
+        "delhi": "Delhi",
+        "gurgaon": "Gurugram",
+    }
+    
+    return mapping.get(city_clean, city.title())
 
 
 def recover_area_and_rate(row):
@@ -233,6 +257,10 @@ def extract_features(input_filename, output_filename):
         lambda row: parse_location(row['title'], row.get('url')), 
         axis=1
     )
+    
+    # Normalize city names ("New Delhi" → "Delhi", "Gurgaon" → "Gurugram")
+    print(">> Normalizing City Names...")
+    df['city'] = df['city'].apply(normalize_city_name)
     
     # Recover area and calculate price per sqft
     print(">> Recovering Area & Calculating Price/Sqft...")
