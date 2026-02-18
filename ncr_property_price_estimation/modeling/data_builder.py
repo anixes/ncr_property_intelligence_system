@@ -22,6 +22,8 @@ class ModelDataConfig:
         "location",
         "locality",
         "society_name",
+        "price",           # leaky: target = price / area
+        "property_hash",   # row ID, not a feature
     )
 
 
