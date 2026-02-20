@@ -26,6 +26,10 @@ session*.json
 !/data/**/*.dvc
 !/data/**/.gitignore
 
+# Model binary artifacts (large/binary — use DVC or S3 instead)
+models/*.joblib
+models/*.db
+
 # Mac OS-specific storage files
 .DS_Store
 
