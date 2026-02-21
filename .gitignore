@@ -30,6 +30,9 @@ session*.json
 models/*.joblib
 models/*.db
 
+# MLflow tracking data (generates thousands of tiny files)
+mlruns/
+
 # Mac OS-specific storage files
 .DS_Store
 
