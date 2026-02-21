@@ -27,6 +27,8 @@ import json
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
+import mlflow
+import mlflow.sklearn
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -60,6 +62,7 @@ _pkg_dir = str(Path(__file__).resolve().parent.parent)
 if _pkg_dir not in sys.path:
     sys.path.insert(0, _pkg_dir)
 from features import build_feature_pipeline
+from config import MLFLOW_TRACKING_URI, MLFLOW_EXPERIMENT_NAME, MLFLOW_MODEL_NAME
 
 # ── Grouping key ──────────────────────────────────────────────────────
 GROUP_COL = "sector"
@@ -333,7 +336,7 @@ def export_feature_importance(pipeline, X_test, y_test, feature_names):
         n_repeats=10,
         random_state=SEED,
         scoring="neg_root_mean_squared_error",
-        n_jobs=-1,
+        n_jobs=1,  # n_jobs=-1 fails on Windows with custom transformers
     )
     perm_importance = {
         name: round(float(imp), 6)
@@ -365,17 +368,23 @@ def export_feature_importance(pipeline, X_test, y_test, feature_names):
 # ======================================================================
 
 def main():
-    # ── 1. Load data ──────────────────────────────────────────────────
     print("=" * 72)
     print("TRAINING PIPELINE -- Multi-Model + Optuna (grouped validation)")
     print("=" * 72)
 
+    # ── MLflow setup ──────────────────────────────────────────────────
+    # MLFLOW_TRACKING_URI is already a file:/// URI (cross-OS safe).
+    # Override with env var MLFLOW_TRACKING_URI for Docker / CI.
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
+    print(f">> MLflow tracking URI : {MLFLOW_TRACKING_URI}")
+    print(f">> MLflow experiment   : {MLFLOW_EXPERIMENT_NAME}")
+
+    # ── 1. Load data ──────────────────────────────────────────────────
     df = pd.read_parquet(DATA_PATH)
     print(f">> Loaded {len(df):,} rows from {DATA_PATH.name}")
 
     # ── 2. Separate features / target ─────────────────────────────────
-    #    scraped_at intentionally dropped in data_builder.py to prevent
-    #    temporal leakage.  This model is cross-sectional, not time-aware.
     X = df.drop(columns=["price_per_sqft"])
     y = np.log1p(df["price_per_sqft"])
 
@@ -383,8 +392,6 @@ def main():
     print(f">> Target: log1p(price_per_sqft)")
 
     # ── 3. Grouped train / test split ─────────────────────────────────
-    #    GroupShuffleSplit prevents sector leakage between train and test.
-    #    All rows for a given sector land entirely in train OR test.
     groups = X[GROUP_COL]
 
     gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=SEED)
@@ -402,90 +409,161 @@ def main():
     print(f">> Test:  {len(X_test):,} rows, {n_sectors_test} sectors")
     print(f">> Sector overlap: {len(overlap)} (should be 0)")
 
-    # ── PHASE 1: Baselines ────────────────────────────────────────────
-    print("\n" + "=" * 72)
-    print("PHASE 1 -- BASELINE COMPARISON  (grouped hold-out)")
-    print("=" * 72)
+    # ══════════════════════════════════════════════════════════════════
+    # Single MLflow run wraps all 4 phases
+    # ══════════════════════════════════════════════════════════════════
+    with mlflow.start_run(run_name="xgb-optuna-v1") as run:
+        print(f"\n>> MLflow run ID: {run.info.run_id}")
 
-    baseline_results = run_baselines(X_train, y_train, X_test, y_test)
-    print()
-    print_comparison(baseline_results)
+        # ── PHASE 1: Baselines ────────────────────────────────────────
+        print("\n" + "=" * 72)
+        print("PHASE 1 -- BASELINE COMPARISON  (grouped hold-out)")
+        print("=" * 72)
 
-    # ── PHASE 2: Optuna XGBoost ───────────────────────────────────────
-    print("\n" + "=" * 72)
-    print("PHASE 2 -- OPTUNA XGBOOST TUNING  (GroupKFold + pruning, 50 trials)")
-    print("=" * 72)
+        baseline_results = run_baselines(X_train, y_train, X_test, y_test)
+        print()
+        print_comparison(baseline_results)
 
-    best_params = run_optuna(X_train, y_train, groups_train, n_trials=50)
+        # ── PHASE 2: Optuna XGBoost ───────────────────────────────────
+        print("\n" + "=" * 72)
+        print("PHASE 2 -- OPTUNA XGBOOST TUNING  (GroupKFold + pruning, 50 trials)")
+        print("=" * 72)
 
-    # ── PHASE 3: Repeated grouped evaluation ──────────────────────────
-    print("\n" + "=" * 72)
-    print(f"PHASE 3 -- REPEATED GROUPED EVALUATION  ({N_REPEATS} repeats)")
-    print("=" * 72)
+        best_params = run_optuna(X_train, y_train, groups_train, n_trials=50)
 
-    tuned_model = XGBRegressor(**best_params, random_state=SEED, verbosity=0)
-    pipeline_template = build_feature_pipeline(tuned_model)
+        # ── PHASE 3: Repeated grouped evaluation ──────────────────────
+        print("\n" + "=" * 72)
+        print(f"PHASE 3 -- REPEATED GROUPED EVALUATION  ({N_REPEATS} repeats)")
+        print("=" * 72)
 
-    all_metrics, summary = repeated_grouped_eval(
-        pipeline_template, X, y, groups, n_repeats=N_REPEATS,
-    )
+        tuned_model = XGBRegressor(**best_params, random_state=SEED, verbosity=0)
+        pipeline_template = build_feature_pipeline(tuned_model)
 
-    print(f"\n  Mean +/- Std across {N_REPEATS} repeats:")
-    for key in METRIC_KEYS:
-        print(f"    {key:<20}  {summary['mean'][key]:>10.4f} +/- {summary['std'][key]:.4f}")
+        all_metrics, summary = repeated_grouped_eval(
+            pipeline_template, X, y, groups, n_repeats=N_REPEATS,
+        )
 
-    # ── Fit final pipeline on primary split for saving ────────────────
-    print("\n>> Fitting final pipeline on primary train split...")
-    pipeline = clone(pipeline_template)
-    pipeline.fit(X_train, y_train)
-    y_pred = pipeline.predict(X_test)
+        print(f"\n  Mean +/- Std across {N_REPEATS} repeats:")
+        for key in METRIC_KEYS:
+            print(f"    {key:<20}  {summary['mean'][key]:>10.4f} +/- {summary['std'][key]:.4f}")
 
-    single_split_metrics = evaluate(y_test, y_pred)
-    baseline_results["XGBoost (tuned)"] = single_split_metrics
+        # ── Fit final pipeline on primary split ───────────────────────
+        print("\n>> Fitting final pipeline on primary train split...")
+        pipeline = clone(pipeline_template)
+        pipeline.fit(X_train, y_train)
+        y_pred = pipeline.predict(X_test)
 
-    print("\n  FULL COMPARISON (baselines + tuned, primary split)")
-    print()
-    print_comparison(baseline_results)
+        single_split_metrics = evaluate(y_test, y_pred)
+        baseline_results["XGBoost (tuned)"] = single_split_metrics
 
-    # ── Feature verification ──────────────────────────────────────────
-    preprocessor = pipeline.named_steps["preprocessor"]
-    feature_names = list(preprocessor.get_feature_names_out())
-    print(f"\n>> Total features after preprocessing: {len(feature_names)}")
+        print("\n  FULL COMPARISON (baselines + tuned, primary split)")
+        print()
+        print_comparison(baseline_results)
 
-    for col in ["city", "sector"]:
-        matches = [f for f in feature_names if col in f.lower()]
-        if matches:
-            print(f"   WARNING: '{col}' found in features: {matches}")
-        else:
-            print(f"   OK: '{col}' not in features")
+        # ── Feature verification ──────────────────────────────────────
+        preprocessor = pipeline.named_steps["preprocessor"]
+        feature_names = list(preprocessor.get_feature_names_out())
+        print(f"\n>> Total features after preprocessing: {len(feature_names)}")
 
-    # ── PHASE 4: Feature importance ───────────────────────────────────
-    print("\n" + "=" * 72)
-    print("PHASE 4 -- FEATURE IMPORTANCE")
-    print("=" * 72)
+        for col in ["city", "sector"]:
+            matches = [f for f in feature_names if col in f.lower()]
+            if matches:
+                print(f"   WARNING: '{col}' found in features: {matches}")
+            else:
+                print(f"   OK: '{col}' not in features")
 
-    export_feature_importance(pipeline, X_test, y_test, feature_names)
+        # ── PHASE 4: Feature importance ───────────────────────────────
+        print("\n" + "=" * 72)
+        print("PHASE 4 -- FEATURE IMPORTANCE")
+        print("=" * 72)
 
-    # ── Save pipeline + experiment results ────────────────────────────
-    print("\n" + "=" * 72)
-    print("SAVING ARTIFACTS")
-    print("=" * 72)
+        importance_payload = export_feature_importance(pipeline, X_test, y_test, feature_names)
 
-    pipeline_path = MODEL_DIR / "pipeline_v1.joblib"
-    dump(pipeline, pipeline_path)
-    print(f">> Pipeline saved to: {pipeline_path}")
+        # ── Log params ───────────────────────────────────────────────
+        mlflow.log_params({
+            "seed":            SEED,
+            "group_col":       GROUP_COL,
+            "n_repeats":       N_REPEATS,
+            "train_rows":      len(X_train),
+            "test_rows":       len(X_test),
+            "n_sectors_train": n_sectors_train,
+            **{f"optuna_{k}": v for k, v in best_params.items()},
+        })
 
-    experiment = {
-        "seed": SEED,
-        "group_column": GROUP_COL,
-        "n_repeats": N_REPEATS,
-        "baseline_results": baseline_results,
-        "optuna_best_params": best_params,
-        "repeated_eval": summary,
-    }
-    save_json(experiment, MODEL_DIR / "experiment_results.json")
-    print(f">> Experiment results saved to: {MODEL_DIR / 'experiment_results.json'}")
-    print("=" * 72)
+        # ── Log metrics ───────────────────────────────────────────────
+        # Baseline results (one metric per model per stat)
+        for model_name, metrics in baseline_results.items():
+            prefix = (
+                model_name.lower()
+                .replace(" ", "_")
+                .replace("(", "")
+                .replace(")", "")
+            )
+            for metric_name, val in metrics.items():
+                safe_key = (
+                    metric_name.replace(" ", "_")
+                    .replace("/", "_")
+                    .replace("(", "")
+                    .replace(")", "")
+                )
+                mlflow.log_metric(f"{prefix}_{safe_key}", val)
+
+        # Repeated eval summary (mean + std)
+        for stat in ["mean", "std"]:
+            for metric_name, val in summary[stat].items():
+                safe_key = (
+                    metric_name.replace(" ", "_")
+                    .replace("/", "_")
+                    .replace("(", "")
+                    .replace(")", "")
+                )
+                mlflow.log_metric(f"repeated_eval_{stat}_{safe_key}", val)
+
+        # ── Log + register pipeline ───────────────────────────────────
+        print("\n" + "=" * 72)
+        print("SAVING ARTIFACTS + MLFLOW LOGGING")
+        print("=" * 72)
+
+        # Also save local joblib copy (fast inference fallback)
+        pipeline_path = MODEL_DIR / "pipeline_v1.joblib"
+        dump(pipeline, pipeline_path)
+        print(f">> Local joblib saved to: {pipeline_path}")
+
+        # Log to MLflow registry -- input_example drives signature inference
+        model_info = mlflow.sklearn.log_model(
+            sk_model=pipeline,
+            artifact_path="pipeline",
+            registered_model_name=MLFLOW_MODEL_NAME,
+            input_example=X_test.head(5),
+        )
+        print(f">> Model logged to MLflow: {model_info.model_uri}")
+
+        # Transition to Staging via version returned by log_model (deterministic)
+        registered_version = model_info.registered_model_version
+        if registered_version:
+            client = mlflow.tracking.MlflowClient()
+            client.transition_model_version_stage(
+                name=MLFLOW_MODEL_NAME,
+                version=registered_version,
+                stage="Staging",
+            )
+            print(f">> {MLFLOW_MODEL_NAME} v{registered_version} -> Staging")
+
+        # Save experiment JSON (human-readable side-car)
+        experiment = {
+            "seed":             SEED,
+            "group_column":     GROUP_COL,
+            "n_repeats":        N_REPEATS,
+            "mlflow_run_id":    run.info.run_id,
+            "mlflow_model_version": registered_version,
+            "baseline_results": baseline_results,
+            "optuna_best_params": best_params,
+            "repeated_eval":    summary,
+        }
+        save_json(experiment, MODEL_DIR / "experiment_results.json")
+        mlflow.log_artifact(str(MODEL_DIR / "experiment_results.json"))
+        print(f">> Experiment results saved + logged to MLflow")
+        print("=" * 72)
 
 
 if __name__ == "__main__":

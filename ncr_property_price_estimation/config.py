@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -20,6 +21,14 @@ MODELS_DIR = PROJ_ROOT / "models"
 
 REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
+
+# MLflow
+# Use file:/// URI so MLflow behaves consistently across OS.
+# Override via environment variable for Docker / CI environments.
+_default_tracking_uri = (PROJ_ROOT / "mlruns").resolve().as_uri()  # file:///...
+MLFLOW_TRACKING_URI: str = os.environ.get("MLFLOW_TRACKING_URI", _default_tracking_uri)
+MLFLOW_EXPERIMENT_NAME: str = "ncr-property-price"
+MLFLOW_MODEL_NAME: str = "property-price-estimator"
 
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135

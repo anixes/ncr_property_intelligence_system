@@ -2,6 +2,8 @@
   "seed": 42,
   "group_column": "sector",
   "n_repeats": 5,
+  "mlflow_run_id": "feab8c2c64d64929b4b51c687c8264d9",
+  "mlflow_model_version": 3,
   "baseline_results": {
     "Ridge": {
       "RMSE (log)": 0.5007,
@@ -36,40 +38,40 @@
       "R2 (Rs/sqft)": 0.1479
     },
     "XGBoost (tuned)": {
-      "RMSE (log)": 0.4947,
-      "MAE (log)": 0.3917,
-      "R2 (log)": 0.2026,
-      "RMSE (Rs/sqft)": 5856.5,
-      "MAE (Rs/sqft)": 4213.8,
-      "R2 (Rs/sqft)": 0.1739
+      "RMSE (log)": 0.4951,
+      "MAE (log)": 0.392,
+      "R2 (log)": 0.2011,
+      "RMSE (Rs/sqft)": 5859.4,
+      "MAE (Rs/sqft)": 4217.1,
+      "R2 (Rs/sqft)": 0.1731
     }
   },
   "optuna_best_params": {
-    "n_estimators": 624,
+    "n_estimators": 754,
     "max_depth": 3,
-    "learning_rate": 0.01415180567793873,
-    "subsample": 0.5609750316915035,
-    "colsample_bytree": 0.7393686001993423,
-    "reg_alpha": 0.03732856482941957,
-    "reg_lambda": 0.18348113258973583,
-    "min_child_weight": 3
+    "learning_rate": 0.014748375719806663,
+    "subsample": 0.5003616314046764,
+    "colsample_bytree": 0.5026331583112141,
+    "reg_alpha": 0.05835482401029232,
+    "reg_lambda": 0.0010797967945256701,
+    "min_child_weight": 1
   },
   "repeated_eval": {
     "mean": {
       "RMSE (log)": 0.5015,
-      "MAE (log)": 0.3955,
-      "R2 (log)": 0.2232,
-      "RMSE (Rs/sqft)": 5918.46,
-      "MAE (Rs/sqft)": 4213.4,
-      "R2 (Rs/sqft)": 0.1998
+      "MAE (log)": 0.3953,
+      "R2 (log)": 0.2231,
+      "RMSE (Rs/sqft)": 5916.74,
+      "MAE (Rs/sqft)": 4211.06,
+      "R2 (Rs/sqft)": 0.2002
     },
     "std": {
-      "RMSE (log)": 0.0097,
-      "MAE (log)": 0.0071,
-      "R2 (log)": 0.0377,
-      "RMSE (Rs/sqft)": 335.5586,
-      "MAE (Rs/sqft)": 164.7697,
-      "R2 (Rs/sqft)": 0.0256
+      "RMSE (log)": 0.0099,
+      "MAE (log)": 0.0073,
+      "R2 (log)": 0.0373,
+      "RMSE (Rs/sqft)": 336.5368,
+      "MAE (Rs/sqft)": 164.8185,
+      "R2 (Rs/sqft)": 0.0266
     }
   }
 }
