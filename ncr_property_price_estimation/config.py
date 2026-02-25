@@ -30,6 +30,10 @@ MLFLOW_TRACKING_URI: str = os.environ.get("MLFLOW_TRACKING_URI", _default_tracki
 MLFLOW_EXPERIMENT_NAME: str = "ncr-property-price"
 MLFLOW_MODEL_NAME: str = "property-price-estimator"
 
+# API
+API_HOST: str = os.environ.get("API_HOST", "0.0.0.0")
+API_PORT: int = int(os.environ.get("API_PORT", "8000"))
+
 # If tqdm is installed, configure loguru with tqdm.write
 # https://github.com/Delgan/loguru/issues/135
 try:
@@ -37,5 +41,5 @@ try:
 
     logger.remove(0)
     logger.add(lambda msg: tqdm.write(msg, end=""), colorize=True)
-except ModuleNotFoundError:
+except (ModuleNotFoundError, ValueError):
     pass
