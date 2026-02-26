@@ -165,7 +165,7 @@ def _try_mlflow_load():
         model = mlflow.pyfunc.load_model(model_uri)
 
         # Extract metadata
-        run_id = model.metadata.run_id if model.metadata else None
+        run_id = getattr(model.metadata, "run_id", None)
 
         # Get version from the model registry
         client = mlflow.tracking.MlflowClient()
@@ -267,11 +267,7 @@ def _predict(inputs: list[PropertyInput]) -> list[PredictionResponse]:
     df = pd.DataFrame(rows, columns=PIPELINE_INPUT_COLUMNS)
 
     # Pipeline predicts log(price_per_sqft) → expm1 to get ₹/sqft
-    if _model_meta["source"] == "mlflow_registry":
-        pred_log = _model.predict(df)
-    else:
-        # joblib-loaded sklearn pipeline
-        pred_log = _model.predict(df)
+    pred_log = _model.predict(df)
 
     pred = np.expm1(pred_log)
 
@@ -354,5 +350,4 @@ if __name__ == "__main__":
         "api:app",
         host=API_HOST,
         port=API_PORT,
-        reload=True,
     )
