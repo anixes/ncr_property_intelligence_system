@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements_production.txt
+            requirements_dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements_dev.txt
+
+      - name: Lint (ruff check)
+        run: ruff check ncr_property_price_estimation/ tests/
+
+      - name: Format check (ruff format)
+        run: ruff format --check ncr_property_price_estimation/ tests/
+
+      - name: Run tests
+        run: pytest -v --tb=short

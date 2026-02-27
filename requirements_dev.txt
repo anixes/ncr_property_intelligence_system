@@ -1,0 +1,13 @@
+# Pull in all production dependencies
+-r requirements_production.txt
+
+# Linting
+ruff>=0.3.0
+
+# Testing
+pytest>=8.0.0
+httpx>=0.27.0
+
+# Needed by config.py at import time
+python-dotenv>=1.0.0
+loguru>=0.7.0

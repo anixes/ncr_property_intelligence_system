@@ -1,9 +1,8 @@
-import pandas as pd
-import numpy as np
 from dataclasses import dataclass
 from pathlib import Path
 
-
+import numpy as np
+import pandas as pd
 
 # MODEL DATA CONFIG
 
@@ -22,10 +21,9 @@ class ModelDataConfig:
         "location",
         "locality",
         "society_name",
-        "price",           # leaky: target = price / area
-        "property_hash",   # row ID, not a feature
+        "price",  # leaky: target = price / area
+        "property_hash",  # row ID, not a feature
     )
-
 
 
 # MODEL DATA BUILDER
@@ -46,21 +44,17 @@ def build_model_dataset(config: ModelDataConfig) -> None:
 
     df = pd.read_parquet(config.input_path)
 
-    
     # 1. Deduplicate
-    
+
     if "property_hash" in df.columns:
         df = df.drop_duplicates(subset=["property_hash"])
 
-    
     # 2. Scope: Drop Plots (Different Asset Class)
-    
+
     if "prop_type" in df.columns:
         df = df[df["prop_type"] != "Plot"]
 
-    
     # 3. Standardize Scraper-Missing Semantics
-    
 
     # Bedrooms & bathrooms:
     # Schema allows 0 (for plots), but plots are dropped.
@@ -84,31 +78,23 @@ def build_model_dataset(config: ModelDataConfig) -> None:
     if "city" in df.columns:
         df["city"] = df["city"].fillna("Unknown").astype(str)
 
-    
     # 4. Domain Filtering (Model-Specific Logic)
-    
-    if {"bathrooms", "bedrooms"}.issubset(df.columns):
-        df = df[
-            ~(
-                df["bathrooms"] >
-                (df["bedrooms"] + config.bathroom_tolerance)
-            )
-        ]
 
-    
+    if {"bathrooms", "bedrooms"}.issubset(df.columns):
+        df = df[~(df["bathrooms"] > (df["bedrooms"] + config.bathroom_tolerance))]
+
     # 5. Drop Modeling-Irrelevant Columns
-    
+
     df = df.drop(columns=list(config.drop_columns), errors="ignore")
 
-    
     # 6. Final Target Sanity Check
-    
-    assert df["price_per_sqft"].notna().all(), \
-        "Target price_per_sqft contains NaN after data_builder"
 
-    
+    assert df["price_per_sqft"].notna().all(), (
+        "Target price_per_sqft contains NaN after data_builder"
+    )
+
     # 7. Save Model Dataset
-    
+
     output_path = Path(config.output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -118,13 +104,12 @@ def build_model_dataset(config: ModelDataConfig) -> None:
     print(f"Final rows: {len(df):,}")
 
 
-
 if __name__ == "__main__":
     PROJECT_ROOT = Path(__file__).parent.parent.parent
-    
+
     config = ModelDataConfig(
         input_path=str(PROJECT_ROOT / "data" / "processed" / "ncr_properties_cleaned.parquet"),
         output_path=str(PROJECT_ROOT / "data" / "model" / "model_v1.parquet"),
     )
-    
+
     build_model_dataset(config)

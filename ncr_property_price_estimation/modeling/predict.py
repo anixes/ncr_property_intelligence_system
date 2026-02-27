@@ -1,8 +1,8 @@
 from pathlib import Path
 
+import typer
 from loguru import logger
 from tqdm import tqdm
-import typer
 
 from ncr_property_price_estimation.config import MODELS_DIR, PROCESSED_DATA_DIR
 

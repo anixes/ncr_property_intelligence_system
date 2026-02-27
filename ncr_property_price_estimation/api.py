@@ -15,7 +15,7 @@ Endpoints:
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -30,12 +30,12 @@ if _pkg_dir not in sys.path:
     sys.path.insert(0, _pkg_dir)
 
 from config import (
-    MLFLOW_MODEL_NAME,
-    MLFLOW_TRACKING_URI,
-    MLFLOW_EXPERIMENT_NAME,
-    MODELS_DIR,
     API_HOST,
     API_PORT,
+    MLFLOW_EXPERIMENT_NAME,
+    MLFLOW_MODEL_NAME,
+    MLFLOW_TRACKING_URI,
+    MODELS_DIR,
 )
 
 # ---------------------------------------------------------------------------
@@ -75,24 +75,31 @@ class PropertyInput(BaseModel):
 
     area: float = Field(..., gt=0, description="Built-up area in sqft")
     bedrooms: int = Field(..., ge=1, description="Number of bedrooms")
-    bathrooms: Optional[int] = Field(None, ge=0, description="Number of bathrooms")
+    bathrooms: int | None = Field(None, ge=0, description="Number of bathrooms")
     balcony: int = Field(0, ge=0, description="Number of balconies")
-    floor: Optional[int] = Field(None, ge=0, description="Floor number")
+    floor: int | None = Field(None, ge=0, description="Floor number")
 
     prop_type: Literal["Apartment", "Builder Floor", "Independent House"] = Field(
         ..., description="Property type"
     )
-    furnished: Literal[
-        "Fully-Furnished", "Semi-Furnished", "Unfurnished", "Unknown"
-    ] = Field("Unknown", description="Furnishing status")
+    furnished: Literal["Fully-Furnished", "Semi-Furnished", "Unfurnished", "Unknown"] = Field(
+        "Unknown", description="Furnishing status"
+    )
     facing: Literal[
-        "East", "North", "North-East", "North-West",
-        "South", "South-East", "South-West", "West", "Unknown",
+        "East",
+        "North",
+        "North-East",
+        "North-West",
+        "South",
+        "South-East",
+        "South-West",
+        "West",
+        "Unknown",
     ] = Field("Unknown", description="Property facing direction")
 
-    city: Literal[
-        "Delhi", "Faridabad", "Ghaziabad", "Greater Noida", "Gurugram", "Noida"
-    ] = Field(..., description="City in NCR")
+    city: Literal["Delhi", "Faridabad", "Ghaziabad", "Greater Noida", "Gurugram", "Noida"] = Field(
+        ..., description="City in NCR"
+    )
     sector: str = Field(..., min_length=1, description="Sector / locality name")
 
     # Amenity flags (0 = absent, 1 = present)
@@ -105,15 +112,19 @@ class PropertyInput(BaseModel):
     parking: int = Field(0, ge=0, le=1)
     vastu_compliant: int = Field(0, ge=0, le=1)
 
-    model_config = {"json_schema_extra": {
-        "examples": [{
-            "area": 1200,
-            "bedrooms": 3,
-            "prop_type": "Apartment",
-            "city": "Gurugram",
-            "sector": "Sector 50",
-        }]
-    }}
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "area": 1200,
+                    "bedrooms": 3,
+                    "prop_type": "Apartment",
+                    "city": "Gurugram",
+                    "sector": "Sector 50",
+                }
+            ]
+        }
+    }
 
 
 class PredictionResponse(BaseModel):
@@ -128,13 +139,13 @@ class PredictionResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     model_loaded: bool
-    model_stage: Optional[str] = None
+    model_stage: str | None = None
 
 
 class ModelInfoResponse(BaseModel):
     model_name: str
-    model_version: Optional[str] = None
-    run_id: Optional[str] = None
+    model_version: str | None = None
+    run_id: str | None = None
     experiment_name: str
 
 
@@ -279,10 +290,12 @@ def _predict(inputs: list[PropertyInput]) -> list[PredictionResponse]:
     results = []
     for i, inp in enumerate(inputs):
         price_sqft = float(pred[i])
-        results.append(PredictionResponse(
-            price_per_sqft=round(price_sqft, 2),
-            estimated_total_price=round(price_sqft * inp.area, 2),
-        ))
+        results.append(
+            PredictionResponse(
+                price_per_sqft=round(price_sqft, 2),
+                estimated_total_price=round(price_sqft * inp.area, 2),
+            )
+        )
 
     return results
 

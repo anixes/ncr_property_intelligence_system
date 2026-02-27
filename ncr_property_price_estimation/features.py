@@ -11,11 +11,10 @@ Pipeline order:
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
-
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 
 # ---------------------------------------------------------------------------
 # Explicit feature lists — no auto-detection
@@ -57,6 +56,7 @@ AMENITY_FEATURES = [
 # 1. Winsorizer
 # ---------------------------------------------------------------------------
 
+
 class Winsorizer(BaseEstimator, TransformerMixin):
     """Clip numeric features at fitted quantile bounds."""
 
@@ -82,6 +82,7 @@ class Winsorizer(BaseEstimator, TransformerMixin):
 # ---------------------------------------------------------------------------
 # 2. FeatureCreator
 # ---------------------------------------------------------------------------
+
 
 class FeatureCreator(BaseEstimator, TransformerMixin):
     """
@@ -121,6 +122,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
 # 3. GeoMedianEncoder (Hierarchical Target Encoding)
 # ---------------------------------------------------------------------------
 
+
 class GeoMedianEncoder(BaseEstimator, TransformerMixin):
     """
     Encode geographic location as a single hierarchical median feature.
@@ -151,11 +153,7 @@ class GeoMedianEncoder(BaseEstimator, TransformerMixin):
         )
 
         # City-level fallback
-        self.city_median_ = (
-            df.groupby(self.city_col)["_target"]
-            .median()
-            .to_dict()
-        )
+        self.city_median_ = df.groupby(self.city_col)["_target"].median().to_dict()
 
         # Global fallback
         self.global_median_ = float(df["_target"].median())
@@ -196,6 +194,7 @@ class GeoMedianEncoder(BaseEstimator, TransformerMixin):
 # 4. Pipeline builder
 # ---------------------------------------------------------------------------
 
+
 def build_feature_pipeline(model):
     """
     Assemble the full prediction pipeline.
@@ -209,15 +208,19 @@ def build_feature_pipeline(model):
     """
     numeric_cols = NUMERIC_FEATURES + AMENITY_FEATURES
 
-    numeric_pipeline = Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
-        ("winsor", Winsorizer()),
-    ])
+    numeric_pipeline = Pipeline(
+        [
+            ("imputer", SimpleImputer(strategy="median")),
+            ("winsor", Winsorizer()),
+        ]
+    )
 
-    categorical_pipeline = Pipeline([
-        ("imputer", SimpleImputer(strategy="constant", fill_value="Unknown")),
-        ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
-    ])
+    categorical_pipeline = Pipeline(
+        [
+            ("imputer", SimpleImputer(strategy="constant", fill_value="Unknown")),
+            ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+        ]
+    )
 
     preprocessor = ColumnTransformer(
         transformers=[
@@ -227,11 +230,13 @@ def build_feature_pipeline(model):
         remainder="drop",  # safety: drop any unexpected columns
     )
 
-    pipeline = Pipeline([
-        ("feature_creator", FeatureCreator()),
-        ("geo_encoder", GeoMedianEncoder()),
-        ("preprocessor", preprocessor),
-        ("model", model),
-    ])
+    pipeline = Pipeline(
+        [
+            ("feature_creator", FeatureCreator()),
+            ("geo_encoder", GeoMedianEncoder()),
+            ("preprocessor", preprocessor),
+            ("model", model),
+        ]
+    )
 
     return pipeline

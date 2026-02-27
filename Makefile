@@ -1,26 +1,29 @@
-.PHONY: ingest ingest-test clean help
+.PHONY: ingest ingest-test clean lint format test ci help
 
 # Default target
 help:
-	@echo "MagicBricks Production Scraper - Makefile"
-	@echo "=========================================="
+	@echo "NCR Property Price Estimation - Makefile"
+	@echo "========================================="
 	@echo ""
 	@echo "Available targets:"
 	@echo "  make ingest          - Run full scraper (all cities)"
 	@echo "  make ingest-test     - Test scraper (Noida, 10 pages)"
 	@echo "  make ingest-gurgaon  - Scrape only Gurgaon"
+	@echo "  make lint            - Run ruff linter + format check"
+	@echo "  make format          - Auto-fix lint + formatting"
+	@echo "  make test            - Run pytest suite"
+	@echo "  make ci              - Run lint then test (same as CI)"
 	@echo "  make clean           - Remove output files"
 	@echo ""
 
-# Run full scraper
+# ---- Data Ingestion ----
+
 ingest:
 	python ncr_property_price_estimation/data/ingest.py
 
-# Test run (single city, limited pages)
 ingest-test:
 	python ncr_property_price_estimation/data/ingest.py --city noida --max-pages 10
 
-# Single city targets
 ingest-gurgaon:
 	python ncr_property_price_estimation/data/ingest.py --city gurgaon
 
@@ -30,7 +33,27 @@ ingest-noida:
 ingest-delhi:
 	python ncr_property_price_estimation/data/ingest.py --city delhi
 
-# Clean output files
+# ---- Code Quality ----
+
+lint:
+	ruff check .
+	ruff format --check .
+
+format:
+	ruff check --fix .
+	ruff format .
+
+# ---- Testing ----
+
+test:
+	pytest
+
+# ---- CI (mirrors GitHub Actions) ----
+
+ci: lint test
+
+# ---- Cleanup ----
+
 clean:
 	rm -f data/raw/magicbricks_production.parquet
 	rm -f data/raw/checkpoint_production.json

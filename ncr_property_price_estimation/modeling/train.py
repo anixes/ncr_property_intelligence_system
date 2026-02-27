@@ -25,25 +25,27 @@ Saves  models/pipeline_v1.joblib
 
 import json
 import warnings
+
 warnings.filterwarnings("ignore", category=UserWarning)
+
+from pathlib import Path
 
 import mlflow
 import mlflow.sklearn
 import numpy as np
+import optuna
 import pandas as pd
-from pathlib import Path
+from joblib import dump
+from lightgbm import LGBMRegressor
 from sklearn.base import clone
-from sklearn.model_selection import GroupShuffleSplit, GroupKFold
-from sklearn.metrics import root_mean_squared_error, mean_absolute_error, r2_score
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import Ridge
-from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+from sklearn.model_selection import GroupKFold, GroupShuffleSplit
 from sklearn.pipeline import make_pipeline as _make_pipeline
-from sklearn.ensemble import RandomForestRegressor
-from lightgbm import LGBMRegressor
+from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
-import optuna
-from joblib import dump
 
 # ── Reproducibility ───────────────────────────────────────────────────
 SEED = 42
@@ -58,11 +60,12 @@ MODEL_DIR.mkdir(parents=True, exist_ok=True)
 # Add source package to path so features module is importable by name
 # (required for joblib/pickle serialization of custom transformers)
 import sys
+
 _pkg_dir = str(Path(__file__).resolve().parent.parent)
 if _pkg_dir not in sys.path:
     sys.path.insert(0, _pkg_dir)
+from config import MLFLOW_EXPERIMENT_NAME, MLFLOW_MODEL_NAME, MLFLOW_TRACKING_URI
 from features import build_feature_pipeline
-from config import MLFLOW_TRACKING_URI, MLFLOW_EXPERIMENT_NAME, MLFLOW_MODEL_NAME
 
 # ── Grouping key ──────────────────────────────────────────────────────
 GROUP_COL = "sector"
@@ -76,27 +79,31 @@ N_REPEATS = 5
 # ======================================================================
 
 METRIC_KEYS = [
-    "RMSE (log)", "MAE (log)", "R2 (log)",
-    "RMSE (Rs/sqft)", "MAE (Rs/sqft)", "R2 (Rs/sqft)",
+    "RMSE (log)",
+    "MAE (log)",
+    "R2 (log)",
+    "RMSE (Rs/sqft)",
+    "MAE (Rs/sqft)",
+    "R2 (Rs/sqft)",
 ]
 
 
 def evaluate(y_true_log, y_pred_log):
     """Return metrics dict on both log-scale and original Rs/sqft scale."""
     rmse_log = root_mean_squared_error(y_true_log, y_pred_log)
-    mae_log  = mean_absolute_error(y_true_log, y_pred_log)
-    r2_log   = r2_score(y_true_log, y_pred_log)
+    mae_log = mean_absolute_error(y_true_log, y_pred_log)
+    r2_log = r2_score(y_true_log, y_pred_log)
 
     y_true = np.expm1(y_true_log)
     y_pred = np.expm1(y_pred_log)
 
     return {
-        "RMSE (log)":     round(float(rmse_log), 4),
-        "MAE (log)":      round(float(mae_log), 4),
-        "R2 (log)":       round(float(r2_log), 4),
+        "RMSE (log)": round(float(rmse_log), 4),
+        "MAE (log)": round(float(mae_log), 4),
+        "R2 (log)": round(float(r2_log), 4),
         "RMSE (Rs/sqft)": round(float(root_mean_squared_error(y_true, y_pred)), 1),
-        "MAE (Rs/sqft)":  round(float(mean_absolute_error(y_true, y_pred)), 1),
-        "R2 (Rs/sqft)":   round(float(r2_score(y_true, y_pred)), 4),
+        "MAE (Rs/sqft)": round(float(mean_absolute_error(y_true, y_pred)), 1),
+        "R2 (Rs/sqft)": round(float(r2_score(y_true, y_pred)), 4),
     }
 
 
@@ -106,7 +113,7 @@ def print_comparison(results: dict):
         f"  {'Model':<20} {'RMSE(log)':>10} {'MAE(log)':>10} {'R2(log)':>10}"
         f" {'RMSE(Rs)':>12} {'MAE(Rs)':>12} {'R2(Rs)':>10}"
     )
-    sep = f"  {'-'*20} {'-'*10} {'-'*10} {'-'*10} {'-'*12} {'-'*12} {'-'*10}"
+    sep = f"  {'-' * 20} {'-' * 10} {'-' * 10} {'-' * 10} {'-' * 12} {'-' * 12} {'-' * 10}"
     print(header)
     print(sep)
     for name, m in results.items():
@@ -146,6 +153,7 @@ def save_json(payload: dict, output_path: Path):
 # Phase 1 — Baseline Comparison
 # ======================================================================
 
+
 def get_baselines():
     """Return dict of baseline models.
 
@@ -156,15 +164,24 @@ def get_baselines():
     return {
         "Ridge": _make_pipeline(StandardScaler(), Ridge(alpha=1.0)),
         "RandomForest": RandomForestRegressor(
-            n_estimators=300, max_depth=15, random_state=SEED, n_jobs=-1,
+            n_estimators=300,
+            max_depth=15,
+            random_state=SEED,
+            n_jobs=-1,
         ),
         "LightGBM": LGBMRegressor(
-            n_estimators=500, learning_rate=0.05, max_depth=-1,
-            random_state=SEED, verbose=-1,
+            n_estimators=500,
+            learning_rate=0.05,
+            max_depth=-1,
+            random_state=SEED,
+            verbose=-1,
         ),
         "XGBoost": XGBRegressor(
-            n_estimators=500, learning_rate=0.05, max_depth=6,
-            random_state=SEED, verbosity=0,
+            n_estimators=500,
+            learning_rate=0.05,
+            max_depth=6,
+            random_state=SEED,
+            verbosity=0,
         ),
     }
 
@@ -185,29 +202,28 @@ def run_baselines(X_train, y_train, X_test, y_test):
 # Phase 2 — Optuna XGBoost Tuning  (GroupKFold + fold-level pruning)
 # ======================================================================
 
+
 def create_objective(X_train, y_train, groups_train):
     """Return an Optuna objective with grouped CV and per-fold pruning."""
 
     def objective(trial):
         params = {
-            "n_estimators":     trial.suggest_int("n_estimators", 200, 1500),
-            "max_depth":        trial.suggest_int("max_depth", 3, 10),
-            "learning_rate":    trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
-            "subsample":        trial.suggest_float("subsample", 0.5, 1.0),
+            "n_estimators": trial.suggest_int("n_estimators", 200, 1500),
+            "max_depth": trial.suggest_int("max_depth", 3, 10),
+            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+            "subsample": trial.suggest_float("subsample", 0.5, 1.0),
             "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
-            "reg_alpha":        trial.suggest_float("reg_alpha", 1e-3, 10.0, log=True),
-            "reg_lambda":       trial.suggest_float("reg_lambda", 1e-3, 10.0, log=True),
+            "reg_alpha": trial.suggest_float("reg_alpha", 1e-3, 10.0, log=True),
+            "reg_lambda": trial.suggest_float("reg_lambda", 1e-3, 10.0, log=True),
             "min_child_weight": trial.suggest_int("min_child_weight", 1, 10),
-            "random_state":     SEED,
-            "verbosity":        0,
+            "random_state": SEED,
+            "verbosity": 0,
         }
 
         gkf = GroupKFold(n_splits=3)
         fold_scores = []
 
-        for fold_idx, (tr_idx, val_idx) in enumerate(
-            gkf.split(X_train, y_train, groups_train)
-        ):
+        for fold_idx, (tr_idx, val_idx) in enumerate(gkf.split(X_train, y_train, groups_train)):
             X_tr = X_train.iloc[tr_idx]
             X_val = X_train.iloc[val_idx]
             y_tr = y_train.iloc[tr_idx]
@@ -250,10 +266,8 @@ def run_optuna(X_train, y_train, groups_train, n_trials=50):
         show_progress_bar=True,
     )
 
-    n_pruned = len([t for t in study.trials
-                    if t.state == optuna.trial.TrialState.PRUNED])
-    n_complete = len([t for t in study.trials
-                      if t.state == optuna.trial.TrialState.COMPLETE])
+    n_pruned = len([t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED])
+    n_complete = len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE])
 
     print(f"\n  Trials completed: {n_complete} | pruned: {n_pruned}")
     print(f"  Best trial RMSE (grouped 3-fold CV): {study.best_value:.4f}")
@@ -267,6 +281,7 @@ def run_optuna(X_train, y_train, groups_train, n_trials=50):
 # ======================================================================
 # Phase 3 — Repeated Grouped Evaluation
 # ======================================================================
+
 
 def repeated_grouped_eval(pipeline_template, X, y, groups, n_repeats=N_REPEATS):
     """Evaluate via repeated GroupShuffleSplit.  Refits a fresh clone each repeat.
@@ -290,14 +305,14 @@ def repeated_grouped_eval(pipeline_template, X, y, groups, n_repeats=N_REPEATS):
 
         metrics = evaluate(y_te, y_pred)
         all_metrics.append(metrics)
-        print(f"  Repeat {i+1}/{n_repeats}  R2(log)={metrics['R2 (log)']:.4f}")
+        print(f"  Repeat {i + 1}/{n_repeats}  R2(log)={metrics['R2 (log)']:.4f}")
 
     # Aggregate
     summary = {"mean": {}, "std": {}}
     for key in METRIC_KEYS:
         vals = [m[key] for m in all_metrics]
         summary["mean"][key] = round(float(np.mean(vals)), 4)
-        summary["std"][key]  = round(float(np.std(vals)), 4)
+        summary["std"][key] = round(float(np.std(vals)), 4)
 
     return all_metrics, summary
 
@@ -305,6 +320,7 @@ def repeated_grouped_eval(pipeline_template, X, y, groups, n_repeats=N_REPEATS):
 # ======================================================================
 # Phase 4 — Feature Importance
 # ======================================================================
+
 
 def export_feature_importance(pipeline, X_test, y_test, feature_names):
     """Export XGBoost gain importance and sklearn permutation importance."""
@@ -332,7 +348,9 @@ def export_feature_importance(pipeline, X_test, y_test, feature_names):
 
     # ── 2. Permutation importance (model-agnostic) ────────────────────
     perm_result = permutation_importance(
-        pipeline, X_test, y_test,
+        pipeline,
+        X_test,
+        y_test,
         n_repeats=10,
         random_state=SEED,
         scoring="neg_root_mean_squared_error",
@@ -358,7 +376,7 @@ def export_feature_importance(pipeline, X_test, y_test, feature_names):
     # Print top-10 gain
     print("\n  Top-10 features (gain):")
     for i, (name, score) in enumerate(list(gain_importance.items())[:10]):
-        print(f"    {i+1:>2}. {name:<30} {score:>12.1f}")
+        print(f"    {i + 1:>2}. {name:<30} {score:>12.1f}")
 
     return payload
 
@@ -366,6 +384,7 @@ def export_feature_importance(pipeline, X_test, y_test, feature_names):
 # ======================================================================
 # Main
 # ======================================================================
+
 
 def main():
     print("=" * 72)
@@ -389,7 +408,7 @@ def main():
     y = np.log1p(df["price_per_sqft"])
 
     print(f">> Features: {list(X.columns)}")
-    print(f">> Target: log1p(price_per_sqft)")
+    print(">> Target: log1p(price_per_sqft)")
 
     # ── 3. Grouped train / test split ─────────────────────────────────
     groups = X[GROUP_COL]
@@ -402,7 +421,7 @@ def main():
     groups_train = groups.iloc[train_idx]
 
     n_sectors_train = groups_train.nunique()
-    n_sectors_test  = groups.iloc[test_idx].nunique()
+    n_sectors_test = groups.iloc[test_idx].nunique()
     overlap = set(groups_train.unique()) & set(groups.iloc[test_idx].unique())
 
     print(f">> Train: {len(X_train):,} rows, {n_sectors_train} sectors")
@@ -440,7 +459,11 @@ def main():
         pipeline_template = build_feature_pipeline(tuned_model)
 
         all_metrics, summary = repeated_grouped_eval(
-            pipeline_template, X, y, groups, n_repeats=N_REPEATS,
+            pipeline_template,
+            X,
+            y,
+            groups,
+            n_repeats=N_REPEATS,
         )
 
         print(f"\n  Mean +/- Std across {N_REPEATS} repeats:")
@@ -477,28 +500,25 @@ def main():
         print("PHASE 4 -- FEATURE IMPORTANCE")
         print("=" * 72)
 
-        importance_payload = export_feature_importance(pipeline, X_test, y_test, feature_names)
+        export_feature_importance(pipeline, X_test, y_test, feature_names)
 
         # ── Log params ───────────────────────────────────────────────
-        mlflow.log_params({
-            "seed":            SEED,
-            "group_col":       GROUP_COL,
-            "n_repeats":       N_REPEATS,
-            "train_rows":      len(X_train),
-            "test_rows":       len(X_test),
-            "n_sectors_train": n_sectors_train,
-            **{f"optuna_{k}": v for k, v in best_params.items()},
-        })
+        mlflow.log_params(
+            {
+                "seed": SEED,
+                "group_col": GROUP_COL,
+                "n_repeats": N_REPEATS,
+                "train_rows": len(X_train),
+                "test_rows": len(X_test),
+                "n_sectors_train": n_sectors_train,
+                **{f"optuna_{k}": v for k, v in best_params.items()},
+            }
+        )
 
         # ── Log metrics ───────────────────────────────────────────────
         # Baseline results (one metric per model per stat)
         for model_name, metrics in baseline_results.items():
-            prefix = (
-                model_name.lower()
-                .replace(" ", "_")
-                .replace("(", "")
-                .replace(")", "")
-            )
+            prefix = model_name.lower().replace(" ", "_").replace("(", "").replace(")", "")
             for metric_name, val in metrics.items():
                 safe_key = (
                     metric_name.replace(" ", "_")
@@ -551,18 +571,18 @@ def main():
 
         # Save experiment JSON (human-readable side-car)
         experiment = {
-            "seed":             SEED,
-            "group_column":     GROUP_COL,
-            "n_repeats":        N_REPEATS,
-            "mlflow_run_id":    run.info.run_id,
+            "seed": SEED,
+            "group_column": GROUP_COL,
+            "n_repeats": N_REPEATS,
+            "mlflow_run_id": run.info.run_id,
             "mlflow_model_version": registered_version,
             "baseline_results": baseline_results,
             "optuna_best_params": best_params,
-            "repeated_eval":    summary,
+            "repeated_eval": summary,
         }
         save_json(experiment, MODEL_DIR / "experiment_results.json")
         mlflow.log_artifact(str(MODEL_DIR / "experiment_results.json"))
-        print(f">> Experiment results saved + logged to MLflow")
+        print(">> Experiment results saved + logged to MLflow")
         print("=" * 72)
 
 
