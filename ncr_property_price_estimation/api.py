@@ -155,25 +155,30 @@ _model_meta = {
 # Model loading helpers
 # ---------------------------------------------------------------------------
 def _try_mlflow_load():
-    """Attempt to load model from MLflow registry (Production stage)."""
+    """Attempt to load model from MLflow registry (Production stage).
+
+    Uses mlflow.sklearn.load_model (not pyfunc) to get the raw sklearn
+    pipeline — avoids pyfunc's strict schema enforcement which rejects
+    int64→int32 and int64→float64 coercion.
+    """
     try:
         import mlflow
+        import mlflow.sklearn
 
         mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
         model_uri = f"models:/{MLFLOW_MODEL_NAME}/Production"
-        model = mlflow.pyfunc.load_model(model_uri)
+        model = mlflow.sklearn.load_model(model_uri)
 
-        # Extract metadata
-        run_id = getattr(model.metadata, "run_id", None)
-
-        # Get version from the model registry
+        # Extract metadata from registry
         client = mlflow.tracking.MlflowClient()
         version = None
+        run_id = None
         try:
             versions = client.get_latest_versions(MLFLOW_MODEL_NAME, stages=["Production"])
             if versions:
                 version = versions[0].version
+                run_id = versions[0].run_id
         except Exception:
             pass
 
