@@ -42,7 +42,7 @@ from sklearn.base import clone
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
 from sklearn.model_selection import GroupKFold, GroupShuffleSplit
 from sklearn.pipeline import make_pipeline as _make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -91,7 +91,7 @@ METRIC_KEYS = [
 
 def evaluate(y_true_log, y_pred_log):
     """Return metrics dict on both log-scale and original Rs/sqft scale."""
-    rmse_log = root_mean_squared_error(y_true_log, y_pred_log)
+    rmse_log = np.sqrt(mean_squared_error(y_true_log, y_pred_log))
     mae_log = mean_absolute_error(y_true_log, y_pred_log)
     r2_log = r2_score(y_true_log, y_pred_log)
 
@@ -102,7 +102,7 @@ def evaluate(y_true_log, y_pred_log):
         "RMSE (log)": round(float(rmse_log), 4),
         "MAE (log)": round(float(mae_log), 4),
         "R2 (log)": round(float(r2_log), 4),
-        "RMSE (Rs/sqft)": round(float(root_mean_squared_error(y_true, y_pred)), 1),
+        "RMSE (Rs/sqft)": round(float(np.sqrt(mean_squared_error(y_true, y_pred))), 1),
         "MAE (Rs/sqft)": round(float(mean_absolute_error(y_true, y_pred)), 1),
         "R2 (Rs/sqft)": round(float(r2_score(y_true, y_pred)), 4),
     }
@@ -234,7 +234,7 @@ def create_objective(X_train, y_train, groups_train):
             pipe.fit(X_tr, y_tr)
 
             y_pred = pipe.predict(X_val)
-            rmse = root_mean_squared_error(y_val, y_pred)
+            rmse = np.sqrt(mean_squared_error(y_val, y_pred))
             fold_scores.append(rmse)
 
             # Report running mean for pruning
@@ -454,7 +454,7 @@ def create_catboost_objective(X_train: pd.DataFrame, y_train: pd.Series, groups_
             )
 
             y_pred = cb_model.predict(X_val_t)
-            rmse = root_mean_squared_error(y_val, y_pred)
+            rmse = np.sqrt(mean_squared_error(y_val, y_pred))
             fold_scores.append(rmse)
 
             # Report running mean for pruning
@@ -589,7 +589,7 @@ def train_catboost(
 
         y_pred = cb_model.predict(X_val_t)
         r2 = r2_score(y_val, y_pred)
-        rmse = root_mean_squared_error(y_val, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_val, y_pred))
 
         fold_r2.append(float(r2))
         fold_rmse.append(float(rmse))
@@ -699,7 +699,7 @@ def create_lgbm_objective(X_train: pd.DataFrame, y_train: pd.Series, groups_trai
             pipe.fit(X_tr, y_tr)
 
             y_pred = pipe.predict(X_val)
-            rmse = root_mean_squared_error(y_val, y_pred)
+            rmse = np.sqrt(mean_squared_error(y_val, y_pred))
             fold_scores.append(rmse)
 
             trial.report(np.mean(fold_scores), fold_idx)
@@ -810,7 +810,7 @@ def train_lightgbm(
 
         y_pred = pipe.predict(X_val)
         r2 = r2_score(y_val, y_pred)
-        rmse = root_mean_squared_error(y_val, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_val, y_pred))
 
         fold_r2.append(float(r2))
         fold_rmse.append(float(rmse))
