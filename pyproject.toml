@@ -8,7 +8,11 @@ select = ["E", "F", "W", "I", "UP"]
 ignore = [
     "E501",   # line-too-long — let formatter handle it
     "E402",   # import-not-at-top — train.py needs sys.path manipulation before imports
+    "W292",   # no-newline-at-eof — causes cross-OS CI issues
 ]
+
+[tool.ruff.format]
+line-ending = "auto"
 
 [tool.ruff.lint.isort]
 known-first-party = ["ncr_property_price_estimation"]

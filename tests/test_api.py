@@ -87,7 +87,13 @@ def test_batch_exceeds_limit():
     from ncr_property_price_estimation.api import BATCH_LIMIT
 
     payload = [
-        {"area": 1000, "bedrooms": 2, "city": "Noida", "sector": "Sector 75", "prop_type": "Apartment"}
+        {
+            "area": 1000,
+            "bedrooms": 2,
+            "city": "Noida",
+            "sector": "Sector 75",
+            "prop_type": "Apartment",
+        }
     ] * (BATCH_LIMIT + 1)
 
     resp = client.post("/predict/batch", json=payload)

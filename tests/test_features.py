@@ -39,9 +39,7 @@ class TestFeatureCreator:
         # bedrooms > 0 → area / bedrooms
         mask = sample_df["bedrooms"] > 0
         expected = sample_df.loc[mask, "area"] / sample_df.loc[mask, "bedrooms"]
-        np.testing.assert_array_almost_equal(
-            result.loc[mask, "area_per_bedroom"], expected
-        )
+        np.testing.assert_array_almost_equal(result.loc[mask, "area_per_bedroom"], expected)
 
     def test_missing_indicators(self, sample_df):
         result = FeatureCreator().fit_transform(sample_df)
@@ -113,8 +111,8 @@ class TestGeoMedianEncoder:
                 "prop_type": ["Apartment"],
                 "furnished": ["Unfurnished"],
                 "facing": ["North"],
-                "city": ["Lucknow"],          # never seen during fit
-                "sector": ["Gomti Nagar"],    # never seen during fit
+                "city": ["Lucknow"],  # never seen during fit
+                "sector": ["Gomti Nagar"],  # never seen during fit
                 "pooja_room": [0],
                 "servant_room": [0],
                 "store_room": [0],
@@ -147,8 +145,8 @@ class TestGeoMedianEncoder:
                 "prop_type": ["Apartment"],
                 "furnished": ["Unfurnished"],
                 "facing": ["North"],
-                "city": ["Gurugram"],            # known city
-                "sector": ["Sector 999"],        # unknown sector
+                "city": ["Gurugram"],  # known city
+                "sector": ["Sector 999"],  # unknown sector
                 "pooja_room": [0],
                 "servant_room": [0],
                 "store_room": [0],
