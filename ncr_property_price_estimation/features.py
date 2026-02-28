@@ -240,3 +240,59 @@ def build_feature_pipeline(model):
     )
 
     return pipeline
+
+
+def build_catboost_pipeline(model):
+    """
+    Assemble a prediction pipeline suitable for CatBoost.
+
+    Identical to :func:`build_feature_pipeline` **except** the categorical
+    sub-pipeline omits ``OneHotEncoder`` — it only imputes missing values
+    with ``"Unknown"`` and passes raw strings through.  This preserves
+    ``object`` dtype so CatBoost can use its native categorical handling
+    via the ``cat_features`` parameter.
+
+    Args:
+        model: A CatBoostRegressor (or any estimator that accepts
+               ``cat_features`` in its ``.fit()`` call).
+
+    Returns:
+        sklearn.pipeline.Pipeline with steps:
+            feature_creator → geo_encoder → preprocessor → model
+    """
+    numeric_cols = NUMERIC_FEATURES + AMENITY_FEATURES
+
+    numeric_pipeline = Pipeline(
+        [
+            ("imputer", SimpleImputer(strategy="median")),
+            ("winsor", Winsorizer()),
+        ]
+    )
+
+    # No OneHotEncoder — CatBoost handles categoricals natively.
+    # SimpleImputer returns a 2-D numpy array of dtype object, which
+    # CatBoostRegressor accepts when indices are passed via cat_features.
+    categorical_pipeline = Pipeline(
+        [
+            ("imputer", SimpleImputer(strategy="constant", fill_value="Unknown")),
+        ]
+    )
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", numeric_pipeline, numeric_cols),
+            ("cat", categorical_pipeline, CATEGORICAL_FEATURES),
+        ],
+        remainder="drop",
+    )
+
+    pipeline = Pipeline(
+        [
+            ("feature_creator", FeatureCreator()),
+            ("geo_encoder", GeoMedianEncoder()),
+            ("preprocessor", preprocessor),
+            ("model", model),
+        ]
+    )
+
+    return pipeline
