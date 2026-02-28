@@ -33,6 +33,9 @@ models/*.db
 # MLflow tracking data (generates thousands of tiny files)
 mlruns/
 
+# CatBoost training cache (auto-generated)
+catboost_info/
+
 # Mac OS-specific storage files
 .DS_Store
 
