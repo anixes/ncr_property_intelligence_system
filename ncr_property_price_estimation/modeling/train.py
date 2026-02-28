@@ -42,7 +42,7 @@ from sklearn.base import clone
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error, r2_score, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import GroupKFold, GroupShuffleSplit
 from sklearn.pipeline import make_pipeline as _make_pipeline
 from sklearn.preprocessing import StandardScaler
