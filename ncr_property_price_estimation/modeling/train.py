@@ -35,6 +35,7 @@ import mlflow.sklearn
 import numpy as np
 import optuna
 import pandas as pd
+from catboost import CatBoostRegressor
 from joblib import dump
 from lightgbm import LGBMRegressor
 from sklearn.base import clone
@@ -45,7 +46,6 @@ from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_err
 from sklearn.model_selection import GroupKFold, GroupShuffleSplit
 from sklearn.pipeline import make_pipeline as _make_pipeline
 from sklearn.preprocessing import StandardScaler
-from catboost import CatBoostRegressor
 from xgboost import XGBRegressor
 
 # ── Reproducibility ───────────────────────────────────────────────────
@@ -405,17 +405,13 @@ def _get_cat_feature_indices(preprocessor) -> list[int]:
     transformer prefix is set in :func:`build_catboost_pipeline`.
     """
     feature_names = list(preprocessor.get_feature_names_out())
-    return [
-        i for i, col in enumerate(feature_names)
-        if col.startswith("cat__")
-    ]
+    return [i for i, col in enumerate(feature_names) if col.startswith("cat__")]
 
 
 # ── Optuna CatBoost tuning ────────────────────────────────────────────
 
 
-def create_catboost_objective(X_train: pd.DataFrame, y_train: pd.Series,
-                              groups_train: pd.Series):
+def create_catboost_objective(X_train: pd.DataFrame, y_train: pd.Series, groups_train: pd.Series):
     """Return an Optuna objective with GroupKFold CV and per-fold pruning."""
 
     def objective(trial: optuna.Trial) -> float:
@@ -435,9 +431,7 @@ def create_catboost_objective(X_train: pd.DataFrame, y_train: pd.Series,
         gkf = GroupKFold(n_splits=3)
         fold_scores: list[float] = []
 
-        for fold_idx, (tr_idx, val_idx) in enumerate(
-            gkf.split(X_train, y_train, groups_train)
-        ):
+        for fold_idx, (tr_idx, val_idx) in enumerate(gkf.split(X_train, y_train, groups_train)):
             X_tr, X_val = X_train.iloc[tr_idx], X_train.iloc[val_idx]
             y_tr, y_val = y_train.iloc[tr_idx], y_train.iloc[val_idx]
 
@@ -449,12 +443,11 @@ def create_catboost_objective(X_train: pd.DataFrame, y_train: pd.Series,
             X_tr_t = preprocess_steps.fit_transform(X_tr, y_tr)
             X_val_t = preprocess_steps.transform(X_val)
 
-            cat_indices = _get_cat_feature_indices(
-                pipeline.named_steps["preprocessor"]
-            )
+            cat_indices = _get_cat_feature_indices(pipeline.named_steps["preprocessor"])
 
             cb_model.fit(
-                X_tr_t, y_tr,
+                X_tr_t,
+                y_tr,
                 eval_set=(X_val_t, y_val),
                 cat_features=cat_indices,
                 use_best_model=True,
@@ -499,10 +492,8 @@ def run_catboost_optuna(
         show_progress_bar=True,
     )
 
-    n_pruned = len([t for t in study.trials
-                    if t.state == optuna.trial.TrialState.PRUNED])
-    n_complete = len([t for t in study.trials
-                      if t.state == optuna.trial.TrialState.COMPLETE])
+    n_pruned = len([t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED])
+    n_complete = len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE])
 
     print(f"\n  Trials completed: {n_complete} | pruned: {n_pruned}")
     print(f"  Best trial RMSE (grouped 3-fold CV): {study.best_value:.4f}")
@@ -568,7 +559,7 @@ def train_catboost(
     print(f"\n>> Hyperparameters: {hparams}")
 
     # ── Phase 2: GroupKFold evaluation with best params ───────────────
-    print(f"\n>> GROUPED CV EVALUATION  (5-fold)")
+    print("\n>> GROUPED CV EVALUATION  (5-fold)")
     print("-" * 72)
     gkf = GroupKFold(n_splits=5)
 
@@ -586,12 +577,11 @@ def train_catboost(
         X_tr_t = preprocess_steps.fit_transform(X_tr, y_tr)
         X_val_t = preprocess_steps.transform(X_val)
 
-        cat_indices = _get_cat_feature_indices(
-            pipeline.named_steps["preprocessor"]
-        )
+        cat_indices = _get_cat_feature_indices(pipeline.named_steps["preprocessor"])
 
         cb_model.fit(
-            X_tr_t, y_tr,
+            X_tr_t,
+            y_tr,
             eval_set=(X_val_t, y_val),
             cat_features=cat_indices,
             use_best_model=True,
@@ -621,13 +611,10 @@ def train_catboost(
 
     preprocess_steps = final_pipeline[:-1]
     X_full_t = preprocess_steps.fit_transform(X, y)
-    cat_indices = _get_cat_feature_indices(
-        final_pipeline.named_steps["preprocessor"]
-    )
+    cat_indices = _get_cat_feature_indices(final_pipeline.named_steps["preprocessor"])
 
     # No eval_set for final model — disable early stopping
-    final_hparams = {k: v for k, v in hparams.items()
-                     if k != "early_stopping_rounds"}
+    final_hparams = {k: v for k, v in hparams.items() if k != "early_stopping_rounds"}
     final_model = CatBoostRegressor(**final_hparams)
     final_model.fit(X_full_t, y, cat_features=cat_indices)
 
@@ -647,9 +634,7 @@ def train_catboost(
 
     with mlflow.start_run(run_name="catboost-optuna") as run:
         mlflow.log_param("model_type", "catboost")
-        mlflow.log_params(
-            {k: v for k, v in hparams.items() if k != "verbose"}
-        )
+        mlflow.log_params({k: v for k, v in hparams.items() if k != "verbose"})
         mlflow.log_metrics(metrics)
 
         mlflow.sklearn.log_model(
@@ -663,6 +648,7 @@ def train_catboost(
     print("=" * 72)
 
     return final_pipeline, metrics
+
 
 # ======================================================================
 # LightGBM Experiment  (Optuna-tuned, GroupKFold)
@@ -684,8 +670,7 @@ LGBM_PARAMS: dict = {
 }
 
 
-def create_lgbm_objective(X_train: pd.DataFrame, y_train: pd.Series,
-                           groups_train: pd.Series):
+def create_lgbm_objective(X_train: pd.DataFrame, y_train: pd.Series, groups_train: pd.Series):
     """Return an Optuna objective for LightGBM with GroupKFold CV."""
 
     def objective(trial: optuna.Trial) -> float:
@@ -706,9 +691,7 @@ def create_lgbm_objective(X_train: pd.DataFrame, y_train: pd.Series,
         gkf = GroupKFold(n_splits=3)
         fold_scores: list[float] = []
 
-        for fold_idx, (tr_idx, val_idx) in enumerate(
-            gkf.split(X_train, y_train, groups_train)
-        ):
+        for fold_idx, (tr_idx, val_idx) in enumerate(gkf.split(X_train, y_train, groups_train)):
             X_tr, X_val = X_train.iloc[tr_idx], X_train.iloc[val_idx]
             y_tr, y_val = y_train.iloc[tr_idx], y_train.iloc[val_idx]
 
@@ -753,10 +736,8 @@ def run_lgbm_optuna(
         show_progress_bar=True,
     )
 
-    n_pruned = len([t for t in study.trials
-                    if t.state == optuna.trial.TrialState.PRUNED])
-    n_complete = len([t for t in study.trials
-                      if t.state == optuna.trial.TrialState.COMPLETE])
+    n_pruned = len([t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED])
+    n_complete = len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE])
 
     print(f"\n  Trials completed: {n_complete} | pruned: {n_pruned}")
     print(f"  Best trial RMSE (grouped 3-fold CV): {study.best_value:.4f}")
@@ -813,7 +794,7 @@ def train_lightgbm(
     print(f"\n>> Hyperparameters: {hparams}")
 
     # ── Phase 2: GroupKFold evaluation with best params ───────────────
-    print(f"\n>> GROUPED CV EVALUATION  (5-fold)")
+    print("\n>> GROUPED CV EVALUATION  (5-fold)")
     print("-" * 72)
     gkf = GroupKFold(n_splits=5)
 
@@ -861,9 +842,7 @@ def train_lightgbm(
 
     with mlflow.start_run(run_name="lgbm-optuna") as run:
         mlflow.log_param("model_type", "lightgbm")
-        mlflow.log_params(
-            {k: v for k, v in hparams.items() if k != "verbose"}
-        )
+        mlflow.log_params({k: v for k, v in hparams.items() if k != "verbose"})
         mlflow.log_metrics(metrics)
 
         mlflow.sklearn.log_model(
