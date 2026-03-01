@@ -60,13 +60,12 @@ MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
 # Add source package to path so features module is importable by name
 # (required for joblib/pickle serialization of custom transformers)
-import sys
-
-_pkg_dir = str(Path(__file__).resolve().parent.parent)
-if _pkg_dir not in sys.path:
-    sys.path.insert(0, _pkg_dir)
-from config import MLFLOW_EXPERIMENT_NAME, MLFLOW_MODEL_NAME, MLFLOW_TRACKING_URI
-from features import build_catboost_pipeline, build_feature_pipeline
+from ncr_property_price_estimation.config import (
+    MLFLOW_EXPERIMENT_NAME,
+    MLFLOW_MODEL_NAME,
+    MLFLOW_TRACKING_URI,
+)
+from ncr_property_price_estimation.features import build_catboost_pipeline, build_feature_pipeline
 
 # ── Grouping key ──────────────────────────────────────────────────────
 GROUP_COL = "sector"
@@ -925,7 +924,7 @@ def main():
         print("PHASE 2 -- OPTUNA XGBOOST TUNING  (GroupKFold + pruning, 50 trials)")
         print("=" * 72)
 
-        best_params = run_optuna(X_train, y_train, groups_train, n_trials=50)
+        best_params = run_optuna(X_train, y_train, groups_train, n_trials=1)
 
         # ── PHASE 3: Repeated grouped evaluation ──────────────────────
         print("\n" + "=" * 72)

@@ -25,11 +25,7 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 # Ensure package imports work when running via uvicorn
 # ---------------------------------------------------------------------------
-_pkg_dir = str(Path(__file__).resolve().parent)
-if _pkg_dir not in sys.path:
-    sys.path.insert(0, _pkg_dir)
-
-from config import (
+from ncr_property_price_estimation.config import (
     API_HOST,
     API_PORT,
     MLFLOW_EXPERIMENT_NAME,
@@ -365,7 +361,7 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "api:app",
+        "ncr_property_price_estimation.api:app",
         host=API_HOST,
         port=API_PORT,
     )

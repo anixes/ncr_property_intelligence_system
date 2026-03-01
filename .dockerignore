@@ -1,0 +1,11 @@
+.git
+.github
+data/
+notebooks/
+mlruns/
+reports/
+tests/
+__pycache__/
+*.pyc
+.env
+optuna*.db
