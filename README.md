@@ -24,6 +24,33 @@ The application consists of three main logical components decoupled for scalabil
    - A modern, responsive Python-based UI styled with custom CSS for an enterprise look.
    - Interacts seamlessly with the FastAPI backend over HTTP to fetch and display predictions.
 
+### 🗂️ Project Structure
+
+```text
+ncr_property_price_estimation/
+├── .dvc/                   # DVC configuration and remote settings
+├── .github/workflows/      # CI/CD GitHub Actions (Lint, Test, Docker build)
+├── data/                   # Raw & processed data (managed by DVC)
+├── frontend/               # Streamlit application
+│   ├── .streamlit/         # Custom UI theme config
+│   ├── app.py              # Main frontend application
+│   └── Dockerfile          # Frontend container definition
+├── models/                 # ML serialized artifacts (pipeline_v1.joblib tracked by DVC)
+├── ncr_property_price_estimation/
+│   ├── data/               # Data loading utilities
+│   ├── modeling/           # ML pipelines, Custom Transformers (Log, Winsorizer, Geo-Median)
+│   ├── api.py              # FastAPI application & endpoints
+│   ├── config.py           # Centralized configuration management
+│   └── features.py         # Advanced feature engineering
+├── notebooks/              # Jupyter notebooks for EDA
+├── tests/                  # Pytest suite (Data, API, Features)
+├── docker-compose.yml      # Orchestration for API + Frontend
+├── Dockerfile              # API container definition
+├── Makefile                # Dev convenience scripts
+├── requirements_api.txt    # Frozen exact dependencies for the API
+└── README.md               # You are here
+```
+
 ## 💻 Tech Stack
 
 - **Machine Learning**: `scikit-learn`, `pandas`, `numpy`, `xgboost/lightgbm (optional)`
