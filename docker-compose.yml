@@ -21,3 +21,15 @@ services:
       start_period: 15s
       retries: 3
     restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8501:8501"
+    environment:
+      # Point Streamlit at the API service within the Docker network
+      - API_BASE_URL=http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped

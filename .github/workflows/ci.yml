@@ -30,10 +30,10 @@ jobs:
         run: pip install -r requirements_dev.txt
 
       - name: Lint (ruff check)
-        run: ruff check ncr_property_price_estimation/ tests/
+        run: ruff check ncr_property_price_estimation/ tests/ frontend/
 
       - name: Format check (ruff format)
-        run: ruff format --check ncr_property_price_estimation/ tests/
+        run: ruff format --check ncr_property_price_estimation/ tests/ frontend/
 
       - name: Run tests
         run: pytest -v --tb=short
@@ -47,10 +47,11 @@ jobs:
 
       - name: Create dummy model artifact for build test
         run: |
-          # The real model is tracked via DVC / Google Drive.
-          # CI only validates that the Dockerfile builds correctly.
           mkdir -p models
           dd if=/dev/zero of=models/pipeline_v1.joblib bs=1024 count=1
 
-      - name: Build Docker image
+      - name: Build API image
         run: docker build -t ncr-property-api:ci-test .
+
+      - name: Build frontend image
+        run: docker build -t ncr-property-frontend:ci-test ./frontend
