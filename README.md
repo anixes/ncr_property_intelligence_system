@@ -141,3 +141,13 @@ To run lint checks:
 ruff check .
 ruff format --check .
 ```
+
+---
+
+## 🗺️ Roadmap (v2)
+
+This current release represents **v1** of the application, focusing on robust price estimation using current market data.
+
+Planned features for **v2**:
+- **Property Recommender System**: A new engine to recommend similar available properties based on user preferences and estimated budgets.
+- **Enhanced Data Scraper**: Upgraded web scraping pipelines to gather more comprehensive, real-time property data and amenities across a wider radius in the NCR region.
