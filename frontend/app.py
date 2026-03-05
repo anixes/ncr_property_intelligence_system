@@ -59,7 +59,7 @@ SECTOR_HINTS: dict[str, list[str]] = {
         "Knowledge Park",
     ],
     "Gurugram": [
-        "Sector 49", "Sector 50", "Sector 54", "Sector 56", "Sector 57", 
+        "Sector 49", "Sector 50", "Sector 54", "Sector 56", "Sector 57",
         "Sector 65", "Sector 67", "Sector 69", "Sector 82",
         "Golf Course Road", "Golf Course Extension", "Sohna Road", "DLF Phase 1", "DLF Phase 2", "DLF Phase 5"
     ],
