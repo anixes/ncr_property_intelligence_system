@@ -1,18 +1,18 @@
 # Core
-pandas>=2.0.0
-numpy>=1.24.0
+pandas==2.3.2
+numpy==1.26.4
 scikit-learn==1.8.0
-joblib>=1.3.0
+joblib==1.5.3
 
 # Model serialization (required for joblib load of CatBoost/XGBoost estimator)
 xgboost==3.1.2
 catboost==1.2.10
 
 # API dependencies
-fastapi>=0.110.0
-uvicorn[standard]>=0.27.0
-pydantic>=2.0.0
+fastapi==0.129.0
+uvicorn[standard]==0.41.0
+pydantic==2.11.7
 
 # Config dependencies
-python-dotenv>=1.0.0
-loguru>=0.7.0
+python-dotenv==0.21.0
+loguru==0.7.3

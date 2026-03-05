@@ -26,8 +26,7 @@ session*.json
 !/data/**/*.dvc
 !/data/**/.gitignore
 
-# Model binary artifacts (large/binary — use DVC or S3 instead)
-models/*.joblib
+# Model binary artifacts — managed by DVC (see models/.gitignore)
 models/*.db
 
 # MLflow tracking data (generates thousands of tiny files)

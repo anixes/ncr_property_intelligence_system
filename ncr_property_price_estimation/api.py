@@ -12,14 +12,14 @@ Endpoints:
     GET  /model-info   — Model registry metadata
 """
 
-import sys
+import os
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import Literal
 
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
@@ -262,6 +262,18 @@ app = FastAPI(
     description="Predict property prices per sqft in the National Capital Region.",
     version="1.0.0",
     lifespan=lifespan,
+)
+
+# ---------------------------------------------------------------------------
+# CORS — configurable via CORS_ORIGINS env var (comma-separated)
+# ---------------------------------------------------------------------------
+_cors_origins = os.environ.get("CORS_ORIGINS", "*").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

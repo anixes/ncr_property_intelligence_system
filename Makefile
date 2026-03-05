@@ -1,4 +1,4 @@
-.PHONY: ingest ingest-test clean lint format test ci help
+.PHONY: ingest ingest-test clean lint format test ci docker-build docker-run docker-up help
 
 # Default target
 help:
@@ -13,6 +13,9 @@ help:
 	@echo "  make format          - Auto-fix lint + formatting"
 	@echo "  make test            - Run pytest suite"
 	@echo "  make ci              - Run lint then test (same as CI)"
+	@echo "  make docker-build    - Build Docker image"
+	@echo "  make docker-run      - Run Docker container on port 8000"
+	@echo "  make docker-up       - Start via docker-compose"
 	@echo "  make clean           - Remove output files"
 	@echo ""
 
@@ -58,3 +61,15 @@ clean:
 	rm -f data/raw/magicbricks_production.parquet
 	rm -f data/raw/checkpoint_production.json
 	@echo "Cleaned output files"
+
+# ---- Docker ----
+
+docker-build:
+	docker build -t ncr-property-api:latest .
+
+docker-run: docker-build
+	docker run --rm -p 8000:8000 ncr-property-api:latest
+
+docker-up:
+	docker compose up --build
+

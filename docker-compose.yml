@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Override MLflow tracking URI for container (optional).
+      # Leave empty to use the baked-in local joblib fallback.
+      - MLFLOW_TRACKING_URI=
+      # API bind settings (defaults match Dockerfile CMD)
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      # CORS allowed origins (comma-separated). Default: allow all.
+      - CORS_ORIGINS=*
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    restart: unless-stopped
