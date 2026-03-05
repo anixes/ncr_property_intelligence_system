@@ -35,40 +35,38 @@ FACING_OPTIONS = [
 
 # Curated sector suggestions per city (most popular)
 SECTOR_HINTS: dict[str, list[str]] = {
-    "Delhi": ["Dwarka", "Rohini", "Saket", "Vasant Kunj", "Janakpuri"],
-    "Faridabad": ["Sector 14", "Sector 15", "Sector 21", "Sector 37", "Sector 88"],
+    "Delhi": ["Dwarka", "Rohini", "Saket", "Vasant Kunj", "Janakpuri", "Laxmi Nagar", "Uttam Nagar", "Greater Kailash", "Hauz Khas", "Pitampura", "Okhla"],
+    "Faridabad": ["Sector 14", "Sector 15", "Sector 16", "Sector 21", "Sector 37", "Sector 42", "Sector 43", "Sector 88", "Neharpar", "Green Fields"],
     "Ghaziabad": [
         "Indirapuram",
         "Vaishali",
+        "Vasundhara",
         "Raj Nagar Extension",
         "Crossings Republik",
-        "Vasundhara",
+        "Kaushambi",
+        "Govindpuram",
+        "Wave City",
     ],
     "Greater Noida": [
         "Sector Alpha",
         "Sector Beta",
+        "Sector Gamma",
+        "Sector Delta",
         "Sector Omega",
         "Sector Chi",
         "Pari Chowk",
+        "Greater Noida West",
+        "Knowledge Park",
     ],
     "Gurugram": [
-        "Sector 49",
-        "Sector 50",
-        "Sector 56",
-        "Sector 57",
-        "Sector 67",
-        "Golf Course Road",
-        "Sohna Road",
-        "DLF Phase",
+        "Sector 49", "Sector 50", "Sector 54", "Sector 56", "Sector 57", 
+        "Sector 65", "Sector 67", "Sector 69", "Sector 82",
+        "Golf Course Road", "Golf Course Extension", "Sohna Road", "DLF Phase 1", "DLF Phase 2", "DLF Phase 5"
     ],
     "Noida": [
-        "Sector 75",
-        "Sector 76",
-        "Sector 77",
-        "Sector 78",
-        "Sector 128",
-        "Sector 137",
-        "Sector 150",
+        "Sector 15", "Sector 44", "Sector 50", "Sector 62",
+        "Sector 74", "Sector 75", "Sector 76", "Sector 77", "Sector 78",
+        "Sector 128", "Sector 137", "Sector 143", "Sector 150"
     ],
 }
 
@@ -316,67 +314,66 @@ with st.sidebar:
     st.markdown("## Property Details")
     st.markdown('<hr class="soft-divider">', unsafe_allow_html=True)
 
-    with st.form("property_form"):
-        # --- Location ---
-        st.markdown("### Location")
-        city = st.selectbox("City", CITIES, index=4, help="Select the NCR city")
-        sector_hints = SECTOR_HINTS.get(city, ["Sector 50"])
-        selected_sector = st.selectbox(
-            "Sector / Locality",
-            options=sector_hints + ["Other (Type manually)"],
-            help="Type to search or scroll to select a locality",
-        )
-        if selected_sector == "Other (Type manually)":
-            sector = st.text_input("Enter Sector Name", placeholder="e.g. Sector 12")
-        else:
-            sector = selected_sector
+    # --- Location ---
+    st.markdown("### Location")
+    city = st.selectbox("City", CITIES, index=4, help="Select the NCR city")
+    sector_hints = SECTOR_HINTS.get(city, ["Sector 50"])
+    selected_sector = st.selectbox(
+        "Sector / Locality",
+        options=sector_hints + ["Other (Type manually)"],
+        help="Type to search or scroll to select a locality",
+    )
+    if selected_sector == "Other (Type manually)":
+        sector = st.text_input("Enter Sector Name", placeholder="e.g. Sector 12")
+    else:
+        sector = selected_sector
 
-        # --- Property Type ---
-        st.markdown("### Type & Configuration")
-        prop_type = st.selectbox("Property Type", PROP_TYPES)
-        col_bed, col_bath = st.columns(2)
-        with col_bed:
-            bedrooms = st.number_input("Bedrooms", min_value=1, max_value=10, value=3)
-        with col_bath:
-            bathrooms = st.number_input("Bathrooms", min_value=0, max_value=10, value=2)
+    # --- Property Type ---
+    st.markdown("### Type & Configuration")
+    prop_type = st.selectbox("Property Type", PROP_TYPES)
+    col_bed, col_bath = st.columns(2)
+    with col_bed:
+        bedrooms = st.number_input("Bedrooms", min_value=1, max_value=10, value=3)
+    with col_bath:
+        bathrooms = st.number_input("Bathrooms", min_value=0, max_value=10, value=2)
 
-        col_area, col_floor = st.columns(2)
-        with col_area:
-            area = st.number_input("Area (sqft)", min_value=100, max_value=50000, value=1200, step=50)
-        with col_floor:
-            floor = st.number_input("Floor", min_value=0, max_value=80, value=5)
-        balcony = st.number_input("Balconies", min_value=0, max_value=10, value=2)
+    col_area, col_floor = st.columns(2)
+    with col_area:
+        area = st.number_input("Area (sqft)", min_value=100, max_value=50000, value=1200, step=50)
+    with col_floor:
+        floor = st.number_input("Floor", min_value=0, max_value=80, value=5)
+    balcony = st.number_input("Balconies", min_value=0, max_value=10, value=2)
 
-        # --- Furnishing & Facing ---
-        st.markdown("### Furnishing & Facing")
-        col_f, col_d = st.columns(2)
-        with col_f:
-            furnished = st.selectbox("Furnished", FURNISHED_OPTIONS)
-        with col_d:
-            facing = st.selectbox("Facing", FACING_OPTIONS)
+    # --- Furnishing & Facing ---
+    st.markdown("### Furnishing & Facing")
+    col_f, col_d = st.columns(2)
+    with col_f:
+        furnished = st.selectbox("Furnished", FURNISHED_OPTIONS)
+    with col_d:
+        facing = st.selectbox("Facing", FACING_OPTIONS)
 
-        # --- Amenities ---
-        st.markdown("### Amenities")
-        amenity_cols = st.columns(2)
-        with amenity_cols[0]:
-            lift = st.checkbox("Lift", value=True)
-            parking = st.checkbox("Parking", value=True)
-            gym = st.checkbox("Gym", value=False)
-            pool = st.checkbox("Pool", value=False)
-        with amenity_cols[1]:
-            pooja_room = st.checkbox("Pooja Room", value=False)
-            servant_room = st.checkbox("Servant Room", value=False)
-            store_room = st.checkbox("Store Room", value=False)
-            vastu_compliant = st.checkbox("Vastu Compliant", value=False)
+    # --- Amenities ---
+    st.markdown("### Amenities")
+    amenity_cols = st.columns(2)
+    with amenity_cols[0]:
+        lift = st.checkbox("Lift", value=True)
+        parking = st.checkbox("Parking", value=True)
+        gym = st.checkbox("Gym", value=False)
+        pool = st.checkbox("Pool", value=False)
+    with amenity_cols[1]:
+        pooja_room = st.checkbox("Pooja Room", value=False)
+        servant_room = st.checkbox("Servant Room", value=False)
+        store_room = st.checkbox("Store Room", value=False)
+        vastu_compliant = st.checkbox("Vastu Compliant", value=False)
 
-        st.markdown('<hr class="soft-divider">', unsafe_allow_html=True)
+    st.markdown('<hr class="soft-divider">', unsafe_allow_html=True)
 
-        predict_clicked = st.form_submit_button(
-            "Estimate Price",
-            use_container_width=True,
-            type="primary",
-            disabled=not api_healthy,
-        )
+    predict_clicked = st.button(
+        "Estimate Price",
+        use_container_width=True,
+        type="primary",
+        disabled=not api_healthy,
+    )
 
 
 # ---------------------------------------------------------------------------
