@@ -174,7 +174,7 @@ st.markdown(
         line-height: 1.2;
     }
     .result-card .value-highlight {
-        color: #3b82f6; 
+        color: #3b82f6;
     }
     .result-card .sub {
         font-size: 0.875rem;
