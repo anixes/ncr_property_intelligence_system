@@ -2,11 +2,27 @@
 
 A complete end-to-end Machine Learning web application for predicting real estate prices in the National Capital Region (Delhi-NCR) of India. 
 
-The project includes an entire ML pipeline: data processing, model training, an exposed **FastAPI** backend for predictions, and a polished **Streamlit** frontend interface. All components are containerized and orchestrated using **Docker Compose** for seamless CI/CD and deployment.
+The project includes an entire ML pipeline: data processing, model training, an exposed **FastAPI** backend for predictions, and a polished **Streamlit** frontend interface.
 
 ---
 
-## 🏗️ System Architecture & Design
+## 📐 System Architecture
+
+```mermaid
+graph LR
+    User([User]) --> Streamlit[Streamlit Frontend]
+    Streamlit --> FastAPI[FastAPI Backend]
+    subgraph "Inference Server"
+    FastAPI --> Pipeline[Sklearn Pipeline]
+    Pipeline --> Artifacts[(Model Artifacts)]
+    end
+    subgraph "MLOps Layer"
+    Artifacts <--> DVC[DVC Storage]
+    Artifacts <--> MLflow[MLflow Tracking]
+    end
+```
+
+## 🏗️ Technical Component Overview
 
 The application consists of three main logical components decoupled for scalability:
 
@@ -49,6 +65,62 @@ ncr_property_price_estimation/
 ├── Makefile                # Dev convenience scripts
 ├── requirements_api.txt    # Frozen exact dependencies for the API
 └── README.md               # You are here
+```
+
+---
+
+## 🛤️ Training Lifecycle & MLOps
+
+The model is trained using a robust pipeline to prevent geographic leakage and ensure generalization across the NCR region.
+
+### 1. Model Training
+Run the training suite via:
+```bash
+python -m ncr_property_price_estimation.modeling.train
+```
+**Workflow:**
+- **Baselines**: Compares Ridge, RandomForest, LightGBM, and XGBoost.
+- **Optimization**: Uses **Optuna** for Bayesian optimization (50 trials) with GroupKFold CV.
+- **Evaluation**: 5-repeat GroupShuffleSplit validation to estimate true generalization error.
+- **Artifacts**: Final model is serialized to `models/pipeline_v1.joblib`.
+
+### 2. Experiment Tracking
+All hyperparameters, metrics (RMSE, MAE, R²), and feature importance are logged to **MLflow**.
+- **Model Registry**: Training automatically logs the pipeline as an MLflow model.
+- **DVC**: The large model artifacts are tracked via Data Version Control (DVC) for reproducible datasets and models.
+
+---
+
+## 🔌 API Contract (V1)
+
+The backend provides a stable REST interface for property estimations.
+
+### `POST /predict`
+Estimates the price for a single property configuration.
+
+**Request Body (`application/json`):**
+```json
+{
+  "area": 1200.0,
+  "bedrooms": 3,
+  "bathrooms": 2,
+  "prop_type": "Apartment",
+  "city": "Gurugram",
+  "sector": "Sector 50",
+  "floor": 5,
+  "furnished": "Semi-Furnished",
+  "facing": "East",
+  "lift": 1,
+  "parking": 1
+}
+```
+
+**Response Body:**
+```json
+{
+  "price_per_sqft": 7765.42,
+  "estimated_total_price": 9318504.0
+}
 ```
 
 ## 💻 Tech Stack
