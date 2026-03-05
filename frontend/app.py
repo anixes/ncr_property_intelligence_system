@@ -35,8 +35,31 @@ FACING_OPTIONS = [
 
 # Curated sector suggestions per city (most popular)
 SECTOR_HINTS: dict[str, list[str]] = {
-    "Delhi": ["Dwarka", "Rohini", "Saket", "Vasant Kunj", "Janakpuri", "Laxmi Nagar", "Uttam Nagar", "Greater Kailash", "Hauz Khas", "Pitampura", "Okhla"],
-    "Faridabad": ["Sector 14", "Sector 15", "Sector 16", "Sector 21", "Sector 37", "Sector 42", "Sector 43", "Sector 88", "Neharpar", "Green Fields"],
+    "Delhi": [
+        "Dwarka",
+        "Rohini",
+        "Saket",
+        "Vasant Kunj",
+        "Janakpuri",
+        "Laxmi Nagar",
+        "Uttam Nagar",
+        "Greater Kailash",
+        "Hauz Khas",
+        "Pitampura",
+        "Okhla",
+    ],
+    "Faridabad": [
+        "Sector 14",
+        "Sector 15",
+        "Sector 16",
+        "Sector 21",
+        "Sector 37",
+        "Sector 42",
+        "Sector 43",
+        "Sector 88",
+        "Neharpar",
+        "Green Fields",
+    ],
     "Ghaziabad": [
         "Indirapuram",
         "Vaishali",
@@ -59,14 +82,36 @@ SECTOR_HINTS: dict[str, list[str]] = {
         "Knowledge Park",
     ],
     "Gurugram": [
-        "Sector 49", "Sector 50", "Sector 54", "Sector 56", "Sector 57",
-        "Sector 65", "Sector 67", "Sector 69", "Sector 82",
-        "Golf Course Road", "Golf Course Extension", "Sohna Road", "DLF Phase 1", "DLF Phase 2", "DLF Phase 5"
+        "Sector 49",
+        "Sector 50",
+        "Sector 54",
+        "Sector 56",
+        "Sector 57",
+        "Sector 65",
+        "Sector 67",
+        "Sector 69",
+        "Sector 82",
+        "Golf Course Road",
+        "Golf Course Extension",
+        "Sohna Road",
+        "DLF Phase 1",
+        "DLF Phase 2",
+        "DLF Phase 5",
     ],
     "Noida": [
-        "Sector 15", "Sector 44", "Sector 50", "Sector 62",
-        "Sector 74", "Sector 75", "Sector 76", "Sector 77", "Sector 78",
-        "Sector 128", "Sector 137", "Sector 143", "Sector 150"
+        "Sector 15",
+        "Sector 44",
+        "Sector 50",
+        "Sector 62",
+        "Sector 74",
+        "Sector 75",
+        "Sector 76",
+        "Sector 77",
+        "Sector 78",
+        "Sector 128",
+        "Sector 137",
+        "Sector 143",
+        "Sector 150",
     ],
 }
 
@@ -501,8 +546,6 @@ if predict_clicked:
                 chips_html += f'<span class="amenity-chip {cls}">{icon} {label}</span>'
             chips_html += "</div>"
             st.markdown(chips_html, unsafe_allow_html=True)
-
-
 
         except requests.exceptions.ConnectionError:
             st.error(
