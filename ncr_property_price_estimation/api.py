@@ -356,6 +356,17 @@ def predict_batch(properties: list[PropertyInput]):
     return _predict(properties)
 
 
+@app.get("/debug/model")
+def debug_model():
+    """Inspect the loaded model object."""
+    return {
+        "type": str(type(_model)),
+        "meta": _model_meta,
+        "steps": [str(s) for s in _model.steps] if hasattr(_model, "steps") else None,
+        "features": list(_model.feature_names_in_) if hasattr(_model, "feature_names_in_") else None
+    }
+
+
 @app.get("/model-info", response_model=ModelInfoResponse)
 def model_info():
     """Return current model metadata."""
