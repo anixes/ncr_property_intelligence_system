@@ -33,6 +33,7 @@ from ncr_property_price_estimation.config import (
     MLFLOW_TRACKING_URI,
     MODELS_DIR,
 )
+import ncr_property_price_estimation.features  # Load custom transformers for joblib
 
 # ---------------------------------------------------------------------------
 # Constants
