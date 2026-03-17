@@ -296,14 +296,24 @@ def _predict(inputs: list[PropertyInput]) -> list[PredictionResponse]:
 
     pred = np.expm1(pred_log)
 
+    # Get transformed features for the first row (debugging)
+    X_transformed = df.copy()
+    for name, step in _model.named_steps.items():
+        if name == "model": break
+        X_transformed = step.transform(X_transformed)
+    
+    transformed_sample = X_transformed[0].tolist() if not isinstance(X_transformed, pd.DataFrame) else X_transformed.iloc[0].to_dict()
+
     results = []
     for i, inp in enumerate(inputs):
         price_sqft = float(pred[i])
         results.append(
-            PredictionResponse(
-                price_per_sqft=round(price_sqft, 2),
-                estimated_total_price=round(price_sqft * inp.area, 2),
-            )
+            {
+                "price_per_sqft": round(price_sqft, 2),
+                "estimated_total_price": round(price_sqft * inp.area, 2),
+                "debug_pred_log": float(pred_log[i]),
+                "debug_transformed_sample": transformed_sample if i == 0 else None
+            }
         )
 
     return results
@@ -328,7 +338,7 @@ def health():
     )
 
 
-@app.post("/predict", response_model=PredictionResponse)
+@app.post("/predict")
 def predict(property_input: PropertyInput):
     """Predict price per sqft for a single property."""
     if not _model_meta["loaded"]:
@@ -338,7 +348,7 @@ def predict(property_input: PropertyInput):
     return results[0]
 
 
-@app.post("/predict/batch", response_model=list[PredictionResponse])
+@app.post("/predict/batch")
 def predict_batch(properties: list[PropertyInput]):
     """Predict price per sqft for multiple properties (max 50)."""
     if not _model_meta["loaded"]:
