@@ -27,6 +27,7 @@ session*.json
 !/data/**/.gitignore
 
 # Model binary artifacts — managed by DVC (see models/.gitignore)
+/models/pipeline_v1.joblib
 models/*.db
 
 # MLflow tracking data (generates thousands of tiny files)
