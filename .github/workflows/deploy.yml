@@ -79,6 +79,10 @@ jobs:
           script: |
             mkdir -p ~/apps/ncr-app
             cd ~/apps/ncr-app
+            if [ ! -f .env ]; then
+              echo "API_BASE_URL=http://api:8000" > .env
+              echo "GITHUB_REPOSITORY=${{ github.repository }}" >> .env
+            fi
             export IMAGE_TAG=${{ github.sha }}
             export GITHUB_REPOSITORY=${{ github.repository }}
             docker compose pull
