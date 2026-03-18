@@ -383,6 +383,25 @@ def debug_model():
     }
 
 
+@app.get("/debug/geocoder")
+def debug_geocoder():
+    """Inspect the internal state of the GeoMedianEncoder."""
+    if not _model_meta["loaded"] or not hasattr(_model, "named_steps"):
+        return {"error": "Model not loaded or has no named_steps"}
+
+    geo_encoder = _model.named_steps.get("geo_encoder")
+    if not geo_encoder:
+        return {"error": "geo_encoder not found in pipeline"}
+
+    return {
+        "global_median": geo_encoder.global_median_,
+        "city_medians": geo_encoder.city_median_,
+        "sample_sector_stats": geo_encoder.sector_stats_.head(10).to_dict()
+        if hasattr(geo_encoder, "sector_stats_")
+        else None,
+    }
+
+
 @app.get("/model-info", response_model=ModelInfoResponse)
 def model_info():
     """Return current model metadata."""
