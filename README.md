@@ -2,6 +2,11 @@
 
 A complete end-to-end Machine Learning web application for predicting real estate prices in the National Capital Region (Delhi-NCR) of India.
 
+### 🌐 Live Access
+
+- 🏠 **Application Storefront**: [http://13.204.212.148:8501/](http://13.204.212.148:8501/)
+- ⚙️ **FastAPI Swagger Docs**: [http://13.204.212.148:8000/docs](http://13.204.212.148:8000/docs)
+
 The project includes an entire ML pipeline: data processing, model training, an exposed **FastAPI** backend for predictions, and a polished **Streamlit** frontend interface.
 
 ---
