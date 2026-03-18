@@ -468,7 +468,7 @@ if predict_clicked:
                     f"""
                 <div class="result-card">
                     <div class="label">Price per Sqft</div>
-                    <div class="value">₹ {price_sqft:,.0f}</div>
+                    <div class="value">₹ {price_sqft:,.2f}</div>
                     <div class="sub">per square foot</div>
                 </div>
                 """,
@@ -523,7 +523,7 @@ if predict_clicked:
                 | **Furnished** | {furnished} |
                 | **Facing** | {facing} |
                 | **Area** | {area:,} sqft |
-                | **Price/sqft** | ₹ {price_sqft:,.0f} |
+                | **Price/sqft** | ₹ {price_sqft:,.2f} |
                 | **Total Price** | {format_inr_full(total_price)} |
                 """
                 )
