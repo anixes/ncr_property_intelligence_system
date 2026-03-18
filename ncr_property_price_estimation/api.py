@@ -33,7 +33,6 @@ from ncr_property_price_estimation.config import (
     MLFLOW_TRACKING_URI,
     MODELS_DIR,
 )
-import ncr_property_price_estimation.features  # Load custom transformers for joblib
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -299,10 +298,15 @@ def _predict(inputs: list[PropertyInput]) -> list[PredictionResponse]:
     # Get transformed features for the first row (debugging)
     X_transformed = df.copy()
     for name, step in _model.named_steps.items():
-        if name == "model": break
+        if name == "model":
+            break
         X_transformed = step.transform(X_transformed)
-    
-    transformed_sample = X_transformed[0].tolist() if not isinstance(X_transformed, pd.DataFrame) else X_transformed.iloc[0].to_dict()
+
+    transformed_sample = (
+        X_transformed[0].tolist()
+        if not isinstance(X_transformed, pd.DataFrame)
+        else X_transformed.iloc[0].to_dict()
+    )
 
     results = []
     for i, inp in enumerate(inputs):
@@ -312,7 +316,7 @@ def _predict(inputs: list[PropertyInput]) -> list[PredictionResponse]:
                 "price_per_sqft": round(price_sqft, 2),
                 "estimated_total_price": round(price_sqft * inp.area, 2),
                 "debug_pred_log": float(pred_log[i]),
-                "debug_transformed_sample": transformed_sample if i == 0 else None
+                "debug_transformed_sample": transformed_sample if i == 0 else None,
             }
         )
 
@@ -373,7 +377,9 @@ def debug_model():
         "type": str(type(_model)),
         "meta": _model_meta,
         "steps": [str(s) for s in _model.steps] if hasattr(_model, "steps") else None,
-        "features": list(_model.feature_names_in_) if hasattr(_model, "feature_names_in_") else None
+        "features": list(_model.feature_names_in_)
+        if hasattr(_model, "feature_names_in_")
+        else None,
     }
 
 
