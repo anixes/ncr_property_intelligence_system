@@ -15,6 +15,9 @@ COPY requirements/api.txt .
 
 RUN pip install --no-cache-dir --prefix=/install -r api.txt
 
+# Remove unnecessary NVIDIA GPU libraries to save ~1GB of disk space (CPU-only)
+RUN find /install -name "nvidia*" -type d -exec rm -rf {} + || true
+
 
 # ---------- Runtime stage ----------
 FROM python:3.11-slim

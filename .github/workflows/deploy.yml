@@ -87,3 +87,4 @@ jobs:
             export GITHUB_REPOSITORY=${{ github.repository }}
             docker compose pull
             docker compose up -d --force-recreate
+            docker image prune -f
