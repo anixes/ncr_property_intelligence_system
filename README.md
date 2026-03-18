@@ -157,8 +157,28 @@ Estimates the price for a single property configuration.
 - **Frontend**: `Streamlit`, `Requests`
 - **Containerization**: `Docker`, `Docker Compose`
 - **CI/CD**: `GitHub Actions` (Linting, Test Suite, Docker Image Builds)
-- **Formatting / Linting**: `Ruff`
-- **Testing**: `Pytest`
+
+---
+
+## 🤖 End-to-End Automation
+
+This project implements a fully automated MLOps pipeline using **GitHub Actions**, **DVC**, and **Docker**.
+
+### 1. Continuous Integration (CI)
+
+On every pull request or push to any branch, the `ci.yml` workflow:
+
+- **Lints** the code using `Ruff`.
+- **Tests** the logic using `Pytest`.
+- **Smoke Builds** the Docker images using a dummy model artifact to ensure the container structure is valid without waiting for large DVC downloads.
+
+### 2. Continuous Deployment (CD)
+
+On a push to the `main` branch, the `deploy.yml` workflow:
+
+- **Pulls** the actual production model artifact from **DVC** (via DAGsHub).
+- **Builds & Pushes** production-ready images to the **GitHub Container Registry (GHCR)**.
+- **Deploys** directly to **AWS EC2** via SSH, pulling the latest images and restarting the services using `docker compose`.
 
 ---
 
