@@ -8,10 +8,25 @@ test_*.py
 fix_*.py
 preview_*.py
 cleanup_*.ps1
+tmp_*.py
+test_*.txt
+*.txt
 
 # Cookies and session data
 cookies.json
 session*.json
+
+# Data Tracking (V30.8 Final Hardening)
+*.csv
+*.parquet
+*.json
+!**/*.dvc
+!**/.gitignore
+!requirements*.txt
+!pyproject.toml
+!package.json
+!plugin.json
+!manifest.json
 
 # Data
 # Ignore the large data files
@@ -224,3 +239,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+/data

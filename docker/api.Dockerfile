@@ -33,10 +33,12 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 # Copy only installed packages from builder
 COPY --from=builder /install /usr/local
 
-# Copy code package and model artifact
+# Copy code package, model artifact and data dependencies
 # Note: models/pipeline_v1.joblib is pulled via DVC in CI before build
 COPY ncr_property_price_estimation/ ncr_property_price_estimation/
 COPY models/ models/
+COPY data/model/ data/model/
+COPY locality_intelligence_index.json .
 
 EXPOSE 8000
 

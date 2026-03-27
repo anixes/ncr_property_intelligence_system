@@ -24,31 +24,39 @@ NUMERIC_FEATURES = [
     "area",
     "bedrooms",
     "bathrooms",
-    "balcony",
-    "floor",
     "log_area",
     "area_per_bedroom",
     "bathrooms_missing",
-    "floor_missing",
     "geo_median",
 ]
 
 CATEGORICAL_FEATURES = [
     "prop_type",
-    "furnished",
-    "facing",
+    "furnishing_status",
+    "legal_status",
 ]
 
 # Binary amenity columns (treated as numeric passthrough)
 AMENITY_FEATURES = [
-    "pooja_room",
-    "servant_room",
-    "store_room",
-    "pool",
-    "gym",
-    "lift",
-    "parking",
-    "vastu_compliant",
+    "is_rera_registered",
+    "is_luxury",
+    "is_gated_community",
+    "is_vastu_compliant",
+    "is_servant_room",
+    "is_study_room",
+    "is_store_room",
+    "is_pooja_room",
+    "has_pool",
+    "has_gym",
+    "has_lift",
+    "is_near_metro",
+    "has_power_backup",
+    "is_corner_property",
+    "is_park_facing",
+    "no_brokerage",
+    "bachelors_allowed",
+    "is_standalone",
+    "is_owner_listing",
 ]
 
 
@@ -92,7 +100,6 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
         log_area          — log1p(area), reduces right skew
         area_per_bedroom  — area / bedrooms, safe division
         bathrooms_missing — binary indicator
-        floor_missing     — binary indicator
     """
 
     def fit(self, X, y=None):
@@ -113,7 +120,6 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
 
         # Missing indicators (before imputation fills them)
         X["bathrooms_missing"] = X["bathrooms"].isna().astype(int)
-        X["floor_missing"] = X["floor"].isna().astype(int)
 
         return X
 
@@ -169,68 +175,83 @@ class GeoMedianEncoder(BaseEstimator, TransformerMixin):
             how="left",
         )
 
-        def _resolve(row):
-            # Level 1: sector median (if enough support)
-            if pd.notna(row.get("count")) and row["count"] >= self.min_support:
-                return row["median"]
+        # --- Vectorized priority chain (replaces slow row-wise apply) ---
+        # Level 1: Sector median where support >= min_support
+        has_support = merged["count"].notna() & (merged["count"] >= self.min_support)
+        geo = np.where(has_support, merged["median"], np.nan)
 
-            # Level 2: city median
-            city_val = self.city_median_.get(row[self.city_col])
-            if city_val is not None and pd.notna(city_val):
-                return city_val
+        # Level 2: City median fallback
+        city_vals = merged[self.city_col].map(self.city_median_)
+        geo = np.where(np.isnan(geo.astype(float)), city_vals.values, geo)
 
-            # Level 3: global
-            return self.global_median_
+        # Level 3: Global median last resort
+        geo = np.where(pd.isna(geo), self.global_median_, geo)
 
-        X["geo_median"] = merged.apply(_resolve, axis=1)
+        X["geo_median"] = geo.astype(float)
 
-        # Drop consumed geo columns — prevents accidental one-hot encoding
+        # Drop consumed geo columns
         X = X.drop(columns=[self.city_col, self.sector_col])
 
         return X
 
 
 # ---------------------------------------------------------------------------
-# 4. Pipeline builder
+# 4. Pipeline builder helpers
 # ---------------------------------------------------------------------------
 
 
-def build_feature_pipeline(model):
-    """
-    Assemble the full prediction pipeline.
-
-    Args:
-        model: An sklearn-compatible estimator (e.g., LGBMRegressor).
-
-    Returns:
-        sklearn.pipeline.Pipeline with steps:
-            feature_creator → geo_encoder → preprocessor → model
-    """
-    numeric_cols = NUMERIC_FEATURES + AMENITY_FEATURES
-
+def _build_preprocessor(numeric_cols: list, categorical_pipeline: Pipeline) -> ColumnTransformer:
+    """Shared ColumnTransformer builder used by both XGBoost and CatBoost pipelines."""
     numeric_pipeline = Pipeline(
         [
             ("imputer", SimpleImputer(strategy="median")),
             ("winsor", Winsorizer()),
         ]
     )
+    return ColumnTransformer(
+        transformers=[
+            ("num", numeric_pipeline, numeric_cols),
+            ("cat", categorical_pipeline, list(CATEGORICAL_FEATURES)),
+        ],
+        remainder="drop",
+    )
 
-    categorical_pipeline = Pipeline(
+
+def _resolve_cols(df=None) -> tuple[list, list]:
+    """Return (numeric_cols, categorical_cols) filtered by df presence."""
+    requested_numeric = list(NUMERIC_FEATURES) + list(AMENITY_FEATURES)
+    requested_categorical = list(CATEGORICAL_FEATURES)
+    if df is not None:
+        return (
+            [c for c in requested_numeric if c in df.columns],
+            [c for c in requested_categorical if c in df.columns],
+        )
+    return requested_numeric, requested_categorical
+
+
+def build_feature_pipeline(model, df=None) -> Pipeline:
+    """
+    Assemble the full XGBoost prediction pipeline.
+
+    Args:
+        model: An sklearn-compatible estimator (e.g., XGBRegressor).
+        df: Optional dataframe to filter features by presence.
+
+    Returns:
+        sklearn.pipeline.Pipeline with steps:
+            feature_creator → geo_encoder → preprocessor → model
+    """
+    numeric_cols, _ = _resolve_cols(df)
+
+    ohe_pipeline = Pipeline(
         [
             ("imputer", SimpleImputer(strategy="constant", fill_value="Unknown")),
             ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
         ]
     )
+    preprocessor = _build_preprocessor(numeric_cols, ohe_pipeline)
 
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("num", numeric_pipeline, numeric_cols),
-            ("cat", categorical_pipeline, CATEGORICAL_FEATURES),
-        ],
-        remainder="drop",  # safety: drop any unexpected columns
-    )
-
-    pipeline = Pipeline(
+    return Pipeline(
         [
             ("feature_creator", FeatureCreator()),
             ("geo_encoder", GeoMedianEncoder()),
@@ -239,54 +260,33 @@ def build_feature_pipeline(model):
         ]
     )
 
-    return pipeline
 
-
-def build_catboost_pipeline(model):
+def build_catboost_pipeline(model, df=None) -> Pipeline:
     """
-    Assemble a prediction pipeline suitable for CatBoost.
+    Assemble a CatBoost-compatible prediction pipeline.
 
-    Identical to :func:`build_feature_pipeline` **except** the categorical
-    sub-pipeline omits ``OneHotEncoder`` — it only imputes missing values
-    with ``"Unknown"`` and passes raw strings through.  This preserves
-    ``object`` dtype so CatBoost can use its native categorical handling
-    via the ``cat_features`` parameter.
+    Identical to :func:`build_feature_pipeline` except the categorical
+    sub-pipeline omits OneHotEncoder — CatBoost handles categoricals natively.
 
     Args:
-        model: A CatBoostRegressor (or any estimator that accepts
-               ``cat_features`` in its ``.fit()`` call).
+        model: A CatBoostRegressor.
+        df: Optional dataframe to filter features by presence.
 
     Returns:
         sklearn.pipeline.Pipeline with steps:
             feature_creator → geo_encoder → preprocessor → model
     """
-    numeric_cols = NUMERIC_FEATURES + AMENITY_FEATURES
+    numeric_cols, _ = _resolve_cols(df)
 
-    numeric_pipeline = Pipeline(
-        [
-            ("imputer", SimpleImputer(strategy="median")),
-            ("winsor", Winsorizer()),
-        ]
-    )
-
-    # No OneHotEncoder — CatBoost handles categoricals natively.
-    # SimpleImputer returns a 2-D numpy array of dtype object, which
-    # CatBoostRegressor accepts when indices are passed via cat_features.
-    categorical_pipeline = Pipeline(
+    # No OHE — CatBoost accepts raw string categoricals via cat_features.
+    passthrough_pipeline = Pipeline(
         [
             ("imputer", SimpleImputer(strategy="constant", fill_value="Unknown")),
         ]
     )
+    preprocessor = _build_preprocessor(numeric_cols, passthrough_pipeline)
 
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("num", numeric_pipeline, numeric_cols),
-            ("cat", categorical_pipeline, CATEGORICAL_FEATURES),
-        ],
-        remainder="drop",
-    )
-
-    pipeline = Pipeline(
+    return Pipeline(
         [
             ("feature_creator", FeatureCreator()),
             ("geo_encoder", GeoMedianEncoder()),
@@ -294,5 +294,3 @@ def build_catboost_pipeline(model):
             ("model", model),
         ]
     )
-
-    return pipeline

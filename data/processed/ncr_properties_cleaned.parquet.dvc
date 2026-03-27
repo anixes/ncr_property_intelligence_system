@@ -1,5 +1,0 @@
-outs:
-- md5: ee501332142baa3e3c36c2c05637f0a6
-  size: 1195073
-  hash: md5
-  path: ncr_properties_cleaned.parquet

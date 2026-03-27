@@ -43,11 +43,12 @@ class ValidationService:
     """Industrial Validator with Skew-Aware Z-Score Logic (V16)."""
     
     # Semantic bounds for NCR real estate
-    PRICE_MIN = 500_000       # 5 Lakh minimum (even for rent deposits)
+    PRICE_MIN_BUY = 500_000   # 5 Lakh minimum for Buy
+    PRICE_MIN_RENT = 5_000     # 5k minimum for Rent (prevents repo of deposits only)
     PRICE_MAX = 500_000_000   # 50 Crore cap
     AREA_MIN = 100            # 100 sqft minimum
     AREA_MAX = 50_000         # 50,000 sqft cap
-    BHK_VALID = {1, 2, 3, 4, 5, 6}
+    BHK_VALID = set(range(1, 11)) # 1 BHK to 10 BHK (Luxury Penthouses)
     
     def __init__(self):
         self.counter = StageCounter()
@@ -71,8 +72,12 @@ class ValidationService:
 
     def _enforce_semantic_bounds(self, df: pd.DataFrame) -> pd.DataFrame:
         """Reject rows that fail basic common-sense checks."""
+        # 0. Listing Mode Context
+        is_rent = df.get('listing_mode', pd.Series('buy', index=df.index)).str.lower() == 'rent'
+        min_price = np.where(is_rent, self.PRICE_MIN_RENT, self.PRICE_MIN_BUY)
+
         mask = (
-            (df['price'] >= self.PRICE_MIN) & 
+            (df['price'] >= min_price) & 
             (df['price'] <= self.PRICE_MAX) &
             (df['area'] >= self.AREA_MIN) & 
             (df['area'] <= self.AREA_MAX) &

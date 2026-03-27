@@ -18,8 +18,10 @@ class GeoEnrichmentService:
     def encode_h3(self, lat: float, lng: float) -> str:
         """Convert Lat/Long to H3 hexagonal index."""
         try:
+            if hasattr(h3, 'latlng_to_cell'):
+                return h3.latlng_to_cell(lat, lng, self.res)
             return h3.geo_to_h3(lat, lng, self.res)
-        except Exception:
+        except Exception as e:
             return None
 
     def get_neighborhood_stats(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -58,8 +60,11 @@ class GeoEnrichmentService:
     def enrich_batch(self, df: pd.DataFrame) -> pd.DataFrame:
         """Complete enrichment cycle for a new batch."""
         # 1. Coordinate to H3
-        if "lat" in df.columns and "lng" in df.columns:
-            df['h3_res8'] = df.apply(lambda r: self.encode_h3(r['lat'], r['lng']), axis=1)
+        # Support both naming conventions (lat/lng and latitude/longitude)
+        lat_col = "latitude" if "latitude" in df.columns else "lat"
+        lng_col = "longitude" if "longitude" in df.columns else "lng"
+        if lat_col in df.columns and lng_col in df.columns:
+            df['h3_res8'] = df.apply(lambda r: self.encode_h3(r[lat_col], r[lng_col]), axis=1)
         
         # 2. Neighborhood Enrichment (Leakage-Proof)
         df = self.get_neighborhood_stats(df)
@@ -71,6 +76,29 @@ class GeoEnrichmentService:
         return df
 
 if __name__ == "__main__":
-    # Test Spatial Logic
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", type=str, choices=["sales", "rentals"], required=True)
+    args = parser.parse_args()
+    
+    print(f"\n[GEO-ENRICHMENT: {args.mode.upper()}]")
     service = GeoEnrichmentService()
-    print("GeoEnrichmentService Initialized.")
+    
+    in_file = PROCESSED_DATA_DIR.parent / "interim" / f"{args.mode}_geocoded.parquet"
+    out_file = PROCESSED_DATA_DIR / f"{args.mode}_processed.parquet"
+    
+    df = pd.read_parquet(in_file)
+    print(f"  Input rows: {len(df)}")
+    
+    # Fake timestamp if missing for safety
+    if "timestamp" not in df.columns:
+        if "scraped_at" in df.columns:
+            df["timestamp"] = pd.to_datetime(df["scraped_at"])
+        else:
+            df["timestamp"] = pd.Timestamp("2026-03-25")
+            
+    df = service.enrich_batch(df)
+    
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(out_file, index=False)
+    print(f"  Saved H3 Enriched data to: {out_file}")

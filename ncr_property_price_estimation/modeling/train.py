@@ -23,6 +23,7 @@ Saves  models/pipeline_v1.joblib
        models/feature_importance_gain.json
 """
 
+import argparse
 import json
 import warnings
 
@@ -54,9 +55,8 @@ np.random.seed(SEED)
 
 # ── Paths ─────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-DATA_PATH = PROJECT_ROOT / "data" / "model" / "model_v1.parquet"
-MODEL_DIR = PROJECT_ROOT / "models"
-MODEL_DIR.mkdir(parents=True, exist_ok=True)
+# DATA_PATH and MODEL_DIR will be set dynamically in main()
+MODEL_ROOT = PROJECT_ROOT / "models"
 
 # Add source package to path so features module is importable by name
 # (required for joblib/pickle serialization of custom transformers)
@@ -189,12 +189,14 @@ def get_baselines():
 def run_baselines(X_train, y_train, X_test, y_test):
     """Train every baseline, evaluate, and return results dict."""
     results = {}
-    for name, model in get_baselines().items():
+    baselines = get_baselines() # Get baselines here
+    for name, model in baselines.items():
         print(f"  Training {name}...")
-        pipe = build_feature_pipeline(model)
-        pipe.fit(X_train, y_train)
-        y_pred = pipe.predict(X_test)
-        results[name] = evaluate(y_test, y_pred)
+        with mlflow.start_run(run_name=f"baseline-{name.lower()}", nested=True):
+            pipe = build_feature_pipeline(model, df=X_train)
+            pipe.fit(X_train, y_train)
+            y_pred = pipe.predict(X_test)
+            results[name] = evaluate(y_test, y_pred)
     return results
 
 
@@ -229,7 +231,7 @@ def create_objective(X_train, y_train, groups_train):
             y_tr = y_train.iloc[tr_idx]
             y_val = y_train.iloc[val_idx]
 
-            pipe = build_feature_pipeline(XGBRegressor(**params))
+            pipe = build_feature_pipeline(XGBRegressor(**params), df=X_tr)
             pipe.fit(X_tr, y_tr)
 
             y_pred = pipe.predict(X_val)
@@ -246,11 +248,11 @@ def create_objective(X_train, y_train, groups_train):
     return objective
 
 
-def run_optuna(X_train, y_train, groups_train, n_trials=50):
+def run_optuna(X_train, y_train, groups_train, model_dir, n_trials=50):
     """Run Optuna study with GroupKFold.  SQLite backend for crash safety."""
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    storage_url = f"sqlite:///{MODEL_DIR / 'optuna.db'}"
+    storage_url = f"sqlite:///{model_dir / 'optuna.db'}"
 
     study = optuna.create_study(
         direction="minimize",
@@ -322,31 +324,21 @@ def repeated_grouped_eval(pipeline_template, X, y, groups, n_repeats=N_REPEATS):
 # ======================================================================
 
 
-def export_feature_importance(pipeline, X_test, y_test, feature_names):
-    """Export XGBoost gain importance and sklearn permutation importance."""
+def export_feature_importance(pipeline, X_test, y_test, feature_names, model_dir):
+    """Save XGBoost gain importance and permutation importance to JSON."""
+    xgb_model = pipeline.named_steps["model"]
 
-    # ── 1. Gain importance (XGBoost native) ───────────────────────────
-    model_step = pipeline.named_steps["model"]
+    # ── 1. Gain Importance ────────────────────────────────────────────
+    gain_importance = {
+        name: round(float(score), 1)
+        for name, score in sorted(
+            xgb_model.get_booster().get_score(importance_type="gain").items(),
+            key=lambda x: -x[1],
+        )
+    }
 
-    # Unwrap if model_step is itself a sub-pipeline (e.g. Ridge)
-    if hasattr(model_step, "get_booster"):
-        booster = model_step.get_booster()
-        raw_gain = booster.get_score(importance_type="gain")
-
-        # Map booster feature names (f0, f1, ...) to real names
-        booster_names = booster.feature_names
-        if booster_names is None:
-            booster_names = [f"f{i}" for i in range(len(feature_names))]
-
-        name_map = dict(zip(booster_names, feature_names))
-        gain_importance = {
-            name_map.get(k, k): round(v, 4)
-            for k, v in sorted(raw_gain.items(), key=lambda x: -x[1])
-        }
-    else:
-        gain_importance = {}
-
-    # ── 2. Permutation importance (model-agnostic) ────────────────────
+    # ── 2. Permutation Importance ─────────────────────────────────────
+    print(">> Calculating permutation importance (n_repeats=10)...")
     perm_result = permutation_importance(
         pipeline,
         X_test,
@@ -369,7 +361,7 @@ def export_feature_importance(pipeline, X_test, y_test, feature_names):
         "gain_importance": gain_importance,
         "permutation_importance_mean": perm_importance,
     }
-    out_path = MODEL_DIR / "feature_importance_gain.json"
+    out_path = model_dir / "feature_importance_gain.json"
     save_json(payload, out_path)
     print(f">> Feature importance saved to: {out_path}")
 
@@ -435,7 +427,7 @@ def create_catboost_objective(X_train: pd.DataFrame, y_train: pd.Series, groups_
             y_tr, y_val = y_train.iloc[tr_idx], y_train.iloc[val_idx]
 
             cb_model = CatBoostRegressor(**params)
-            pipeline = build_catboost_pipeline(cb_model)
+            pipeline = build_catboost_pipeline(cb_model, df=X_tr)
 
             # Two-stage fit: preprocess → CatBoost with cat_features
             preprocess_steps = pipeline[:-1]
@@ -470,12 +462,13 @@ def run_catboost_optuna(
     X_train: pd.DataFrame,
     y_train: pd.Series,
     groups_train: pd.Series,
+    model_dir: Path, # Added model_dir parameter
     n_trials: int = 50,
 ) -> dict:
     """Run Optuna study for CatBoost with GroupKFold.  SQLite backend."""
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    storage_url = f"sqlite:///{MODEL_DIR / 'optuna_catboost.db'}"
+    storage_url = f"sqlite:///{model_dir / 'optuna_catboost.db'}"
 
     study = optuna.create_study(
         direction="minimize",
@@ -508,6 +501,7 @@ def run_catboost_optuna(
 
 def train_catboost(
     df: pd.DataFrame,
+    model_dir: Path, # Added model_dir parameter
     params: dict | None = None,
     n_trials: int = 50,
 ) -> tuple[object, dict]:
@@ -547,7 +541,7 @@ def train_catboost(
     else:
         print(f"\n>> OPTUNA TUNING  ({n_trials} trials, GroupKFold)")
         print("-" * 72)
-        best_params = run_catboost_optuna(X, y, groups, n_trials=n_trials)
+        best_params = run_catboost_optuna(X, y, groups, model_dir, n_trials=n_trials)
         hparams = {
             **best_params,
             "random_seed": SEED,
@@ -570,7 +564,7 @@ def train_catboost(
         y_tr, y_val = y.iloc[tr_idx], y.iloc[val_idx]
 
         cb_model = CatBoostRegressor(**hparams)
-        pipeline = build_catboost_pipeline(cb_model)
+        pipeline = build_catboost_pipeline(cb_model, df=X_tr)
 
         preprocess_steps = pipeline[:-1]
         X_tr_t = preprocess_steps.fit_transform(X_tr, y_tr)
@@ -606,7 +600,7 @@ def train_catboost(
     print("\n>> Fitting final model on full dataset...")
 
     final_model = CatBoostRegressor(**hparams)
-    final_pipeline = build_catboost_pipeline(final_model)
+    final_pipeline = build_catboost_pipeline(final_model, df=X)
 
     preprocess_steps = final_pipeline[:-1]
     X_full_t = preprocess_steps.fit_transform(X, y)
@@ -694,7 +688,7 @@ def create_lgbm_objective(X_train: pd.DataFrame, y_train: pd.Series, groups_trai
             X_tr, X_val = X_train.iloc[tr_idx], X_train.iloc[val_idx]
             y_tr, y_val = y_train.iloc[tr_idx], y_train.iloc[val_idx]
 
-            pipe = build_feature_pipeline(LGBMRegressor(**params))
+            pipe = build_feature_pipeline(LGBMRegressor(**params), df=X_tr)
             pipe.fit(X_tr, y_tr)
 
             y_pred = pipe.predict(X_val)
@@ -714,12 +708,13 @@ def run_lgbm_optuna(
     X_train: pd.DataFrame,
     y_train: pd.Series,
     groups_train: pd.Series,
+    model_dir: Path, # Added model_dir parameter
     n_trials: int = 50,
 ) -> dict:
     """Run Optuna study for LightGBM with GroupKFold.  SQLite backend."""
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    storage_url = f"sqlite:///{MODEL_DIR / 'optuna_lgbm.db'}"
+    storage_url = f"sqlite:///{model_dir / 'optuna_lgbm.db'}"
 
     study = optuna.create_study(
         direction="minimize",
@@ -752,6 +747,7 @@ def run_lgbm_optuna(
 
 def train_lightgbm(
     df: pd.DataFrame,
+    model_dir: Path, # Added model_dir parameter
     params: dict | None = None,
     n_trials: int = 50,
 ) -> tuple[object, dict]:
@@ -787,7 +783,7 @@ def train_lightgbm(
     else:
         print(f"\n>> OPTUNA TUNING  ({n_trials} trials, GroupKFold)")
         print("-" * 72)
-        best_params = run_lgbm_optuna(X, y, groups, n_trials=n_trials)
+        best_params = run_lgbm_optuna(X, y, groups, model_dir, n_trials=n_trials)
         hparams = {**best_params, "random_state": SEED, "verbose": -1}
 
     print(f"\n>> Hyperparameters: {hparams}")
@@ -804,7 +800,7 @@ def train_lightgbm(
         X_tr, X_val = X.iloc[tr_idx], X.iloc[val_idx]
         y_tr, y_val = y.iloc[tr_idx], y.iloc[val_idx]
 
-        pipe = build_feature_pipeline(LGBMRegressor(**hparams))
+        pipe = build_feature_pipeline(LGBMRegressor(**hparams), df=X_tr)
         pipe.fit(X_tr, y_tr)
 
         y_pred = pipe.predict(X_val)
@@ -825,7 +821,7 @@ def train_lightgbm(
 
     # ── Phase 3: Train final model on full data ───────────────────────
     print("\n>> Fitting final pipeline on full dataset...")
-    final_pipeline = build_feature_pipeline(LGBMRegressor(**hparams))
+    final_pipeline = build_feature_pipeline(LGBMRegressor(**hparams), df=X)
     final_pipeline.fit(X, y)
 
     # ── Phase 4: MLflow logging ───────────────────────────────────────
@@ -863,21 +859,32 @@ def train_lightgbm(
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", type=str, choices=["sales", "rentals"], default="sales")
+    parser.add_argument("--trials", type=int, default=1)
+    args = parser.parse_args()
+
+    mode = args.mode
+    data_path = PROJECT_ROOT / "data" / "model" / f"model_{mode}.parquet"
+    model_dir = MODEL_ROOT / mode
+    model_dir.mkdir(parents=True, exist_ok=True)
+
+    # Mode-specific MLflow settings
+    experiment_name = f"ncr-property-{mode}"
+    
     print("=" * 72)
-    print("TRAINING PIPELINE -- Multi-Model + Optuna (grouped validation)")
+    print(f"TRAINING PIPELINE: {mode.upper()}")
     print("=" * 72)
 
     # ── MLflow setup ──────────────────────────────────────────────────
-    # MLFLOW_TRACKING_URI is already a file:/// URI (cross-OS safe).
-    # Override with env var MLFLOW_TRACKING_URI for Docker / CI.
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
+    mlflow.set_experiment(experiment_name)
     print(f">> MLflow tracking URI : {MLFLOW_TRACKING_URI}")
-    print(f">> MLflow experiment   : {MLFLOW_EXPERIMENT_NAME}")
+    print(f">> MLflow experiment   : {experiment_name}")
 
     # ── 1. Load data ──────────────────────────────────────────────────
-    df = pd.read_parquet(DATA_PATH)
-    print(f">> Loaded {len(df):,} rows from {DATA_PATH.name}")
+    df = pd.read_parquet(data_path)
+    print(f">> Loaded {len(df):,} rows from {data_path.name}")
 
     # ── 2. Separate features / target ─────────────────────────────────
     X = df.drop(columns=["price_per_sqft"])
@@ -907,7 +914,7 @@ def main():
     # ══════════════════════════════════════════════════════════════════
     # Single MLflow run wraps all 4 phases
     # ══════════════════════════════════════════════════════════════════
-    with mlflow.start_run(run_name="xgb-optuna-v1") as run:
+    with mlflow.start_run(run_name=f"xgb-optuna-{mode}") as run:
         print(f"\n>> MLflow run ID: {run.info.run_id}")
 
         # ── PHASE 1: Baselines ────────────────────────────────────────
@@ -924,15 +931,16 @@ def main():
         print("PHASE 2 -- OPTUNA XGBOOST TUNING  (GroupKFold + pruning, 50 trials)")
         print("=" * 72)
 
-        best_params = run_optuna(X_train, y_train, groups_train, n_trials=1)
+        best_params = run_optuna(X_train, y_train, groups_train, model_dir, n_trials=args.trials)
 
         # ── PHASE 3: Repeated grouped evaluation ──────────────────────
         print("\n" + "=" * 72)
         print(f"PHASE 3 -- REPEATED GROUPED EVALUATION  ({N_REPEATS} repeats)")
         print("=" * 72)
 
+        # Re-build best pipeline
         tuned_model = XGBRegressor(**best_params, random_state=SEED, verbosity=0)
-        pipeline_template = build_feature_pipeline(tuned_model)
+        pipeline_template = build_feature_pipeline(tuned_model, df=X_train)
 
         all_metrics, summary = repeated_grouped_eval(
             pipeline_template,
@@ -976,7 +984,7 @@ def main():
         print("PHASE 4 -- FEATURE IMPORTANCE")
         print("=" * 72)
 
-        export_feature_importance(pipeline, X_test, y_test, feature_names)
+        export_feature_importance(pipeline, X_test, y_test, feature_names, model_dir)
 
         # ── Log params ───────────────────────────────────────────────
         mlflow.log_params(
@@ -1021,7 +1029,7 @@ def main():
         print("=" * 72)
 
         # Also save local joblib copy (fast inference fallback)
-        pipeline_path = MODEL_DIR / "pipeline_v1.joblib"
+        pipeline_path = model_dir / f"pipeline_{mode}.joblib"
         dump(pipeline, pipeline_path)
         print(f">> Local joblib saved to: {pipeline_path}")
 
@@ -1029,7 +1037,7 @@ def main():
         model_info = mlflow.sklearn.log_model(
             sk_model=pipeline,
             artifact_path="pipeline",
-            registered_model_name=MLFLOW_MODEL_NAME,
+            registered_model_name=f"{MLFLOW_MODEL_NAME}_{mode}",
             input_example=X_test.head(5),
         )
         print(f">> Model logged to MLflow: {model_info.model_uri}")
@@ -1039,7 +1047,7 @@ def main():
         if registered_version:
             client = mlflow.tracking.MlflowClient()
             client.transition_model_version_stage(
-                name=MLFLOW_MODEL_NAME,
+                name=f"{MLFLOW_MODEL_NAME}_{mode}",
                 version=registered_version,
                 stage="Staging",
             )
@@ -1047,6 +1055,7 @@ def main():
 
         # Save experiment JSON (human-readable side-car)
         experiment = {
+            "mode": mode,
             "seed": SEED,
             "group_column": GROUP_COL,
             "n_repeats": N_REPEATS,
@@ -1056,8 +1065,8 @@ def main():
             "optuna_best_params": best_params,
             "repeated_eval": summary,
         }
-        save_json(experiment, MODEL_DIR / "experiment_results.json")
-        mlflow.log_artifact(str(MODEL_DIR / "experiment_results.json"))
+        save_json(experiment, model_dir / "experiment_results.json")
+        mlflow.log_artifact(str(model_dir / "experiment_results.json"))
         print(">> Experiment results saved + logged to MLflow")
         print("=" * 72)
 

@@ -18,9 +18,10 @@ RUN pip install --no-cache-dir -r requirements_api.txt
 # 3. Copy source code package
 COPY ncr_property_price_estimation/ ncr_property_price_estimation/
 
-# 4. Copy model artifact (joblib fallback)
-# We bake the joblib inside the image for simplicity.
-# At scale, this would be downloaded at runtime from MLflow/S3.
+# 4. Copy consolidated data registry (H3 indices, locality maps)
+COPY data/ data/
+
+# 5. Copy model artifact (joblib fallback)
 COPY models/pipeline_v1.joblib models/pipeline_v1.joblib
 
 # 5. Expose the port

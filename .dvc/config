@@ -1,7 +1,5 @@
 [core]
     remote = origin
-['remote "gdrive_remote"']
-    url = gdrive://1kenwB6Yxe72eSdpO8bEa3yhJ3KXa4lJ2
 ['remote "local_remote"']
     url = d:\DATA SCIENCE\dvc-storage
 ['remote "origin"']
