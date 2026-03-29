@@ -13,6 +13,8 @@ help:
 	@echo "  make format          - Auto-fix lint + formatting"
 	@echo "  make test            - Run pytest suite"
 	@echo "  make ci              - Run lint then test (same as CI)"
+	@echo "  make process         - Run data processing and geo-enrichment"
+	@echo "  make train           - Run CatBoost-Only training"
 	@echo "  make docker-build    - Build Docker image"
 	@echo "  make docker-run      - Run Docker container on port 8000"
 	@echo "  make docker-up       - Start via docker-compose"
@@ -33,8 +35,15 @@ ingest-gurgaon:
 ingest-noida:
 	python ncr_property_price_estimation/data/ingest.py --city noida
 
-ingest-delhi:
-	python ncr_property_price_estimation/data/ingest.py --city delhi
+# ---- Pipeline Orchestration --
+process:
+	python run_pipeline.py --skip-train
+
+train:
+	python run_pipeline.py
+
+sync:
+	python run_pipeline.py
 
 # ---- Code Quality ----
 

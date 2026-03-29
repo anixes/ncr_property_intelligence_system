@@ -7,51 +7,87 @@ on:
     branches: [main, develop]
 
 jobs:
-  lint-and-test:
+  # ---------------------------------------------------------------------------
+  # 1. Static Analysis (Fast)
+  # ---------------------------------------------------------------------------
+  static-analysis:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10"]
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
+      - uses: actions/checkout@v4
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: |
-            requirements_production.txt
-            requirements_dev.txt
-
-      - name: Install dependencies
-        run: pip install -r requirements_dev.txt
-
-      - name: Lint (ruff check)
+          python-version: "3.10"
+      - name: Install Linting Tools
+        run: pip install ruff==0.15.4
+      - name: Lint check
         run: ruff check ncr_property_price_estimation/ tests/ frontend/
-
-      - name: Format check (ruff format)
+      - name: Format check
         run: ruff format --check ncr_property_price_estimation/ tests/ frontend/
 
-      - name: Run tests
-        run: pytest -v --tb=short
-
-  docker-build:
+  # ---------------------------------------------------------------------------
+  # 2. Unit & Contract Tests (Fast, No DVC)
+  # ---------------------------------------------------------------------------
+  unit-and-contract:
+    needs: static-analysis
     runs-on: ubuntu-latest
-    needs: lint-and-test
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Create dummy model artifact for build test
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements_dev.txt
+      - name: Run Unit & API Contract Tests
+        # Focus on fast tests that don't need real models
         run: |
-          mkdir -p models
-          dd if=/dev/zero of=models/pipeline_v1.joblib bs=1024 count=1
+          pytest tests/test_features.py tests/test_api_contract.py -v --tb=short
 
+  # ---------------------------------------------------------------------------
+  # 3. Model Quality Gate (Needs DVC Artifacts)
+  # ---------------------------------------------------------------------------
+  model-quality-gate:
+    needs: unit-and-contract
+    runs-on: ubuntu-latest
+    # Only run on PRs or Main to save DVC bandwidth
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for DVC diffs/history
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: pip install -r requirements_dev.txt
+      
+      - name: Configure DVC Remote (DAGsHub)
+        # Harmonized with existing repo secrets
+        run: |
+          dvc remote modify origin --project auth basic
+          dvc remote modify origin user ${{ secrets.DAGSHUB_USERNAME }}
+          dvc remote modify origin password ${{ secrets.DAGSHUB_TOKEN }}
+          
+      - name: Pull Model Artifacts
+        run: dvc pull -v
+        
+      - name: Run Model Quality Gate
+        # Validate real model performance and data schemas
+        run: |
+          pytest tests/test_model_validation.py tests/test_data_schema.py -v --tb=short
+
+  # ---------------------------------------------------------------------------
+  # 4. Production Build Verification
+  # ---------------------------------------------------------------------------
+  build-verification:
+    needs: model-quality-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Build API image
-        run: docker build -t ncr-property-api:ci-test .
-
-      - name: Build frontend image
-        run: docker build -t ncr-property-frontend:ci-test ./frontend
+        run: docker build -t ncr-property-api:test .
+      - name: Build Frontend image
+        run: docker build -t ncr-property-frontend:test ./frontend

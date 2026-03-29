@@ -1,14 +1,29 @@
 import pandas as pd
 import json
+import os
 from pathlib import Path
+from ncr_property_price_estimation.config import PROCESSED_DATA_DIR
 
 def build_index():
-    root_dir = Path(__file__).parent.parent
-    data_path = root_dir / "Full_Audit_NCR.csv"
-    output_path = root_dir / "locality_intelligence_index.json"
+    sales_path = PROCESSED_DATA_DIR / "sales_processed.parquet"
+    rentals_path = PROCESSED_DATA_DIR / "rentals_processed.parquet"
+    output_path = PROCESSED_DATA_DIR.parent / "locality_intelligence_index.json"
     
-    print(f"Loading data from {data_path}...")
-    df = pd.read_csv(data_path, usecols=['city', 'locality', 'price', 'area', 'listing_type', 'society_name'])
+    print(f"Loading data from {PROCESSED_DATA_DIR}...")
+    
+    dfs = []
+    if sales_path.exists():
+        s_df = pd.read_parquet(sales_path, columns=['listing_mode', 'city', 'locality', 'price', 'area', 'society_name'])
+        dfs.append(s_df)
+    if rentals_path.exists():
+        r_df = pd.read_parquet(rentals_path, columns=['listing_mode', 'city', 'locality', 'price', 'area', 'society_name'])
+        dfs.append(r_df)
+        
+    if not dfs:
+        print("❌ No processed data found. Skipping index build.")
+        return
+
+    df = pd.concat(dfs, ignore_index=True)
     
     # Clean locality
     df['locality'] = df['locality'].fillna('Other')
@@ -26,8 +41,8 @@ def build_index():
     df['ui_city'] = df['city'].apply(lambda c: city_map.get(str(c), str(c)))
 
     # Separate Buy and Rent data
-    buy_df = df[df['listing_type'] == 'Buy']
-    rent_df = df[df['listing_type'] == 'Rent']
+    buy_df = df[df['listing_mode'].str.lower() == 'buy']
+    rent_df = df[df['listing_mode'].str.lower() == 'rent']
     
     index = {}
     

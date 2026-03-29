@@ -4,8 +4,7 @@ numpy==1.26.4
 scikit-learn==1.8.0
 joblib==1.5.3
 
-# Model serialization (required for joblib load of CatBoost/XGBoost estimator)
-xgboost==3.1.2
+# Model serialization (required for joblib load of CatBoost estimator)
 catboost==1.2.10
 
 # API dependencies

@@ -32,8 +32,10 @@ jobs:
       - name: Pull model from DVC
         run: dvc pull
 
-      - name: Verify model exists
-        run: ls -lh models/
+      - name: Verify models exist
+        run: |
+          ls -lh models/sales/pipeline_sales.joblib
+          ls -lh models/rentals/pipeline_rentals.joblib
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -91,3 +93,22 @@ jobs:
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
+
+      - name: Post-Deploy Smoke Test (Confidence Layer)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Waiting 15s for 'Pure ML' model loading and container warmup..."
+            sleep 15
+            echo "Running healthcheck on EC2..."
+            if curl -f http://localhost:8000/health; then
+              echo "SUCCESS: API is up and healthy."
+            else
+              echo "FAILURE: Healthcheck failed! Checking logs..."
+              cd ~/apps/ncr-app/
+              docker compose logs api --tail 50
+              exit 1
+            fi

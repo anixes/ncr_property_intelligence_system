@@ -2,22 +2,22 @@ import pandas as pd
 import numpy as np
 import re
 from pathlib import Path
+from ncr_property_price_estimation.config import PROJ_ROOT, RAW_DATA_DIR
 from ncr_property_price_estimation.data.schema import validate_dataframe
 from ncr_property_price_estimation.data.validator import ValidationService
 
 # --- CONFIGURATION ---
-PROJECT_ROOT = Path("d:/DATA SCIENCE/ncr_property_price_estimation")
-INPUT_FILE = PROJECT_ROOT / "data/raw/raw_ncr_rent.csv"
-OUTPUT_FILE = PROJECT_ROOT / "data/interim/rentals_cleaned.parquet"
+INPUT_FILE = RAW_DATA_DIR / "raw_ncr_rent.csv"
+OUTPUT_FILE = PROJ_ROOT / "data" / "interim" / "rentals_cleaned.parquet"
 
 class RentPreprocessor:
-    """Specialized Preprocessor for Rental Data (V19.7)"""
+    """Specialized Preprocessor for Rental Data"""
     
     def __init__(self):
         self.validator = ValidationService()
         
     def parse_price(self, text):
-        """Mega-Recovery Price Parser (V19.8) - Deep Extraction."""
+        """Mega-Recovery Price Parser - Deep Extraction."""
         if not isinstance(text, str): return np.nan
         text = text.replace(',', '').strip()
         
@@ -41,7 +41,7 @@ class RentPreprocessor:
         return np.nan
 
     def parse_area(self, text):
-        """Mega-Recovery Area Parser (V19.8) - Deep Extraction."""
+        """Mega-Recovery Area Parser - Deep Extraction."""
         if not isinstance(text, str): return np.nan
         text_clean = text.replace(',', '').lower()
         match = re.search(r"(\d+)\s*(sq\.ft|sqft|sq-ft|square\s*feet|super\s*area)", text_clean)
@@ -62,7 +62,7 @@ class RentPreprocessor:
         df['has_gym'] = desc.str.contains('gym|fitness').astype(int)
         df['has_lift'] = desc.str.contains('lift|elevator').astype(int)
         
-        # 2. V25 FURNISHING Status
+        # FURNISHING Status
         def get_furnishing(txt):
             if re.search(r'fully|full[- ]?furnished', txt): return 'Fully-Furnished'
             if re.search(r'semi[- ]?furnished', txt): return 'Semi-Furnished'
@@ -71,7 +71,7 @@ class RentPreprocessor:
             
         df['furnishing_status'] = combined.apply(get_furnishing)
         
-        # 3. V28 Premium NLP Flags
+        # Premium NLP Flags
         df['is_near_metro'] = combined.str.contains(r'metro').astype(int)
         df['has_power_backup'] = combined.str.contains(r'power backup').astype(int)
         df['is_corner_property'] = combined.str.contains(r'corner').astype(int)
@@ -79,7 +79,7 @@ class RentPreprocessor:
         df['no_brokerage'] = combined.str.contains(r'no brokerage|zero brokerage').astype(int)
         df['bachelors_allowed'] = combined.str.contains(r'bachelor').astype(int)
         
-        # 4. Missing Data Propagation (V28 NA Injection)
+        # Missing Data Propagation
         valid_text_mask = combined.str.len() > 15
         
         nlp_binary_cols = [
@@ -101,18 +101,18 @@ class RentPreprocessor:
         
         df['listing_mode'] = 'rent'
         
-        # New V19.8 Step: Deep Merge of Price/Area from text blobs
+        # Deep Merge of Price/Area from text blobs
         print(">> Deep Mining Price & Area from Raw Text blocks...")
         df['price'] = df.apply(lambda r: self.parse_price(str(r['price_text'])) or self.parse_price(str(r['description_raw'])), axis=1)
         df['area'] = df.apply(lambda r: self.parse_area(str(r['area_text'])) or self.parse_area(str(r['description_raw'])), axis=1)
         
-        # --- V24/V25 ROOM EXTRACTION (Robust Rooms) ---
+        # --- ROOM EXTRACTION (Robust Rooms) ---
         def extract_rooms(row):
             title = str(row.get('title_raw', '')).lower()
             desc = str(row.get('description_raw', '')).lower()
             combined = f"{title} | {desc}"
             
-            # 1. Bedrooms: Try Title First, then Description (V25.1 Upgrade)
+            # 1. Bedrooms: Try Title First, then Description
             bhk = None
             m_bhk = re.search(r'(\d+(?:\.\d+)?)\s*(?:bhk|bedroom|bed room)', title)
             if m_bhk:
@@ -183,7 +183,7 @@ class RentPreprocessor:
             return f"Sector {m.group(1)}" if m else None
         df['sector'] = df['title_raw'].apply(get_sector)
         
-        # --- REFINED EXTRACTION (V20.1) ---
+        # --- REFINED EXTRACTION ---
         
         DEVELOPERS = [
             "M3M", "DLF", "Godrej", "Emaar", "IREO", "Vatika", "SS", "Bestech", 
@@ -224,9 +224,8 @@ class RentPreprocessor:
                             return cand
             return None
 
-        def refine_society_and_locality_v23(row):
+        def refine_society_and_locality(row):
             """
-            SPEC V23 HIERARCHY:
             Society: Actual Name > Block/Phase/Pocket > Independent > Colony Fallback
             Locality: Colony > Area > Sector > Unknown/City
             """
@@ -315,7 +314,7 @@ class RentPreprocessor:
             
             return pd.Series({'soc_clean': society, 'loc_clean': locality})
 
-        res = df.apply(refine_society_and_locality_v23, axis=1)
+        res = df.apply(refine_society_and_locality, axis=1)
         df['society_name'] = res['soc_clean']
         df['locality'] = res['loc_clean']
 
@@ -363,5 +362,5 @@ class RentPreprocessor:
 if __name__ == "__main__":
     import os
     import sys
-    sys.path.append("d:/DATA SCIENCE/ncr_property_price_estimation")
+    sys.path.append(str(PROJ_ROOT))
     RentPreprocessor().run()

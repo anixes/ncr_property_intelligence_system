@@ -1,8 +1,8 @@
-# NCR Property Intelligence (V30 Production) 🏙️
+# NCR Property Intelligence 🏙️
 
 The **NCR Property Intelligence** suite is an enterprise-grade investment discovery platform that leverages hyper-local spatial intelligence and machine learning to identify high-yield real estate opportunities across the National Capital Region (Gurgaon, Noida, and Ghaziabad).
 
-## 🚀 Key Production Features (V30.x)
+## 🚀 Key Production Features
 
 - **AI Investment Auditor**: Every listing is cross-referenced against a **Hyper-Local H3 Spatial Median** to assign visual value badges (🟢 Great Value, Good Deal, Premium).
 - **"Best Deal" Discovery**: Aggressive **Alpha-Normalized Deduplication** filters out agent-listing noise, ensuring only the most competitive price variant for any given property is surfaced.
@@ -103,7 +103,7 @@ We've added advanced diagnostic endpoints to help identify scaling or versioning
 
 ---
 
-## 🔌 API Contract (V30 Production)
+## 🔌 API Contract
 
 The backend provides a stable REST interface for property estimations and investment discovery.
 
@@ -166,7 +166,7 @@ streamlit run frontend/app.py
 
 ---
 
-## 🗺️ Roadmap (V3.x)
+## 🗺️ Roadmap
 
 - **[DONE] Property Recommender**: Intelligent engine to surface high-yield alternatives in neighboring sectors.
 - **[DONE] Enhanced Scraper**: Production-grade pipelines for Gurgaon, Noida, and Ghaziabad.

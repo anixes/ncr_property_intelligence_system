@@ -13,8 +13,8 @@
 
 set -e
 
-API_IMAGE="ghcr.io/anixes/ncr-property-api:v1"
-FRONTEND_IMAGE="ghcr.io/anixes/ncr-property-frontend:v1"
+API_IMAGE="ghcr.io/anixes/ncr-property-api:latest"
+FRONTEND_IMAGE="ghcr.io/anixes/ncr-property-frontend:latest"
 NETWORK="ncr-net"
 
 echo ">>> Pulling latest images..."

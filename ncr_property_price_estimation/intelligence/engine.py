@@ -1,9 +1,9 @@
 """
-NCR Advanced Intelligence Engine (V28).
+NCR Advanced Intelligence Engine.
 
 Calculates Yield, Risk, and Investment Scores using Cross-Model analysis.
 
-Optimizations (V28.1):
+Optimizations:
 - evaluate_property() now accepts typed scalars (not raw dicts), eliminating
   the estimated_total_price / estimated_market_value key mismatch.
 - Risk scoring now defaults to geo_median from the feature pipeline when no
@@ -18,7 +18,7 @@ from typing import Dict, Any
 
 class IntelligenceEngine:
     """
-    Advanced Intelligence Layer (V28).
+    Advanced Intelligence Layer.
     Calculates Yield, Risk, and Investment Scores using Cross-Model analysis.
     """
 
@@ -26,7 +26,7 @@ class IntelligenceEngine:
     def calculate_yield(total_price: float, monthly_rent: float) -> float:
         """
         Calculate Annualized Gross Rental Yield.
-        Yield % = (Monthly Rent × 12) / Total Value × 100
+        Yield % = (Monthly Rent * 12) / Total Value * 100
         """
         if total_price <= 0:
             return 0.0
@@ -230,17 +230,23 @@ class IntelligenceEngine:
         
         results = []
         for _, row in top_matches.iterrows():
+            h3_med_raw = row.get("h3_median_price", 0)
+            h3_med = float(h3_med_raw) if pd.notna(h3_med_raw) else 0.0
+            price_sqft_raw = row.get("price_per_sqft", 0)
+            price_sqft = float(price_sqft_raw) if pd.notna(price_sqft_raw) else 0.0
+            v_score = round((h3_med - price_sqft) / h3_med, 3) if h3_med > 0 else 0.0
+
             results.append({
-                "society": str(row["society_name"]),
+                "society": str(row["society"]),
                 "locality": str(row["sector"]),
-                "price": round(float(row["total_price"]), 0),
-                "area": round(float(row["area"]), 0),
+                "price": round(float(row.get("total_price", 0)), 0) if pd.notna(row.get("total_price")) else 0.0,
+                "area": round(float(row.get("area", 0)), 0) if pd.notna(row.get("area")) else 0.0,
                 "bhk": int(row["bedrooms"]) if pd.notna(row["bedrooms"]) else 0,
-                "price_sqft": round(float(row["price_per_sqft"]), 0),
+                "price_sqft": round(price_sqft, 0),
                 "latitude": float(row["latitude"]) if pd.notna(row.get("latitude")) else None,
                 "longitude": float(row["longitude"]) if pd.notna(row.get("longitude")) else None,
-                "h3_median_price": float(row.get("h3_median_price", 0)),
-                "value_score": round((row.get("h3_median_price", 0) - row["price_per_sqft"]) / row["h3_median_price"], 3) if row.get("h3_median_price", 0) > 0 else 0
+                "h3_median_price": h3_med,
+                "value_score": v_score
             })
             
         return results
@@ -291,9 +297,9 @@ class IntelligenceEngine:
         results = []
         for _, row in df.iterrows():
             loc = str(row["sector"])
-            area = float(row["area"])
-            price = float(row["total_price"])
-            price_sqft = float(row["price_per_sqft"])
+            area = float(row.get("area", 0)) if pd.notna(row.get("area")) else 0.0
+            price = float(row.get("total_price", 0)) if pd.notna(row.get("total_price")) else 0.0
+            price_sqft = float(row.get("price_per_sqft", 0)) if pd.notna(row.get("price_per_sqft")) else 0.0
             
             loc_data = locality_index.get(city, {}).get(loc, {})
             geo_median_price_sqft = loc_data.get("median_price_sqft", 0)
@@ -315,26 +321,28 @@ class IntelligenceEngine:
             risk = self.calculate_risk_score(total_price, geo_median_price_sqft * area if geo_median_price_sqft else 0)
             roi_index = self.calculate_roi_index(y_pct, False, risk["score"]) 
 
-            # Value Analysis
-            h3_median = float(row.get("h3_median_price", 0))
-            benchmark = h3_median if h3_median > 0 else geo_median_price_sqft
-            value_score = (benchmark - price_sqft) / benchmark if benchmark > 0 else 0
+            # Value Analysis (Unit-Agnostic Correction)
+            h3_med_raw = row.get("h3_median_price", 0)
+            h3_median = float(h3_med_raw) if pd.notna(h3_med_raw) else 0.0
+            h3_median_per_sqft = h3_median / area if (h3_median > 0 and area > 0) else 0.0
+            benchmark = h3_median_per_sqft if h3_median_per_sqft > 0 else geo_median_price_sqft
+            value_score = (benchmark - price_sqft) / benchmark if benchmark > 0 else 0.0
             
             results.append({
-                "society": str(row["society_name"]),
+                "society": str(row["society"]),
                 "locality": loc,
                 "city": city,
-                "price": price,
-                "area": area,
+                "price": price if pd.notna(price) else 0.0,
+                "area": area if pd.notna(area) else 0.0,
                 "bhk": int(row["bedrooms"]) if pd.notna(row["bedrooms"]) else 0,
-                "price_sqft": price_sqft,
-                "rental_yield_pct": y_pct,
-                "roi_index": roi_index,
+                "price_sqft": price_sqft if pd.notna(price_sqft) else 0.0,
+                "rental_yield_pct": y_pct if pd.notna(y_pct) else 0.0,
+                "roi_index": roi_index if pd.notna(roi_index) else 0.0,
                 "listing_type": listing_type.lower(),
                 "latitude": float(row["latitude"]) if pd.notna(row.get("latitude")) else None,
                 "longitude": float(row["longitude"]) if pd.notna(row.get("longitude")) else None,
                 "h3_median_price": h3_median,
-                "value_score": round(value_score, 3)
+                "value_score": round(value_score, 3) if pd.notna(value_score) else 0.0
             })
             
         # Sort

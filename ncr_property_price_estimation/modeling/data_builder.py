@@ -4,11 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
-import sys
-sys.path.append(r"d:\DATA SCIENCE\ncr_property_price_estimation")
-from ncr_property_price_estimation.data.geo_enrichment import GeoEnrichmentService
-
+from ncr_property_price_estimation.config import PROCESSED_DATA_DIR, PROJ_ROOT
 from sklearn.ensemble import IsolationForest
 
 @dataclass
@@ -95,16 +91,34 @@ def build_model_dataset(config: ModelDataConfig) -> None:
         # Map back to original df
         df.loc[iso_df.index, "is_anomaly"] = anomalies
         # Filter (keep 1, drop -1)
-        # Note: If a row was dropped for ISO fit, we keep it here for XGBoost to handle NaNs
+        # Note: If a row was dropped for ISO fit, we keep it here for CatBoost to handle NaNs
         df = df[df["is_anomaly"] != -1].drop(columns=["is_anomaly"])
         print(f"  Multivariate outliers removed (Isolation Forest): {len(iso_df) - (anomalies == 1).sum():,}")
 
     # 6. Drop Modeling-Irrelevant Columns
     df = df.drop(columns=list(config.drop_columns), errors="ignore")
     
-    # --- Audit Friendly Reordering ---
+    # --- Audit Friendly Reordering & Standardized Naming ---
+    if "society_name" in df.columns:
+        df.rename(columns={"society_name": "society"}, inplace=True)
+        
+    from ncr_property_price_estimation.features import (
+        AMENITY_FEATURES,
+        CATEGORICAL_FEATURES,
+        NUMERIC_FEATURES,
+    )
+    PIPELINE_FEATURES = (
+        ["society", "sector", "city"] +
+        list(NUMERIC_FEATURES) +
+        list(AMENITY_FEATURES) +
+        list(CATEGORICAL_FEATURES)
+    )
+    for col in PIPELINE_FEATURES:
+        if col not in df.columns and col != "geo_median":
+            df[col] = 0 if col not in CATEGORICAL_FEATURES else "Unknown"
+
     audit_cols = [
-        "listing_type", "title_raw", "description_raw", "society_name", "locality", 
+        "listing_type", "society", "locality", 
         "bedrooms", "bathrooms", "furnishing_status", "legal_status", "is_rera_registered",
         "is_servant_room", "is_study_room", "is_standalone", "is_owner_listing"
     ]
@@ -131,14 +145,12 @@ if __name__ == "__main__":
     parser.add_argument("--mode", type=str, choices=["sales", "rentals"], required=True)
     args = parser.parse_args()
     
-    PROJECT_ROOT = Path(r"d:\DATA SCIENCE\ncr_property_price_estimation")
-    
     in_file = f"{args.mode}_processed.parquet"
     out_file = f"model_{args.mode}.parquet"
     
     config = ModelDataConfig(
         mode=args.mode,
-        input_path=PROJECT_ROOT / "data" / "processed" / in_file,
-        output_path=PROJECT_ROOT / "data" / "model" / out_file,
+        input_path=PROCESSED_DATA_DIR / in_file,
+        output_path=PROJ_ROOT / "data" / "model" / out_file,
     )
     build_model_dataset(config)

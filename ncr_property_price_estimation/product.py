@@ -1,5 +1,5 @@
 """
-V16 Product Interface — Unified CLI for the NCR Intelligence Engine.
+Product Interface — Unified CLI for the NCR Intelligence Engine.
 
 Orchestrates the full lifecycle: Scrape → Process → Predict → Recommend.
 Supports three modes: predict, recommend, analyze.
@@ -7,20 +7,14 @@ Supports three modes: predict, recommend, analyze.
 
 import argparse
 import json
-import sys
-import time
-import signal
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from typing import Optional
-
 from ncr_property_price_estimation.config import (
-    PROJ_ROOT, PROCESSED_DATA_DIR, MODELS_DIR, REPORTS_DIR
+    PROCESSED_DATA_DIR, MODELS_DIR
 )
 
 # =============================================================================
-# NCR INTELLIGENCE ENGINE (V16) - PRODUCT CLI
+# NCR INTELLIGENCE ENGINE - PRODUCT CLI
 # =============================================================================
 
 TIMEOUT_SECONDS = 30   # Latency guard for live scraping
@@ -33,9 +27,8 @@ class TimeoutError(Exception):
 def _timeout_handler(signum, frame):
     raise TimeoutError("Scraping exceeded 30-second latency budget.")
 
-
 class ProductEngine:
-    """Unified orchestration layer for the NCR Intelligence Engine (V16)."""
+    """Unified orchestration layer for the NCR Intelligence Engine."""
     
     def __init__(self):
         self.model = None
@@ -44,15 +37,16 @@ class ProductEngine:
         self._load_dataset()
 
     def _load_model(self):
-        """Load the trained model from disk (joblib or MLflow)."""
+        """Load the trained Pure ML model from disk."""
         try:
             import joblib
-            model_path = MODELS_DIR / "pipeline_v1.joblib"
+            # Standardized on Sales pipeline for the unified CLI
+            model_path = MODELS_DIR / "sales" / "pipeline_sales.joblib"
             if model_path.exists():
                 self.model = joblib.load(model_path)
-                print(f"✅ Model loaded from {model_path}")
+                print(f"✅ Pure ML Model loaded from {model_path}")
             else:
-                print("⚠️  No trained model found. Run training first.")
+                print(f"⚠️  No trained model found at {model_path}. Run training first.")
         except Exception as e:
             print(f"⚠️  Model load failed: {e}")
 
@@ -138,7 +132,7 @@ class ProductEngine:
 
     def analyze(self, properties: dict, top_k: int = 5) -> dict:
         """
-        Unified Analysis Mode (V16).
+        Unified Analysis Mode.
         
         Performs: Predict → Find Similar → Score Deals → Explain Why.
         
@@ -148,19 +142,19 @@ class ProductEngine:
         - Deal quality assessment
         """
         print("\n" + "=" * 60)
-        print("🏠 NCR REAL ESTATE INTELLIGENCE ENGINE (V16)")
+        print("🏠 NCR REAL ESTATE INTELLIGENCE ENGINE")
         print("=" * 60)
         
         # 1. Predict
         prediction = self.predict(properties)
         
-        print(f"\n📊 PREDICTION:")
+        print("\n📊 PREDICTION:")
         print(f"   Predicted Price/sqft: ₹{prediction.get('price_per_sqft', 'N/A'):,.2f}")
         print(f"   Estimated Total:      ₹{prediction.get('estimated_total_price', 'N/A'):,.2f}")
-        
+
         # 2. Find Similar
         similar = self.recommend(properties=properties, top_k=top_k)
-        
+
         print(f"\n🔍 TOP {len(similar)} COMPARABLE PROPERTIES:")
         print("-" * 50)
         
@@ -177,7 +171,7 @@ class ProductEngine:
         
         if actual_price > 0 and predicted > 0:
             underval = (predicted - actual_price) / predicted * 100
-            print(f"\n💰 DEAL ASSESSMENT:")
+            print("\n💰 DEAL ASSESSMENT:")
             print(f"   Listed Price:    ₹{actual_price:,.0f}")
             print(f"   Predicted Value: ₹{predicted:,.0f}")
             if underval > 15:
@@ -185,7 +179,7 @@ class ProductEngine:
             elif underval > 5:
                 print(f"   Verdict:         ✅ Fair Deal ({underval:.1f}% below predicted)")
             elif underval > -5:
-                print(f"   Verdict:         ➡️  Fair Price (within 5% of predicted)")
+                print("   Verdict:         ➡️  Fair Price (within 5% of predicted)")
             else:
                 print(f"   Verdict:         ⚠️  Overpriced ({abs(underval):.1f}% above predicted)")
         
@@ -204,7 +198,7 @@ class ProductEngine:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="NCR Real Estate Intelligence Engine (V16)",
+        description="NCR Real Estate Intelligence Engine",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
