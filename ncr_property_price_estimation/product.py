@@ -7,17 +7,17 @@ Supports three modes: predict, recommend, analyze.
 
 import argparse
 import json
+
 import numpy as np
 import pandas as pd
-from ncr_property_price_estimation.config import (
-    PROCESSED_DATA_DIR, MODELS_DIR
-)
+
+from ncr_property_price_estimation.config import MODELS_DIR, PROCESSED_DATA_DIR
 
 # =============================================================================
 # NCR INTELLIGENCE ENGINE - PRODUCT CLI
 # =============================================================================
 
-TIMEOUT_SECONDS = 30   # Latency guard for live scraping
+TIMEOUT_SECONDS = 30  # Latency guard for live scraping
 
 
 class TimeoutError(Exception):
@@ -27,9 +27,10 @@ class TimeoutError(Exception):
 def _timeout_handler(signum, frame):
     raise TimeoutError("Scraping exceeded 30-second latency budget.")
 
+
 class ProductEngine:
     """Unified orchestration layer for the NCR Intelligence Engine."""
-    
+
     def __init__(self):
         self.model = None
         self.dataset = None
@@ -40,6 +41,7 @@ class ProductEngine:
         """Load the trained Pure ML model from disk."""
         try:
             import joblib
+
             # Standardized on Sales pipeline for the unified CLI
             model_path = MODELS_DIR / "sales" / "pipeline_sales.joblib"
             if model_path.exists():
@@ -75,16 +77,16 @@ class ProductEngine:
         """Predict price for a single property."""
         if self.model is None:
             return {"error": "No model loaded. Train first."}
-        
+
         df = pd.DataFrame([properties])
-        
+
         try:
             pred_log = self.model.predict(df)
             pred = np.expm1(pred_log)
-            
+
             price_sqft = float(pred[0])
-            area = properties.get('area', 1)
-            
+            area = properties.get("area", 1)
+
             return {
                 "price_per_sqft": round(price_sqft, 2),
                 "estimated_total_price": round(price_sqft * area, 2),
@@ -97,12 +99,13 @@ class ProductEngine:
         """Find similar properties from the dataset."""
         if self.dataset is None:
             return [{"error": "No dataset loaded."}]
-        
+
         from ncr_property_price_estimation.modeling.recommender import RecommenderService
+
         recommender = RecommenderService()
-        
-        if listing_id and 'listing_id' in self.dataset.columns:
-            target_row = self.dataset[self.dataset['listing_id'] == listing_id]
+
+        if listing_id and "listing_id" in self.dataset.columns:
+            target_row = self.dataset[self.dataset["listing_id"] == listing_id]
             if len(target_row) == 0:
                 return [{"error": f"Listing {listing_id} not found."}]
             target = target_row.iloc[0]
@@ -110,32 +113,34 @@ class ProductEngine:
             target = pd.Series(properties)
         else:
             return [{"error": "Provide listing_id or properties."}]
-        
+
         similar = recommender.find_similar(target, self.dataset, top_k=top_k)
-        
+
         results = []
         for _, row in similar.iterrows():
             explanation = recommender.explain_recommendation(target, row)
-            results.append({
-                "listing_id": row.get('listing_id', 'N/A'),
-                "price": row.get('price', 0),
-                "area": row.get('area', 0),
-                "bhk": row.get('bhk', 0),
-                "society": row.get('society', 'N/A'),
-                "similarity": round(row.get('similarity_score', 0), 3),
-                "deal_score": round(row.get('deal_score', 0), 3),
-                "is_strong_deal": bool(row.get('is_strong_deal', False)),
-                "why": explanation['explanations'],
-            })
-        
+            results.append(
+                {
+                    "listing_id": row.get("listing_id", "N/A"),
+                    "price": row.get("price", 0),
+                    "area": row.get("area", 0),
+                    "bhk": row.get("bhk", 0),
+                    "society": row.get("society", "N/A"),
+                    "similarity": round(row.get("similarity_score", 0), 3),
+                    "deal_score": round(row.get("deal_score", 0), 3),
+                    "is_strong_deal": bool(row.get("is_strong_deal", False)),
+                    "why": explanation["explanations"],
+                }
+            )
+
         return results
 
     def analyze(self, properties: dict, top_k: int = 5) -> dict:
         """
         Unified Analysis Mode.
-        
+
         Performs: Predict → Find Similar → Score Deals → Explain Why.
-        
+
         Output:
         - Predicted price
         - Similar listings with explanations
@@ -144,10 +149,10 @@ class ProductEngine:
         print("\n" + "=" * 60)
         print("🏠 NCR REAL ESTATE INTELLIGENCE ENGINE")
         print("=" * 60)
-        
+
         # 1. Predict
         prediction = self.predict(properties)
-        
+
         print("\n📊 PREDICTION:")
         print(f"   Predicted Price/sqft: ₹{prediction.get('price_per_sqft', 'N/A'):,.2f}")
         print(f"   Estimated Total:      ₹{prediction.get('estimated_total_price', 'N/A'):,.2f}")
@@ -157,18 +162,20 @@ class ProductEngine:
 
         print(f"\n🔍 TOP {len(similar)} COMPARABLE PROPERTIES:")
         print("-" * 50)
-        
+
         for i, rec in enumerate(similar, 1):
-            deal_icon = "🔥" if rec.get('is_strong_deal') else "  "
-            print(f"   {deal_icon} #{i} | {rec['society']} | {rec['bhk']}BHK | ₹{rec['price']:,.0f} | Score: {rec['similarity']}")
-            if rec['why']:
-                for reason in rec['why']:
+            deal_icon = "🔥" if rec.get("is_strong_deal") else "  "
+            print(
+                f"   {deal_icon} #{i} | {rec['society']} | {rec['bhk']}BHK | ₹{rec['price']:,.0f} | Score: {rec['similarity']}"
+            )
+            if rec["why"]:
+                for reason in rec["why"]:
                     print(f"      → {reason}")
-        
+
         # 3. Deal Assessment
-        actual_price = properties.get('price', 0)
-        predicted = prediction.get('estimated_total_price', 0)
-        
+        actual_price = properties.get("price", 0)
+        predicted = prediction.get("estimated_total_price", 0)
+
         if actual_price > 0 and predicted > 0:
             underval = (predicted - actual_price) / predicted * 100
             print("\n💰 DEAL ASSESSMENT:")
@@ -182,17 +189,19 @@ class ProductEngine:
                 print("   Verdict:         ➡️  Fair Price (within 5% of predicted)")
             else:
                 print(f"   Verdict:         ⚠️  Overpriced ({abs(underval):.1f}% above predicted)")
-        
+
         print("\n" + "=" * 60)
-        
+
         return {
             "prediction": prediction,
             "comparables": similar,
             "deal_assessment": {
                 "listed_price": actual_price,
                 "predicted_value": predicted,
-                "undervaluation_pct": round(underval, 2) if actual_price > 0 and predicted > 0 else None,
-            }
+                "undervaluation_pct": round(underval, 2)
+                if actual_price > 0 and predicted > 0
+                else None,
+            },
         }
 
 
@@ -210,11 +219,15 @@ Examples:
   
   # Find similar properties
   python product.py --mode recommend --area 1200 --bhk 2 --city Gurugram --sector "Sector 49"
-        """
+        """,
     )
-    
-    parser.add_argument("--mode", choices=["predict", "recommend", "analyze"], default="analyze",
-                        help="Engine mode: predict, recommend, or analyze (default: analyze)")
+
+    parser.add_argument(
+        "--mode",
+        choices=["predict", "recommend", "analyze"],
+        default="analyze",
+        help="Engine mode: predict, recommend, or analyze (default: analyze)",
+    )
     parser.add_argument("--area", type=float, required=True, help="Area in sqft")
     parser.add_argument("--bhk", "--bedrooms", type=int, required=True, help="Number of bedrooms")
     parser.add_argument("--city", type=str, required=True, help="City (e.g., Gurugram, Noida)")
@@ -226,9 +239,9 @@ Examples:
     parser.add_argument("--furnished", type=str, default="Unknown")
     parser.add_argument("--facing", type=str, default="Unknown")
     parser.add_argument("--top_k", type=int, default=5, help="Number of recommendations")
-    
+
     args = parser.parse_args()
-    
+
     properties = {
         "area": args.area,
         "bedrooms": args.bhk,
@@ -242,12 +255,18 @@ Examples:
         "sector": args.sector,
         "price": args.price,
         "bhk": args.bhk,
-        "pooja_room": 0, "servant_room": 0, "store_room": 0,
-        "pool": 0, "gym": 0, "lift": 0, "parking": 0, "vastu_compliant": 0,
+        "pooja_room": 0,
+        "servant_room": 0,
+        "store_room": 0,
+        "pool": 0,
+        "gym": 0,
+        "lift": 0,
+        "parking": 0,
+        "vastu_compliant": 0,
     }
-    
+
     engine = ProductEngine()
-    
+
     if args.mode == "predict":
         result = engine.predict(properties)
         print(json.dumps(result, indent=2))

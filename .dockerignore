@@ -2,6 +2,8 @@
 .github
 data/raw/
 data/processed/
+data/interim/
+data/external/
 notebooks/
 mlruns/
 reports/
@@ -10,3 +12,5 @@ __pycache__/
 *.pyc
 .env
 optuna*.db
+*venv*/
+.venv/

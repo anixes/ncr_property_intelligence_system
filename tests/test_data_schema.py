@@ -1,15 +1,16 @@
 """
 Data Contract Validation.
 
-Verifies that the processed Parquet files match the expected schema 
+Verifies that the processed Parquet files match the expected schema
 required by the CatBoost pipeline.
 
 Highlight: Automated Schema verification during CI pipeline.
 """
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
-from pathlib import Path
 
 PROJ_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJ_ROOT / "data" / "model"
@@ -24,12 +25,13 @@ REQUIRED_COLUMNS = [
     "city",
     "sector",
     "society",
-    "price_per_sqft"
+    "price_per_sqft",
 ]
 
 # ---------------------------------------------------------------------------
 # Sales Data Schema
 # ---------------------------------------------------------------------------
+
 
 class TestSalesDataSchema:
     @pytest.fixture(autouse=True)
@@ -53,9 +55,11 @@ class TestSalesDataSchema:
         assert (self.df["area"] > 0).all(), "Found area <= 0 in Sales data"
         assert (self.df["price_per_sqft"] > 0).all(), "Found price <= 0 in Sales data"
 
+
 # ---------------------------------------------------------------------------
 # Rentals Data Schema
 # ---------------------------------------------------------------------------
+
 
 class TestRentalsDataSchema:
     @pytest.fixture(autouse=True)

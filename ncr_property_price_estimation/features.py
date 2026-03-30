@@ -63,17 +63,19 @@ AMENITY_FEATURES = [
 # 1. CityNormalizer (Data-Driven Pre-processing)
 # ---------------------------------------------------------------------------
 
+
 class CityNormalizer(BaseEstimator, TransformerMixin):
     """
     Standardize city names to match training data (Gurugram -> Gurgaon).
     This enables the API to accept current naming while maintaining
     model compatibility natively.
     """
+
     def __init__(self, mapping=None):
         self.mapping = mapping or {
             "Gurugram": "Gurgaon",
             "Greater Noida": "Greater_Noida",
-            "Delhi": "Delhi"
+            "Delhi": "Delhi",
         }
 
     def fit(self, X, y=None):
@@ -94,7 +96,7 @@ class CityNormalizer(BaseEstimator, TransformerMixin):
 class Winsorizer(BaseEstimator, TransformerMixin):
     """
     Clip numeric features at fitted quantile bounds.
-    
+
     If bypass_luxury is True, rows where is_luxury=1 will not be clipped
     for the 'area' column, preserving the true scale of ultra-premium estates.
     """
@@ -108,21 +110,21 @@ class Winsorizer(BaseEstimator, TransformerMixin):
         # We only fit on non-luxury or all? Usually fit on all to get global stats
         self.lower_ = np.nanquantile(X, self.lower_q, axis=0)
         self.upper_ = np.nanquantile(X, self.upper_q, axis=0)
-        
+
         # Capture schema to handle numpy fallbacks in transform
         if hasattr(X, "columns"):
             self.columns_ = X.columns.tolist()
         else:
             # Fallback for numpy arrays (best guess)
             self.columns_ = []
-            
+
         return self
 
     def transform(self, X):
         # Use numpy directly for speed
         X_arr = X.values if hasattr(X, "values") else X
         X_clipped = np.clip(X_arr, self.lower_, self.upper_)
-        
+
         # Apply luxury bypass (area is usually col 0, luxury is mid-way)
         bypass_luxury = getattr(self, "bypass_luxury", False)
         columns = getattr(self, "columns_", [])
@@ -137,7 +139,7 @@ class Winsorizer(BaseEstimator, TransformerMixin):
                 X_clipped[luxury_mask, area_idx] = X_arr[luxury_mask, area_idx]
             except (ValueError, IndexError):
                 pass  # Fallback: if columns not found in this subset, just skip bypass
-            
+
         # Return same type as input
         if hasattr(X, "iloc"):
             return pd.DataFrame(X_clipped, columns=X.columns, index=X.index)
@@ -200,18 +202,18 @@ class MicroMarketEncoder(BaseEstimator, TransformerMixin):
         3. City-level median (fallback)
         4. Global median (last resort)
 
-    This captures the 'Society Premium' (e.g. Camellias) which is invisible 
+    This captures the 'Society Premium' (e.g. Camellias) which is invisible
     at the Sector level.
     """
 
     def __init__(
-        self, 
-        city_col="city", 
-        sector_col="sector", 
+        self,
+        city_col="city",
+        sector_col="sector",
         society_col="society",
-        min_support_soc=2, 
+        min_support_soc=2,
         min_support_sec=10,
-        bypass_drop=False
+        bypass_drop=False,
     ):
         self.city_col = city_col
         self.sector_col = sector_col
@@ -254,27 +256,30 @@ class MicroMarketEncoder(BaseEstimator, TransformerMixin):
             self.soc_stats_,
             on=[self.city_col, self.sector_col, self.society_col],
             how="left",
-            suffixes=("", "_soc")
+            suffixes=("", "_soc"),
         )
-        
+
         # Layer 2: Sector
         merged_sec = X.merge(
-            self.sec_stats_,
-            on=[self.city_col, self.sector_col],
-            how="left",
-            suffixes=("", "_sec")
+            self.sec_stats_, on=[self.city_col, self.sector_col], how="left", suffixes=("", "_sec")
         )
 
         # --- Hierarchy Logic ---
         # 1. Society Median
-        has_soc_support = merged_soc["count"].notna() & (merged_soc["count"] >= self.min_support_soc)
+        has_soc_support = merged_soc["count"].notna() & (
+            merged_soc["count"] >= self.min_support_soc
+        )
         geo = np.where(has_soc_support, merged_soc["median"], np.nan)
 
         # 2. Sector Median Fallback
-        has_sec_support = merged_sec["count"].notna() & (merged_sec["count"] >= self.min_support_sec)
-        geo = np.where(np.isnan(geo.astype(float)), 
-                       np.where(has_sec_support, merged_sec["median"], np.nan), 
-                       geo)
+        has_sec_support = merged_sec["count"].notna() & (
+            merged_sec["count"] >= self.min_support_sec
+        )
+        geo = np.where(
+            np.isnan(geo.astype(float)),
+            np.where(has_sec_support, merged_sec["median"], np.nan),
+            geo,
+        )
 
         # 3. City Median Fallback
         city_vals = X[self.city_col].map(self.city_median_)
@@ -297,6 +302,7 @@ class MicroMarketEncoder(BaseEstimator, TransformerMixin):
 # 4. Pipeline builder helpers
 # ---------------------------------------------------------------------------
 
+
 def _resolve_cols(df=None) -> tuple[list, list]:
     """Return (numeric_cols, categorical_cols) filtered by df presence."""
     requested_numeric = list(NUMERIC_FEATURES) + list(AMENITY_FEATURES)
@@ -309,14 +315,12 @@ def _resolve_cols(df=None) -> tuple[list, list]:
     return requested_numeric, requested_categorical
 
 
-
-
 def build_catboost_pipeline(model, df=None) -> Pipeline:
     """
     Assemble the primary CatBoost prediction pipeline with Native Category support.
     """
     numeric_cols, categorical_cols = _resolve_cols(df)
-    
+
     # In CatBoost mode, we ADD the spatial columns to the categorical list
     catboost_cat_cols = list(categorical_cols)
     for col in ["city", "sector", "society"]:
@@ -328,14 +332,20 @@ def build_catboost_pipeline(model, df=None) -> Pipeline:
             ("imputer", SimpleImputer(strategy="constant", fill_value="Unknown")),
         ]
     )
-    
+
     # Custom preprocessor that routes our extended categorical list
     preprocessor = ColumnTransformer(
         transformers=[
-            ("num", Pipeline([
-                ("imputer", SimpleImputer(strategy="median")),
-                ("winsor", Winsorizer(bypass_luxury=True)),
-            ]), numeric_cols),
+            (
+                "num",
+                Pipeline(
+                    [
+                        ("imputer", SimpleImputer(strategy="median")),
+                        ("winsor", Winsorizer(bypass_luxury=True)),
+                    ]
+                ),
+                numeric_cols,
+            ),
             ("cat", passthrough_pipeline, catboost_cat_cols),
         ],
         remainder="drop",

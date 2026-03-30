@@ -1,7 +1,7 @@
 """
 NCR Property Intelligence: 'Pure ML' Training Pipeline
 
-Standardized CatBoost-only architecture with Optuna HPO and native 
+Standardized CatBoost-only architecture with Optuna HPO and native
 categorical feature support.
 
 Workflow:
@@ -36,11 +36,9 @@ import optuna
 import pandas as pd
 from catboost import CatBoostRegressor
 from joblib import dump
-from sklearn.base import clone
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import GroupKFold, GroupShuffleSplit
-from sklearn.pipeline import Pipeline
+from sklearn.model_selection import GroupKFold
 
 # ── Reproducibility ───────────────────────────────────────────────────
 SEED = 42
@@ -54,8 +52,6 @@ MODEL_ROOT = PROJECT_ROOT / "models"
 # Add source package to path so features module is importable by name
 # (required for joblib/pickle serialization of custom transformers)
 from ncr_property_price_estimation.config import (
-    MLFLOW_EXPERIMENT_NAME,
-    MLFLOW_MODEL_NAME,
     MLFLOW_TRACKING_URI,
 )
 from ncr_property_price_estimation.features import build_catboost_pipeline
@@ -140,6 +136,7 @@ def save_json(payload: dict, output_path: Path):
         json.dumps(_to_native(payload), indent=2),
         encoding="utf-8",
     )
+
 
 # ======================================================================
 # Phase 4 — Feature Importance
@@ -282,7 +279,7 @@ def run_catboost_optuna(
     X_train: pd.DataFrame,
     y_train: pd.Series,
     groups_train: pd.Series,
-    model_dir: Path, # Added model_dir parameter
+    model_dir: Path,  # Added model_dir parameter
     n_trials: int = 50,
 ) -> dict:
     """Run Optuna study for CatBoost with GroupKFold.  SQLite backend."""
@@ -315,10 +312,15 @@ def run_catboost_optuna(
 
     return study.best_params
 
+
 def main():
-    parser = argparse.ArgumentParser(description="NCR Property Intelligence: CatBoost-Only Training")
+    parser = argparse.ArgumentParser(
+        description="NCR Property Intelligence: CatBoost-Only Training"
+    )
     parser.add_argument("--mode", type=str, choices=["sales", "rentals"], default="sales")
-    parser.add_argument("--trials", type=int, default=1, help="Optuna trials. Use 1 for quick-train.")
+    parser.add_argument(
+        "--trials", type=int, default=1, help="Optuna trials. Use 1 for quick-train."
+    )
     args = parser.parse_args()
 
     mode = args.mode
@@ -338,12 +340,20 @@ def main():
 
     # 2. Schema Healing
     from ncr_property_price_estimation.features import (
-        NUMERIC_FEATURES, AMENITY_FEATURES, CATEGORICAL_FEATURES
+        AMENITY_FEATURES,
+        CATEGORICAL_FEATURES,
+        NUMERIC_FEATURES,
     )
+
     if "society_name" in df.columns:
         df.rename(columns={"society_name": "society"}, inplace=True)
 
-    expected_cols = ["society", "sector", "city"] + list(NUMERIC_FEATURES) + list(AMENITY_FEATURES) + list(CATEGORICAL_FEATURES)
+    expected_cols = (
+        ["society", "sector", "city"]
+        + list(NUMERIC_FEATURES)
+        + list(AMENITY_FEATURES)
+        + list(CATEGORICAL_FEATURES)
+    )
     for col in expected_cols:
         if col not in df.columns and col != "geo_median":
             df[col] = 0 if col not in CATEGORICAL_FEATURES else "Unknown"
@@ -358,7 +368,9 @@ def main():
     if "is_luxury" in df.columns:
         sample_weights = np.where(df["is_luxury"] == 1, 3.0, 1.0)
     price_threshold = df["price_per_sqft"].quantile(0.95)
-    sample_weights = np.where(df["price_per_sqft"] > price_threshold, sample_weights * 1.5, sample_weights)
+    sample_weights = np.where(
+        df["price_per_sqft"] > price_threshold, sample_weights * 1.5, sample_weights
+    )
 
     # 4. MLflow Setup
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
@@ -366,8 +378,10 @@ def main():
 
     # Safe-Start: Ensure no lingering runs
     try:
-        if mlflow.active_run(): mlflow.end_run()
-    except Exception: pass
+        if mlflow.active_run():
+            mlflow.end_run()
+    except Exception:
+        pass
 
     with mlflow.start_run(run_name=f"catboost-optuna-{mode}") as run:
         print(f"\n>> MLflow run ID: {run.info.run_id}")
@@ -376,10 +390,20 @@ def main():
         if args.trials > 1:
             print(f"\n>> OPTUNA TUNING ({args.trials} trials, GroupKFold)")
             best_params = run_catboost_optuna(X, y, groups, model_dir, n_trials=args.trials)
-            hparams = {**best_params, "random_seed": SEED, "verbose": 0, "early_stopping_rounds": 50}
+            hparams = {
+                **best_params,
+                "random_seed": SEED,
+                "verbose": 0,
+                "early_stopping_rounds": 50,
+            }
         else:
             print("\n>> Using default CatBoost parameters.")
-            hparams = {**CATBOOST_PARAMS, "random_seed": SEED, "verbose": 0, "early_stopping_rounds": 50}
+            hparams = {
+                **CATBOOST_PARAMS,
+                "random_seed": SEED,
+                "verbose": 0,
+                "early_stopping_rounds": 50,
+            }
 
         # PHASE 2: Cross-Validation
         print("\n>> 5-FOLD GROUPED CV EVALUATION")
@@ -400,7 +424,14 @@ def main():
             X_val_t = prep.transform(X_val)
             cat_idx = _get_cat_feature_indices(pipeline.named_steps["preprocessor"])
 
-            cb_model.fit(X_tr_t, y_tr, sample_weight=w_tr, eval_set=(X_val_t, y_val), cat_features=cat_idx, use_best_model=True)
+            cb_model.fit(
+                X_tr_t,
+                y_tr,
+                sample_weight=w_tr,
+                eval_set=(X_val_t, y_val),
+                cat_features=cat_idx,
+                use_best_model=True,
+            )
 
             y_pred = cb_model.predict(X_val_t)
             fold_r2.append(r2_score(y_val, y_pred))
@@ -408,35 +439,40 @@ def main():
             print(f"  Fold {fold_idx}/5 | R²: {fold_r2[-1]:.4f} | RMSE: {fold_rmse[-1]:.4f}")
 
         # Final metrics
-        metrics = {
-            "mean_cv_r2": float(np.mean(fold_r2)),
-            "mean_cv_rmse": float(np.mean(fold_rmse))
-        }
+        metrics = {"mean_cv_r2": float(np.mean(fold_r2)), "mean_cv_rmse": float(np.mean(fold_rmse))}
 
         # PHASE 3: Final Fit & Export
         print("\n>> Fitting final model on full dataset...")
-        final_model = CatBoostRegressor(**{k: v for k, v in hparams.items() if k != "early_stopping_rounds"})
+        final_model = CatBoostRegressor(
+            **{k: v for k, v in hparams.items() if k != "early_stopping_rounds"}
+        )
         final_pipeline = build_catboost_pipeline(final_model, df=X)
-        
+
         prep = final_pipeline[:-1]
         X_full_t = prep.fit_transform(X, y)
         cat_idx = _get_cat_feature_indices(final_pipeline.named_steps["preprocessor"])
         final_model.fit(X_full_t, y, cat_features=cat_idx)
-        
+
         final_pipeline.steps[-1] = ("model", final_model)
 
         # Feature Importance
         feature_names = list(final_pipeline.named_steps["preprocessor"].get_feature_names_out())
-        export_feature_importance(final_pipeline, X.head(100), y.head(100), feature_names, model_dir)
+        export_feature_importance(
+            final_pipeline, X.head(100), y.head(100), feature_names, model_dir
+        )
 
         # Log & Save
         mlflow.log_params(hparams)
         mlflow.log_metrics(metrics)
-        mlflow.sklearn.log_model(sk_model=final_pipeline, artifact_path="catboost_pipeline", registered_model_name=f"property-estimator-{mode}")
+        mlflow.sklearn.log_model(
+            sk_model=final_pipeline,
+            artifact_path="catboost_pipeline",
+            registered_model_name=f"property-estimator-{mode}",
+        )
 
         pipeline_path = model_dir / f"pipeline_{mode}.joblib"
         dump(final_pipeline, pipeline_path)
-        
+
         # Save evaluation results for reporting (Pure-ML mode)
         results_payload = {
             "mode": mode,
@@ -446,14 +482,14 @@ def main():
                 "mean_r2": metrics["mean_cv_r2"],
                 "mean_rmse_log": metrics["mean_cv_rmse"],
                 "folds": {
-                    f"fold_{i+1}": {"r2": r2, "rmse": rmse}
+                    f"fold_{i + 1}": {"r2": r2, "rmse": rmse}
                     for i, (r2, rmse) in enumerate(zip(fold_r2, fold_rmse))
-                }
+                },
             },
-            "best_params": hparams
+            "best_params": hparams,
         }
         save_json(results_payload, model_dir / "experiment_results.json")
-        
+
         print(f"\n>> SUCCESS: Model saved to {pipeline_path}")
         print(">> Pure ML CatBoost-Only Pipeline Complete.")
 

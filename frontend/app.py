@@ -1,733 +1,923 @@
 """
-NCR Property Intelligence — Streamlit Frontend
-Intelligence Suite
+NCR Property Intelligence — Streamlit Frontend (v2 — Compact Design).
+
+Two main dashboards:
+  1. Market Analyzer  — Investment Report
+  2. Property Recommender — Discovery Engine
 """
 
-import os
-import requests
-import streamlit as st
-import pandas as pd
-import pydeck as pdk
-import textwrap
 import json
+import math
+import os
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# UI Helpers
-# ---------------------------------------------------------------------------
-def format_indian_number(n: float) -> str:
-    """Format a number into the Indian Lakhs/Crores system (1,00,00,000)."""
-    try:
-        n = int(round(float(n), 0))
-        s = str(n)
-        if len(s) <= 3:
-            return s
-        last_three = s[-3:]
-        remaining = s[:-3]
-        parts = []
-        while remaining:
-            parts.append(remaining[-2:])
-            remaining = remaining[:-2]
-        return ",".join(reversed(parts)) + "," + last_three if parts else last_three
-    except (ValueError, TypeError):
-        return str(n)
-
-def show_market_analyzer_dashboard():
-    st.markdown("## Market Intelligence Hub")
-    st.markdown("#### Real-time Asset Valuation across Delhi, Gurgaon, Noida, Faridabad & Ghaziabad")
-    
-    st.info("Spatial Awareness: Our AI tracks price movements across 1,200+ sectors in the NCR corridor.")
-
-    # --- Pulse Metrics ---
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("Avg. Gurgaon Rent (3 BHK)", "₹ 48,500", "+8.2% YoY", help="Based on 12k+ Gurgaon rental listings.")
-    with c2:
-        st.metric("Noida Appreciation", "14.4%", "Sector 150 Leader", help="Annual capital value growth across Noida micro-markets.")
-    with c3:
-        st.metric("Highest Rental Yield", "4.8%", "Cyber City Zone", delta_color="normal")
-
-    st.markdown("---")
-    
-    # --- Market Strategy Chart ---
-    st.subheader("Market Heatmap Preview")
-    chart_data = pd.DataFrame({
-        "Sector": ["Sector 150, Noida", "Golf Course Ext, GGN", "Sector 62, Noida", "Sector 37D, GGN", "Dwarka Expressway"],
-        "Demand Score": [85, 92, 78, 65, 88],
-        "Price Appr %": [12, 18, 9, 7, 22]
-    })
-    st.bar_chart(chart_data, x="Sector", y="Price Appr %", color="#3b82f6")
-    
-    st.markdown("""
-    **How it works:**
-    1. **Spatial AI**: We use H3 hexagonal indexing (Resolution 9) to analyze micro-market medians.
-    2. **Comparables**: Our engine matches your criteria against 43,000+ real historical listings.
-    3. **ROI Engine**: We calculate risk based on overvaluation vs. neighborhood medians.
-    """)
-
-def show_property_recommender_dashboard():
-    st.markdown("## Investment Discovery Engine")
-    st.markdown("#### Finding the 1% most profitable assets across the NCR corridor")
-    
-    st.info("Getting Started: Set your investment or rental criteria in the sidebar to discover high-priority targets.")
-
-    # --- Investment Hotspots ---
-    st.subheader("Current Hotspots (High ROI Corridor)")
-    h1, h2, h3 = st.columns(3)
-    with h1:
-        st.markdown("""
-        <div class="info-card">
-            <div style="font-weight: 700; color: #f8fafc;">NCR Corridor North</div>
-            <div style="font-size: 0.8rem; color: #94a3b8; margin-top:4px;">Sector 150 & 144, Noida</div>
-            <div style="margin-top: 8px; color: #10b981; font-weight: 600;">Avg Yield: 4.4%</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with h2:
-        st.markdown("""
-        <div class="info-card">
-            <div style="font-weight: 700; color: #f8fafc;">Cyber-Life Zone</div>
-            <div style="font-size: 0.8rem; color: #94a3b8; margin-top:4px;">Golf Course Ext, Gurgaon</div>
-            <div style="margin-top: 8px; color: #10b981; font-weight: 600;">ROI Index: 8.4/10</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with h3:
-        st.markdown("""
-        <div class="info-card">
-            <div style="font-weight: 700; color: #f8fafc;">The Next Frontier</div>
-            <div style="font-size: 0.8rem; color: #94a3b8; margin-top:4px;">Dwarka Expressway (LRP)</div>
-            <div style="margin-top: 8px; color: #3b82f6; font-weight: 600;">High Growth Area</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("---")
-    
-    # --- Discovery Intelligence ---
-    st.subheader("Discovery Intelligence")
-    st.write("Our Discovery Engine continuously monitors **Gurgaon, Noida, Delhi, Faridabad, & Ghaziabad** to find hidden gems.")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("- **Value Score**: Buy ONLY when price < neighborhood median.")
-        st.markdown("- **Rental Velocity**: Projected days-to-rent stats.")
-    with c2:
-        st.markdown("- **Metro Affinity**: Proximity-aware yield calculation.")
-        st.markdown("- **Historical Accuracy**: Backtested against NCR registry data.")
+import h3  # For spatial index decoding
+import pydeck as pdk
+import requests
+import streamlit as st
 
 # ---------------------------------------------------------------------------
-# CSS Foundation (Solid, Clean, Professional)
+# Configuration & Constants
 # ---------------------------------------------------------------------------
-def inject_custom_css():
-    st.markdown("""
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
-        html, body, [class*="css"] {
-            font-family: 'Inter', sans-serif;
-        }
+# Default to the internal docker-compose bridge if available, else localhost/LAN
+DEFAULT_API_URL = "http://192.168.29.249:8000"
+API_BASE_URL = os.getenv("API_BASE_URL", DEFAULT_API_URL)
 
-        /* Metric styling */
-        [data-testid="stMetricValue"] {
-            font-size: 2rem !important;
-            font-weight: 700 !important;
-            color: #1e293b;
-        }
-        
-        [data-testid="stMetricDelta"] {
-            font-weight: 600 !important;
-        }
+PREDICT_URL = f"{API_BASE_URL}/predict"
+HEALTH_URL = f"{API_BASE_URL}/health"
+DISCOVER_URL = f"{API_BASE_URL}/discover"
+HOTSPOTS_URL = f"{API_BASE_URL}/intelligence/hotspots"
 
-        /* Modern Card styling (Dark Theme) */
-        .info-card {
-            background-color: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s, box-shadow 0.2s;
-            color: #f8fafc;
-        }
-        
-        .info-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-            border-color: #3b82f6;
-        }
+CITIES = ["Delhi", "Gurgaon", "Noida", "Greater Noida", "Ghaziabad", "Faridabad"]
+BHK_OPTIONS = [1, 2, 3, 4, 5]
+PROP_TYPES = ["Any", "Apartment", "Builder Floor", "Independent House"]
 
-        /* Metric styling for Dark Mode */
-        [data-testid="stMetricValue"] {
-            font-size: 2rem !important;
-            font-weight: 700 !important;
-            color: #3b82f6 !important;
-        }
-        
-        [data-testid="stMetricLabel"] {
-            color: #94a3b8 !important;
-        }
+CITY_CENTERS = {
+    "Delhi": {"lat": 28.6139, "lon": 77.2090},
+    "Gurgaon": {"lat": 28.4595, "lon": 77.0266},
+    "Noida": {"lat": 28.5355, "lon": 77.3910},
+    "Greater Noida": {"lat": 28.4744, "lon": 77.5040},
+    "Ghaziabad": {"lat": 28.6692, "lon": 77.4538},
+    "Faridabad": {"lat": 28.4089, "lon": 77.3178},
+}
 
-        /* Responsive Grid for Results (Safe for Slim Phones) */
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-            padding-top: 16px;
-        }
+# The locality index uses different city key names in some cases
+CITY_KEY_MAP = {
+    "Gurgaon": "Gurugram",
+    "Delhi": "Delhi",
+    "Noida": "Noida",
+    "Greater Noida": "Greater Noida",
+    "Ghaziabad": "Ghaziabad",
+    "Faridabad": "Faridabad",
+}
 
-        /* Mobile specific fixes (Ultra-Slim Support) */
-        @media (max-width: 640px) {
-            [data-testid="stMetricValue"] {
-                font-size: 1.2rem !important;
-            }
-            .stHorizontalBlock {
-                flex-direction: column !important;
-                gap: 8px !important;
-            }
-            .info-card {
-                padding: 12px;
-                margin-bottom: 12px;
-                width: 100%;
-            }
-            .main .block-container {
-                padding-left: 0.8rem !important;
-                padding-right: 0.8rem !important;
-            }
-            [data-testid="stSidebar"] {
-                width: 80vw !important;
-            }
-        }
-
-        /* Sidebar cleanup (Dark Theme) */
-        [data-testid="stSidebar"] {
-            background-color: #0f172a;
-            border-right: 1px solid #1e293b;
-        }
-
-        /* Tabs (Dark Theme) */
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 24px;
-            background-color: transparent;
-        }
-        
-        .stTabs [data-baseweb="tab"] {
-            height: 50px;
-            white-space: pre-wrap;
-            background-color: transparent;
-            border-radius: 4px 4px 0 0;
-            gap: 1px;
-            padding-top: 10px;
-            padding-bottom: 10px;
-            color: #94a3b8;
-        }
-
-        .stTabs [aria-selected="true"] {
-            color: #3b82f6 !important;
-            font-weight: 700 !important;
-            border-bottom-color: #3b82f6 !important;
-        }
-
-        /* Text colors */
-        h1, h2, h3, h4, p, span, li {
-            color: #f1f5f9 !important;
-        }
-        
-        .stMarkdown div p {
-            color: #cbd5e1 !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Page config (Must be the FIRST Streamlit command)
+# Page Config & Custom CSS
 # ---------------------------------------------------------------------------
 st.set_page_config(
     page_title="NCR Property Intelligence",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
-inject_custom_css()
+
+# Compact styling — override Streamlit's bloated defaults
+css_path = Path(__file__).parent / "style.css"
+if css_path.exists():
+    with open(css_path) as f:
+        st.markdown(f"<style>\n{f.read()}\n</style>", unsafe_allow_html=True)
+
 
 # ---------------------------------------------------------------------------
-# Configuration
+# Session State
 # ---------------------------------------------------------------------------
-API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
-PREDICT_URL = f"{API_BASE_URL}/predict"
-HEALTH_URL = f"{API_BASE_URL}/health"
-
-CITIES = ["Delhi", "Faridabad", "Ghaziabad", "Greater Noida", "Gurugram", "Noida"]
-PROP_TYPES = ["Apartment", "Builder Floor", "Independent House"]
-FURNISHED_OPTIONS = ["Unknown", "Fully-Furnished", "Semi-Furnished", "Unfurnished"]
-LEGAL_OPTIONS = ["Unknown", "Freehold", "Leasehold", "Power of Attorney"]
+if "discovery_results" not in st.session_state:
+    st.session_state.discovery_results = []
+if "analyzer_results" not in st.session_state:
+    st.session_state.analyzer_results = None
+if "page" not in st.session_state:
+    st.session_state.page = 0
 
 
-# Load verified society names mapping (City -> Locality -> [Societies])
+# ---------------------------------------------------------------------------
+# Helper Functions
+# ---------------------------------------------------------------------------
+def fmt(number):
+    """Format large numbers for Indian currency display."""
+    if not number:
+        return "0"
+    if number >= 10000000:
+        return f"₹{number / 10000000:.2f} Cr"
+    elif number >= 100000:
+        return f"₹{number / 100000:.1f} L"
+    elif number >= 1000:
+        return f"₹{number / 1000:.1f}K"
+    return f"₹{number:,.0f}"
+
+
+def score_class(s):
+    if s >= 7:
+        return "score-high"
+    elif s >= 4:
+        return "score-mid"
+    return "score-low"
+
+
+def render_property_card(item):
+    """Compact HTML property card — no st.metric bloat."""
+    society = item.get("society", "Unknown")
+    loc = item.get("locality", item.get("sector", ""))
+    city = item.get("city", "")
+    price = item.get("price", 0)
+    area = item.get("area", 0)
+    psqft = item.get("price_per_sqft", 0)
+    yld = item.get("yield_pct", 0)
+    score = item.get("unified_score", 0)
+    bhk = item.get("bhk", "–")
+
+    st.markdown(
+        f"""
+    <div class="prop-card">
+        <p class="card-title" title="{society}">{society}</p>
+        <p class="card-loc">{loc}, {city}</p>
+        <div class="card-row">
+            <div class="card-kv"><p class="kv-label">Price</p><p class="kv-value">{fmt(price)}</p></div>
+            <div class="card-kv"><p class="kv-label">Area</p><p class="kv-value">{int(area)} sqft</p></div>
+            <div class="card-kv"><p class="kv-label">BHK</p><p class="kv-value">{bhk}</p></div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="card-row">
+            <div class="card-kv"><p class="kv-label">₹/sqft</p><p class="kv-value">{psqft:,.0f}</p></div>
+            <div class="card-kv"><p class="kv-label">Yield</p><p class="kv-value">{yld}%</p></div>
+            <div class="card-kv"><p class="kv-label">Deal Score</p><p class="kv-value"><span class="score-badge {score_class(score)}">{score}/10</span></p></div>
+        </div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_alternative_card(item):
+    """Modern box UI for investment alternatives."""
+    loc = item.get("locality", "Unknown")
+    city = item.get("city", "")
+    psqft = item.get("median_price_sqft", 0)
+    yld = item.get("expected_yield_pct", 0)
+    score = item.get("composite_score", 0)
+    dist = item.get("distance_km")
+
+    st.markdown(
+        f"""
+    <div class="prop-card">
+        <p class="card-title" title="{loc}">{loc}</p>
+        <p class="card-loc">{city}{f" · {dist}km away" if dist else ""}</p>
+        <div class="card-divider"></div>
+        <div class="card-row">
+            <div class="card-kv"><p class="kv-label">Avg ₹/sqft</p><p class="kv-value">{fmt(psqft)}</p></div>
+            <div class="card-kv"><p class="kv-label">Exp. Yield</p><p class="kv-value">{yld}%</p></div>
+            <div class="card-kv"><p class="kv-label">Sector Grade</p><p class="kv-value"><span class="score-badge {score_class(score)}">{score}/10</span></p></div>
+        </div>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+
+def get_color_by_price(price_psf):
+    """Dynamic color scale: Yellow -> Orange -> Red -> Dark Red."""
+    if price_psf < 5000:
+        return [255, 255, 0, 200]
+    elif price_psf < 8000:
+        return [255, 165, 0, 200]
+    elif price_psf < 12000:
+        return [255, 69, 0, 200]
+    else:
+        return [180, 0, 0, 200]
+
+
+def render_hotspot_map(hotspots=None, listings=None, center_lat=None, center_lon=None, zoom=10):
+    """Render 3D spatial visualization using HexagonLayer (Heatmap) or ColumnLayer (Points)."""
+    if not hotspots and not listings:
+        st.caption("No spatial data available.")
+        return
+
+    layers = []
+
+    if listings:
+        # ── Mode 2/3: Discovery & Comparables (3D Towers) ────────────
+        # Limit to top 30 by score to prevent clutter
+        display_data = sorted(listings, key=lambda x: x.get("unified_score", 0), reverse=True)[:30]
+
+        # Pre-calculate fields for Pydeck (avoids complex expressions in JS)
+        for item in display_data:
+            psf = item.get("price_per_sqft", 0)
+            score = item.get("unified_score", 0)
+            item["color_val"] = get_color_by_price(psf)
+            # score 0-10 -> height 80-480 (Elegant needle towers)
+            item["elev_val"] = (score * 40) + 80
+
+            # Resolve H3 index to coordinates if missing
+            if ("latitude" not in item or "longitude" not in item) and "h3_res8" in item:
+                try:
+                    lat, lon = h3.h3_to_geo(item["h3_res8"])
+                    item["latitude"] = lat
+                    item["longitude"] = lon
+                except Exception:
+                    pass
+
+        column_layer = pdk.Layer(
+            "ColumnLayer",
+            data=display_data,
+            get_position="[longitude, latitude]",
+            get_elevation="elev_val",
+            elevation_scale=1,
+            radius=150,  # Precision radius for phone/desktop balance
+            get_fill_color="color_val",
+            pickable=True,
+            auto_highlight=True,
+            extrude=True,
+        )
+        layers.append(column_layer)
+        tooltip = {
+            "html": """
+                <div style='font-family:sans-serif; padding:10px; background:#1a1a2e; border:1px solid #444; border-radius:4px;'>
+                    <b style='font-size:14px;'>{society}</b><br/>
+                    <i style='color:#aaa;'>{locality}, {city}</i><br/>
+                    <hr style='margin:8px 0; border:0; border-top:1px solid rgba(255,255,255,0.1);'/>
+                    Price: <b>Rs.{price:,.0f}</b><br/>
+                    Rate: <b>Rs.{price_per_sqft}/sqft</b><br/>
+                    Yield: <b style='color:#4caf50'>{yield_pct}%</b><br/>
+                    Best Deal Score: <b style='color:#e05c5c'>{unified_score}/10</b>
+                </div>
+            """,
+            "style": {"color": "white", "padding": "0"},
+        }
+    else:
+        # ── Mode 1: Market Hotspots (3D Aggregate Towers) ─────────────
+        # Convert aggregated hotspots to towers for visual consistency
+        for h in hotspots:
+            density = h.get("density", 0)
+            h["color_val"] = get_color_by_price(h.get("median_price_sqft", 0))
+            # Log-scaling: density 1 -> ~242, 10 -> ~839, 1000 -> ~2418
+            h["elev_val"] = math.log1p(density) * 350
+
+        column_layer = pdk.Layer(
+            "ColumnLayer",
+            data=hotspots,
+            get_position="[longitude, latitude]",
+            get_elevation="elev_val",
+            elevation_scale=1,
+            radius=300,  # Focused cluster size
+            get_fill_color="color_val",
+            pickable=True,
+            auto_highlight=True,
+            extrude=True,
+        )
+        layers.append(column_layer)
+        tooltip = {
+            "html": """
+                <div style='font-family:sans-serif; padding:10px; background:#1a1a2e; border:1px solid #444; border-radius:4px;'>
+                    <b>Market Cluster</b><br/>
+                    City: <b>{city}</b><br/>
+                    <hr style='margin:5px 0; border:0; border-top:1px solid rgba(255,255,255,0.1);'/>
+                    Avg Rate: <b>Rs.{median_price_sqft:,.0f}/sqft</b><br/>
+                    Listing Count: <b style='color:#ffa500'>{density}</b>
+                </div>
+            """,
+            "style": {"color": "white", "padding": "0"},
+        }
+
+    view_state = pdk.ViewState(
+        latitude=center_lat,
+        longitude=center_lon,
+        zoom=zoom,
+        pitch=45,
+        bearing=0,
+    )
+
+    deck = pdk.Deck(
+        layers=layers,
+        initial_view_state=view_state,
+        tooltip=tooltip,
+        map_style="mapbox://styles/mapbox/dark-v10",
+        height=450,
+    )
+
+    st.pydeck_chart(deck, use_container_width=True)
+
+
 @st.cache_data
 def load_society_map():
     try:
-        import json
-        from pathlib import Path
-
         root = Path(__file__).resolve().parents[1]
         index_path = root / "data" / "locality_intelligence_index.json"
-
-        with open(index_path, "r") as f:
-            data = json.load(f)
-            # Map UI City names to JSON keys (already normalized in build_locality_index.py)
-            mapping = {
-                "Gurugram": data.get("Gurugram", {}),
-                "Greater Noida": data.get("Greater Noida", {}),
-                "Delhi": data.get("Delhi", {}),
-                "Faridabad": data.get("Faridabad", {}),
-                "Ghaziabad": data.get("Ghaziabad", {}),
-                "Noida": data.get("Noida", {}),
-            }
-            return mapping
-    except:
+        with open(index_path) as f:
+            raw = json.load(f)
+        # Map frontend city names to index keys
+        result = {}
+        for frontend_name, index_key in CITY_KEY_MAP.items():
+            result[frontend_name] = raw.get(index_key, {})
+        return result
+    except Exception:
         return {}
 
 
 SOCIETY_MAP = load_society_map()
 
-# Data-rich sector hints (mapped to societies_detailed_map.json)
-SECTOR_HINTS = {
-    "Delhi": ["West Patel Nagar", "Vasant Kunj", "Greater Kailash I", "Saket", "Janakpuri"],
-    "Faridabad": ["Green Field Colony", "Sector 85", "Sector 89", "RPS City", "Sector 16"],
-    "Ghaziabad": ["Vaishali", "Niti Khand", "Raj Nagar Extension", "Shakti Khand", "Ahinsa Khand"],
-    "Greater Noida": [
-        "Noida Extension",
-        "Techzone IV Greater Noida West",
-        "Sector 1",
-        "Jalpura",
-        "Vaidpura",
-    ],
-    "Gurugram": [
-        "Sector 89",
-        "Sector 70A",
-        "Sector 102",
-        "Sector 57",
-        "Sector 67",
-        "Sector 92",
-        "Sushant Lok Phase 1",
-    ],
-    "Noida": ["Sector 137", "Sector 150", "Sector 104", "Amarpali Silicon City", "Sector 107"],
-}
-
 
 # ---------------------------------------------------------------------------
-# API Health Check
-# ---------------------------------------------------------------------------
-@st.cache_data(ttl=1)
-def check_api():
-    try:
-        r = requests.get(HEALTH_URL, timeout=2)
-        return r.status_code == 200, r.json()
-    except:
-        return False, {}
-
-
-api_healthy, health_data = check_api()
-
-
-@st.cache_data(ttl=60)
-def get_hotspots(listing_type: str):
-    """Fetch pre-computed H3 hotspots for the selected listing type."""
-    try:
-        url = f"{API_BASE_URL}/intelligence/hotspots?listing_type={listing_type.lower()}"
-        r = requests.get(url, timeout=5)
-        if r.status_code == 200:
-            return r.json().get("hotspots", [])
-        return []
-    except:
-        return []
-
-
-# ---------------------------------------------------------------------------
-# Sidebar — Navigation
+# Shared Sidebar
 # ---------------------------------------------------------------------------
 with st.sidebar:
     st.title("NCR Intelligence")
     st.caption("Spatial AI & Market Analytics")
-    if not api_healthy:
-        st.error("API Offline - Server requires restart.")
+
+    api_ok = False
+    try:
+        r = requests.get(HEALTH_URL, timeout=1)
+        api_ok = r.status_code == 200
+    except Exception:
+        pass
+
+    st.markdown(f":{'green' if api_ok else 'red'}[●] {'Online' if api_ok else 'Offline'}")
 
     mode = st.radio("Navigation", ["Market Analyzer", "Property Recommender"])
+    intent = st.radio("Intent", ["Buy", "Rent"], horizontal=True)
+    score_label = "Investment Score" if intent == "Buy" else "Value Score"
 
-    if mode == "Market Analyzer":
-        st.markdown("### Location")
-        city = st.selectbox("NCR City", CITIES, index=4)
-        hints = SECTOR_HINTS.get(city, ["Sector 1"])
 
-        city_data = SOCIETY_MAP.get(city, {})
-        all_city_localities = sorted(list(city_data.keys()))
-
-        sector = st.selectbox(
-            f"Locality / Sector ({len(all_city_localities)} found)",
-            options=all_city_localities if all_city_localities else ["Other"],
-            index=0,
-            help="Type to search for sectors in this city.",
-        )
-
-        loc_data = city_data.get(sector, {})
-        sector_societies = loc_data.get("top_societies", [])
-        total_discovery = loc_data.get("listing_count", 0)
-
-        if not sector_societies:
-            all_city_societies = set()
-            for l_data in city_data.values():
-                all_city_societies.update(l_data.get("societies", []))
-            raw_list = sorted(list(all_city_societies))
-            scope_label = "all in city"
-            discovery_label = f"city-wide fallback"
-        else:
-            raw_list = sorted(sector_societies)
-            scope_label = f"in {sector}"
-            discovery_label = f"{total_discovery} listings in {sector}"
-
-        def sort_score(name):
-            n = name.lower()
-            if any(x in n for x in ["independent", "standalone", "builder floor"]):
-                return 100
-            if any(x in n for x in ["block ", "phase ", "sector "]):
-                return 50
-            return 0
-
-        display_societies = sorted(raw_list, key=lambda x: (sort_score(x), x))
-
-        prop_name = st.selectbox(
-            f"Verified Property ({discovery_label})",
-            options=["Custom / None"] + display_societies,
-            index=0,
-            help=f"Discovered {total_discovery} historical listings in this sector.",
-        )
-
-        st.markdown("### Configuration")
-        prop_type = st.selectbox("Property Type", PROP_TYPES)
-        c1, c2 = st.columns(2)
-        with c1:
-            bedrooms = st.number_input("BHK", 1, 10, 3)
-        with c2:
-            bathrooms = st.number_input("Bathrooms", 0, 10, 2)
-
-        c3, c4 = st.columns(2)
-        with c3:
-            area = st.number_input("Area (sqft)", 100, 50000, 1500)
-        with c4:
-            legal = st.selectbox("Legal", LEGAL_OPTIONS)
-
-        furnished = st.selectbox("Furnished", FURNISHED_OPTIONS)
-
-        st.markdown("### Market Factors")
-        c_cat, c_amen = st.columns(2)
-        with c_cat:
-            is_luxury = st.checkbox("Luxury Segment")
-            is_gated = st.checkbox("Gated Community", value=True)
-            is_metro = st.checkbox("Near Metro (500m)", value=True)
-            is_owner = st.checkbox("Owner Listing")
-            is_rera = st.checkbox("RERA Registered", value=True)
-            is_standalone = st.checkbox("Standalone Building")
-            no_brokerage = st.checkbox("No Brokerage")
-
-        with c_amen:
-            is_vastu = st.checkbox("Vastu Compliant")
-            is_corner = st.checkbox("Corner Property")
-            is_park = st.checkbox("Park Facing")
-            has_pool = st.checkbox("Swimming Pool")
-            has_gym = st.checkbox("Gymnasium")
-            has_lift = st.checkbox("Lift Access", value=True)
-            has_backup = st.checkbox("Power Backup", value=True)
-
-        with st.expander("Additional Rooms"):
-            c_r1, c_r2 = st.columns(2)
-            with c_r1:
-                is_servant = st.checkbox("Servant Room")
-                is_study = st.checkbox("Study Room")
-            with c_r2:
-                is_store = st.checkbox("Store Room")
-                is_pooja = st.checkbox("Pooja Room")
-
-        predict_btn = st.button("Generate Intelligence", type="primary", use_container_width=True, disabled=not api_healthy)
-
-    elif mode == "Property Recommender":
-        st.markdown("### Search Criteria")
-        rec_city = st.selectbox("NCR City", CITIES, index=4, key="rec_city")
-        listing_type = st.radio("Looking to", ["Buy", "Rent"], horizontal=True)
-
-        st.markdown("### BHK Options")
-        bhk_options = [1, 2, 3, 4, 5]
-        selected_bhk = []
-        c1, c2, c3 = st.columns(3)
-        for i, b in enumerate(bhk_options):
-            col = [c1, c2, c3][i % 3]
-            if col.checkbox(f"{b} BHK", value=(b == 3)):
-                selected_bhk.append(b)
-
-        st.markdown("### Budget (Absolute)")
-        if listing_type == "Buy":
-            budget = st.slider("Budget (₹ Lakhs)", 10, 500, (50, 200), step=10)
-            budget_min = budget[0] * 100000
-            budget_max = budget[1] * 100000
-        else:
-            budget = st.slider("Monthly Rent (₹ Thousands)", 5, 200, (15, 60), step=5)
-            budget_min = budget[0] * 1000
-            budget_max = budget[1] * 1000
-
-        if listing_type == "Buy":
-            sort_options = ["yield", "roi", "price_low", "price_high", "area"]
-            sort_labels = {
-                "yield": "Highest Rental Yield",
-                "roi": "Best ROI Index",
-                "price_low": "Lowest Price",
-                "price_high": "Highest Price",
-                "area": "Largest Area",
-            }
-        else:
-            sort_options = ["price_low", "price_high", "area"]
-            sort_labels = {
-                "price_low": "Lowest Rent",
-                "price_high": "Highest Rent",
-                "area": "Largest Area",
-            }
-
-        sort_by = st.selectbox("Sort By", sort_options, format_func=lambda x: sort_labels[x])
-        discover_btn = st.button("Discover Properties", type="primary", disabled=not api_healthy)
-
-# ---------------------------------------------------------------------------
-# Results Display
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# ===========================================================================
+# MODE: MARKET ANALYZER
+# ===========================================================================
 if mode == "Market Analyzer":
+    with st.sidebar:
+        st.markdown("---")
+        city = st.selectbox("NCR City", CITIES, index=1)
+        city_data = SOCIETY_MAP.get(city, {})
+        localities = sorted(list(city_data.keys()))
+        sector = st.selectbox("Locality / Sector", options=localities if localities else ["Other"])
+
+        # Reset results if city or sector changed
+        if (
+            "last_city" not in st.session_state
+            or st.session_state.last_city != city
+            or "last_sector" not in st.session_state
+            or st.session_state.last_sector != sector
+        ):
+            st.session_state.analyzer_results = None
+            st.session_state.last_city = city
+            st.session_state.last_sector = sector
+
+        st.markdown("---")
+        prop_type = st.selectbox("Property Type", PROP_TYPES)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            area = st.number_input("Area (sqft)", min_value=100, max_value=20000, value=1500)
+        with col2:
+            bedrooms = st.selectbox("BHK", BHK_OPTIONS, index=2)
+
+        with st.expander("Advanced Analytics Options"):
+            st.caption("Location & Orientation")
+            is_near_metro = st.checkbox("Near Metro Proximity", value=True)
+            is_corner = st.checkbox("Corner Property")
+            is_park_facing = st.checkbox("Park / Green Facing")
+            is_vastu = st.checkbox("Vastu Compliant")
+
+            st.markdown("---")
+            st.caption("Extra Space")
+            has_servant = st.checkbox("Servant Room")
+            has_study = st.checkbox("Study Room")
+            has_store = st.checkbox("Store Room")
+            has_pooja = st.checkbox("Pooja / Prayer Room")
+
+            st.markdown("---")
+            st.caption("Amenities")
+            has_pool = st.checkbox("Swimming Pool")
+            has_lift = st.checkbox("Lift / Elevator")
+            has_power = st.checkbox("Power Backup")
+            has_gym = st.checkbox("Gym Access")
+
+            st.markdown("---")
+            st.caption("Property Details")
+            bathrooms = st.selectbox("Number of Bathrooms", BHK_OPTIONS, index=1)
+            is_luxury = st.checkbox("Luxury Segment Listing")
+            furnishing = st.selectbox(
+                "Furnishing Status", ["Semi-Furnished", "Fully-Furnished", "Unfurnished", "Unknown"]
+            )
+            legal = st.selectbox(
+                "Legal Ownership Status", ["Unknown", "Freehold", "Leasehold", "Power of Attorney"]
+            )
+
+        predict_btn = st.button("Run Analytics", type="primary", use_container_width=True)
+
     if predict_btn:
+        if city == "Delhi" and intent == "Buy":
+            st.warning(
+                "Buy listing data for Delhi is unavailable in our database. Showing valuation estimate only — no comparables."
+            )
+
         payload = {
             "area": float(area),
             "bedrooms": int(bedrooms),
             "bathrooms": int(bathrooms),
             "prop_type": prop_type,
-            "furnishing_status": furnished,
-            "legal_status": legal,
             "city": city,
             "sector": sector,
-            "property_name": prop_name if prop_name != "Custom / None" else None,
-            "is_luxury": is_luxury,
-            "is_gated_community": is_gated,
-            "is_near_metro": is_metro,
-            "is_owner_listing": is_owner,
-            "is_standalone": is_standalone,
-            "is_rera_registered": is_rera,
-            "is_vastu_compliant": is_vastu,
-            "is_corner_property": is_corner,
-            "is_park_facing": is_park,
-            "has_pool": has_pool,
-            "has_gym": has_gym,
-            "has_lift": has_lift,
-            "has_power_backup": has_backup,
-            "is_servant_room": is_servant,
-            "is_study_room": is_study,
-            "is_store_room": is_store,
-            "is_pooja_room": is_pooja,
-            "no_brokerage": no_brokerage
+            "listing_type": intent.lower(),
+            "amenities": {
+                "has_gym": has_gym,
+                "has_pool": has_pool,
+                "has_lift": has_lift,
+                "has_power_backup": has_power,
+            },
+            "location": {
+                "is_near_metro": is_near_metro,
+                "is_corner_property": is_corner,
+                "is_park_facing": is_park_facing,
+                "is_vastu_compliant": is_vastu,
+            },
+            "features": {
+                "is_luxury": is_luxury,
+                "is_servant_room": has_servant,
+                "is_study_room": has_study,
+                "is_store_room": has_store,
+                "is_pooja_room": has_pooja,
+            },
+            "furnishing_status": furnishing,
+            "legal_status": legal,
         }
 
-        with st.spinner("Analyzing Market Micro-Data..."):
+        with st.spinner("Calculating..."):
             try:
-                res = requests.post(PREDICT_URL, json=payload, timeout=10)
+                res = requests.post(PREDICT_URL, json=payload, timeout=15)
                 res.raise_for_status()
-                data = res.json()
-
-                header_title = f"{prop_name} • {sector}" if prop_name != "Custom / None" else f"{city} • {sector}"
-                st.markdown(f"## {header_title}")
-                
-                # --- Metrics Grid ---
-                m1, m2, m3 = st.columns(3)
-                with m1:
-                    val_fmt = f"₹ {format_indian_number(data['estimated_market_value'])}"
-                    psq_fmt = f"₹ {format_indian_number(data['price_per_sqft'])} / sqft"
-                    st.metric("Valuation Estimate", val_fmt, psq_fmt)
-                
-                with m2:
-                    rent_fmt = f"₹ {format_indian_number(data['predicted_monthly_rent'])} / mo"
-                    yield_fmt = f"Yield: {data['intelligence_suite']['rental_yield_pct']}%"
-                    st.metric("Rental Benchmark", rent_fmt, yield_fmt)
-                
-                with m3:
-                    risk = data['intelligence_suite']['risk_analysis']
-                    st.metric("Investment ROI Index", f"{data['intelligence_suite']['investment_roi_index']} / 10", f"Risk: {risk['label']}")
-
-                # --- Tabbed Details ---
-                tab_overview, tab_market, tab_spatial = st.tabs(["📊 Market Data", "🏆 Comparison", "🗺️ Spatial Evidence"])
-                
-                with tab_overview:
-                    st.markdown("### Intelligence Breakdown")
-                    c1, c2 = st.columns([1, 1])
-                    with c1:
-                        st.write("**Annual Rent Return:**")
-                        st.subheader(f"₹ {format_indian_number(data['intelligence_suite']['annual_rent_return'])}")
-                    with c2:
-                        st.write("**Risk Analysis:**")
-                        st.info(f"Property is currently categorized as **{risk['label']}** based on micro-market H3 medians.")
-
-                with tab_market:
-                    if data.get("similar_listings"):
-                        st.markdown("### Comparable Properties")
-                        comp_df = pd.DataFrame(data["similar_listings"])
-                        # Format prices in DF
-                        comp_df['price_display'] = comp_df['price'].apply(lambda x: f"₹ {format_indian_number(x)}")
-                        comp_df['psqft_display'] = comp_df['price_sqft'].apply(lambda x: f"₹ {format_indian_number(x)}")
-                        
-                        st.dataframe(
-                            comp_df[["society", "locality", "price_display", "area", "psqft_display"]], 
-                            use_container_width=True,
-                            hide_index=True
-                        )
-                    else:
-                        st.warning("No comparable listings found in the immediate sector.")
-
-                with tab_spatial:
-                    with st.expander("Explore H3 Spatial Density", expanded=False):
-                        if data.get("similar_listings"):
-                            sim_map_items = [d for d in data["similar_listings"] if d.get('latitude') and d.get('longitude')]
-                            if sim_map_items:
-                                st.pydeck_chart(pdk.Deck(
-                                    initial_view_state=pdk.ViewState(
-                                        latitude=sum(d['latitude'] for d in sim_map_items)/len(sim_map_items),
-                                        longitude=sum(d['longitude'] for d in sim_map_items)/len(sim_map_items),
-                                        zoom=12.5, pitch=30,
-                                    ),
-                                    layers=[pdk.Layer("ScatterplotLayer", data=sim_map_items, get_position=["longitude", "latitude"],
-                                                      get_radius=100, get_fill_color=[59, 130, 246, 180], pickable=True)],
-                                    tooltip={"html": "<b>{society}</b><br/>₹{price}"}
-                                ))
-                            else:
-                                st.info("Insufficient spatial data to render high-resolution H3 map.")
-                        else:
-                            st.info("Insufficient spatial data to render high-resolution H3 map.")
-
+                st.session_state.analyzer_results = res.json()
             except Exception as e:
-                st.error(f"Intelligence failure: {e}")
-    else:
-        show_market_analyzer_dashboard()
+                st.error(f"Prediction Error: {e}")
+                st.session_state.analyzer_results = None
 
+    if st.session_state.analyzer_results:
+        data = st.session_state.analyzer_results
+        intel = data.get("intelligence_suite", {})
+        score = intel.get("unified_score", 0)
+        risk_data = intel.get("risk_analysis", {})
+
+        st.markdown(f"### Investment Analysis: {bedrooms} BHK {prop_type} in {sector}, {city}")
+
+        # ── 1. KPI Row (compact HTML) ────────────────────────
+        st.markdown(
+            f"""
+        <div class="kpi-row">
+            <div class="kpi-box">
+                <p class="kpi-label">Valuation</p>
+                <p class="kpi-value">{fmt(data["estimated_market_value"])}</p>
+            </div>
+            <div class="kpi-box">
+                <p class="kpi-label">Monthly Rent</p>
+                <p class="kpi-value">{fmt(data["predicted_monthly_rent"])}</p>
+            </div>
+            <div class="kpi-box">
+                <p class="kpi-label">{score_label}</p>
+                <p class="kpi-value"><span class="score-badge {score_class(score)}">{score}/10</span></p>
+            </div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+        # ── 2. ROI Breakdown (compact HTML) ──────────────────
+        st.markdown(
+            f"""
+        <div class="roi-row">
+            <div class="roi-item">
+                <p class="roi-label">Rental Yield</p>
+                <p class="roi-value">{intel.get("yield_pct", 0)}%</p>
+            </div>
+            <div class="roi-item">
+                <p class="roi-label">Market Risk</p>
+                <p class="roi-value">{risk_data.get("label", "N/A")}</p>
+            </div>
+            <div class="roi-item">
+                <p class="roi-label">Metro Dist</p>
+                <p class="roi-value">{f"{data.get('dist_to_metro_km', 'N/A')} km" if data.get("dist_to_metro_km") is not None else "Unknown"}</p>
+            </div>
+            <div class="roi-item">
+                <p class="roi-label">Market Position</p>
+                <p class="roi-value">{intel.get("overvaluation_pct", 0)}%</p>
+            </div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+        # ── 3. Score Bar ─────────────────────────────────────
+        st.progress(max(0.0, min(1.0, score / 10.0)))
+
+        # ── 4. Sector Map (Stable Toggle) ────────────────────
+        st.markdown("---")
+        show_map = st.checkbox("View 3D Intelligence Map", value=False, key="show_sector_map_chk")
+        if show_map:
+            similar = data.get("similar_listings", [])
+            try:
+                hotspot_res = requests.get(
+                    HOTSPOTS_URL, params={"listing_type": intent.lower(), "city": city}, timeout=5
+                )
+                hotspot_data = hotspot_res.json().get("hotspots", [])
+                loc_data = city_data.get(sector, {})
+                center = CITY_CENTERS.get(city, {"lat": 28.5, "lon": 77.3})
+
+                if similar:
+                    # Mode 2: Show comparables as towers
+                    st.caption(f"Visualizing {len(similar)} verified comparables in {sector}")
+                    render_hotspot_map(
+                        listings=similar,
+                        center_lat=loc_data.get("lat", center["lat"]),
+                        center_lon=loc_data.get("lon", center["lon"]),
+                        zoom=12,
+                    )
+                else:
+                    # Mode 1: Show general hotspots
+                    render_hotspot_map(
+                        hotspots=hotspot_data,
+                        center_lat=center["lat"],
+                        center_lon=center["lon"],
+                        zoom=10,
+                    )
+            except Exception:
+                st.caption("Map data unavailable.")
+
+        # ── 5. Comparables ───────────────────────────────────
+        similar = data.get("similar_listings", [])
+        if similar:
+            st.markdown("### Verified Comparables")
+            st.caption(
+                "**Micro Analysis**: Real listings from our database. 'Deal Score' measures how underpriced this specific unit is relative to its local market."
+            )
+            cols = st.columns(3)
+            for i, item in enumerate(similar[:6]):
+                with cols[i % 3]:
+                    render_property_card(item)
+
+        # ── 6. Alternatives ──────────────────────────────────
+        recs = data.get("recommendations", [])
+        if recs:
+            st.markdown("### Better Investment Alternatives")
+            st.caption(
+                "**Macro Analysis**: Neighboring localities. 'Sector Grade' evaluates the overall investment health of the area against the entire NCR region."
+            )
+            grid_cols = st.columns(3)
+            for i, rec in enumerate(recs[:6]):
+                with grid_cols[i % 3]:
+                    render_alternative_card(rec)
+        elif not similar:
+            st.caption("No comparables or alternatives found.")
+
+    else:
+        # Landing dashboard overview
+        st.markdown(
+            """
+        <div class="landing-stat-row">
+            <div class="landing-stat"><p class="ls-val">43,000+</p><p class="ls-lbl">Property Records</p></div>
+            <div class="landing-stat"><p class="ls-val">6</p><p class="ls-lbl">NCR Cities</p></div>
+            <div class="landing-stat"><p class="ls-val">H3</p><p class="ls-lbl">Spatial Indexing</p></div>
+            <div class="landing-stat"><p class="ls-val">ML</p><p class="ls-lbl">Valuation Models</p></div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+        try:
+            hotspot_res = requests.get(
+                HOTSPOTS_URL,
+                params={"listing_type": intent.lower(), "city": "Entire NCR"},
+                timeout=5,
+            )
+            hotspot_data = hotspot_res.json().get("hotspots", [])
+
+            st.markdown("---")
+            show_map = st.checkbox(
+                "View 3D Regional Hotspots Map", value=False, key="show_regional_map_chk"
+            )
+            if show_map:
+                st.markdown("### Regional Overview")
+                st.caption(
+                    f"Visualizing active market hotspots for {intent} across the entire NCR."
+                )
+                render_hotspot_map(hotspots=hotspot_data, center_lat=28.5, center_lon=77.2, zoom=8)
+                st.markdown("<br>", unsafe_allow_html=True)
+        except Exception:
+            pass
+
+        st.markdown("""<h3 style="margin-bottom:12px;">How it works</h3>""", unsafe_allow_html=True)
+        st.markdown(
+            """
+        <div class="landing-grid">
+            <div class="landing-card">
+                <p class="lc-icon">01</p>
+                <h4>Configure Property</h4>
+                <p>Select city, locality, area, BHK, and property type in the sidebar. Adjust advanced options like metro access or luxury segment.</p>
+            </div>
+            <div class="landing-card">
+                <p class="lc-icon">02</p>
+                <h4>Run Analytics</h4>
+                <p>Our ML models predict market value, rental yield, and investment score using spatial H3 indexing across the NCR region.</p>
+            </div>
+            <div class="landing-card">
+                <p class="lc-icon">03</p>
+                <h4>Review Intelligence</h4>
+                <p>Get a full investment report: valuation, ROI breakdown, verified comparables, and better-performing sectors nearby.</p>
+            </div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("""<h3 style="margin-bottom:12px;">What you get</h3>""", unsafe_allow_html=True)
+        st.markdown(
+            """
+        <div class="landing-grid">
+            <div class="landing-card">
+                <h4>Valuation Report</h4>
+                <p>AI-predicted market price per sqft, total value, and estimated monthly rent based on 43,000+ local NCR records.</p>
+            </div>
+            <div class="landing-card">
+                <h4>Dual Scoring</h4>
+                <p>Specific <b>Deal Scores</b> for bargain properties and <b>Sector Grades</b> for overall neighborhood potential.</p>
+            </div>
+            <div class="landing-card">
+                <h4>Verified Proximity</h4>
+                <p>Automated GPS-based distance to the nearest Metro station for accurate 'Transit Premium' valuations.</p>
+            </div>
+            <div class="landing-card">
+                <h4>Market Position</h4>
+                <p>Real-time entry risk: see exactly how much of a 'Discount' or 'Premium' you are paying vs the sector median.</p>
+            </div>
+            <div class="landing-card">
+                <h4>Verified Comparables</h4>
+                <p>Up to 6 real historical listings similar to your property, sourced from real-world NCR transactions.</p>
+            </div>
+            <div class="landing-card">
+                <h4>Spatial Intelligence</h4>
+                <p>3D-tower visualization of market hotspots and results using H3 hexagonal spatial indexing.</p>
+            </div>
+</div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+
+# ===========================================================================
+# MODE: PROPERTY RECOMMENDER
+# ===========================================================================
 elif mode == "Property Recommender":
+    with st.sidebar:
+        st.markdown("---")
+        rec_city = st.selectbox("City", CITIES, index=1)
+        selected_bhk = st.multiselect("BHK Type", BHK_OPTIONS, default=[2, 3])
+        rec_prop_type = st.selectbox("Property Type", PROP_TYPES, key="rec_prop_type")
+
+        if intent == "Buy":
+            budget = st.slider("Budget (₹ Lakhs)", 10, 2000, (50, 300))
+            budget_min = float(budget[0] * 100_000)
+            budget_max = float(budget[1] * 100_000)
+        else:  # Rent
+            budget = st.slider("Monthly Rent (₹ /month)", 5000, 200000, (10000, 50000), step=5000)
+            budget_min = float(budget[0])
+            budget_max = float(budget[1])
+        sort_options = {
+            "score": "Deal Score (Best Value)",
+            "yield": "Investment Yield (%)",
+            "price_low": "Price: Low to High",
+            "price_high": "Price: High to Low",
+            "area": "Property Size (Area)",
+        }
+        sort_label = st.selectbox("Sort Priority", options=list(sort_options.values()))
+        sort_by = [k for k, v in sort_options.items() if v == sort_label][0]
+
+        with st.expander("Advanced Discovery Options"):
+            st.caption("Location Preferences")
+            near_metro_rec = st.checkbox("Near Metro Proximity", value=True, key="metro_rec")
+            corner_rec = st.checkbox("Corner Property", key="corner_rec")
+            park_facing_rec = st.checkbox("Park / Green Facing", key="park_rec")
+            vastu_rec = st.checkbox("Vastu Compliant", key="vastu_rec")
+
+            st.markdown("---")
+            st.caption("Room Requirements")
+            servant_rec = st.checkbox("Servant Room", key="servant_rec")
+            study_rec = st.checkbox("Study Room", key="study_rec")
+            store_rec = st.checkbox("Store Room", key="store_rec")
+            pooja_rec = st.checkbox("Pooja / Prayer Room", key="pooja_rec")
+
+            st.markdown("---")
+            st.caption("Amenities")
+            pool_rec = st.checkbox("Swimming Pool", key="pool_rec")
+            lift_rec = st.checkbox("Lift / Elevator", key="lift_rec")
+            power_rec = st.checkbox("Power Backup", key="power_rec")
+            gym_rec = st.checkbox("Gym Access", key="gym_rec")
+
+            st.markdown("---")
+            st.caption("Property Details")
+            luxury_rec = st.checkbox("Luxury Segment Listing", key="luxury_rec")
+            furnishing_rec = st.selectbox(
+                "Furnishing Status",
+                ["Unknown", "Semi-Furnished", "Fully-Furnished", "Unfurnished"],
+                key="furn_rec",
+            )
+            legal_rec = st.selectbox(
+                "Legal Ownership Status",
+                ["Unknown", "Freehold", "Leasehold", "Power of Attorney"],
+                key="legal_rec",
+            )
+
+        discover_btn = st.button("Discover Best Deals", type="primary", use_container_width=True)
+
+    # ── 1. Search ─────────────────────────────────────────────
     if discover_btn:
+        if rec_city == "Delhi" and intent == "Buy":
+            st.warning(
+                "Buy listing data for Delhi is currently zero. Please try Rent or another city."
+            )
+
         payload = {
             "city": rec_city,
-            "listing_type": listing_type.lower(),
+            "listing_type": intent.lower(),
             "bhk": selected_bhk,
             "budget_min": budget_min,
             "budget_max": budget_max,
             "sort_by": sort_by,
+            "amenities": {
+                "has_gym": gym_rec,
+                "has_pool": pool_rec,
+                "has_lift": lift_rec,
+                "has_power_backup": power_rec,
+            },
+            "location_score": {
+                "is_near_metro": near_metro_rec,
+                "is_corner_property": corner_rec,
+                "is_park_facing": park_facing_rec,
+                "is_vastu_compliant": vastu_rec,
+            },
+            "features": {
+                "is_luxury": luxury_rec,
+                "is_servant_room": servant_rec,
+                "is_study_room": study_rec,
+                "is_store_room": store_rec,
+                "is_pooja_room": pooja_rec,
+            },
+            "prop_type": rec_prop_type,
+            "furnishing_status": furnishing_rec,
+            "legal_status": legal_rec if "legal_rec" in dir() else "Unknown",
         }
-        with st.spinner("Searching Discovery Pool..."):
+        with st.spinner("Scanning 43,000+ records..."):
             try:
-                res = requests.post(f"{API_BASE_URL}/discover", json=payload, timeout=10)
+                res = requests.post(DISCOVER_URL, json=payload, timeout=15)
                 res.raise_for_status()
-                data = res.json().get("listings", [])
-
-                if not data:
-                    st.warning("No matches found within this budget across the NCR corridor.")
-                else:
-                    st.success(f"Discovered {len(data)} High-Priority Targets")
-
-                    map_items = []
-                    for d in data:
-                        if d.get('latitude') and d.get('longitude'):
-                            # Format for map
-                            item = d.copy()
-                            item['price_display'] = f"₹ {format_indian_number(item['price'])}"
-                            
-                            # Color coding [R, G, B, A]
-                            score = item.get('roi_index', 5.0)
-                            if score >= 7.5:
-                                item['color'] = [16, 185, 129, 220] # Green
-                            elif score >= 5.0:
-                                item['color'] = [245, 158, 11, 220] # Amber
-                            else:
-                                item['color'] = [239, 68, 68, 220]  # Red
-                            map_items.append(item)
-
-                    with st.expander("Explore NCR Corridor (Heatmap)", expanded=False):
-                        if map_items:
-                            st.pydeck_chart(pdk.Deck(
-                                initial_view_state=pdk.ViewState(latitude=28.61, longitude=77.23, zoom=10, pitch=40),
-                                layers=[pdk.Layer("ScatterplotLayer", data=map_items, get_position=["longitude", "latitude"],
-                                                  get_radius=180, get_fill_color="color", pickable=True)],
-                                tooltip={"html": "<b>{society}</b><br/>{price_display}<br/>Score: {roi_index}/10"}
-                            ))
-                    
-                    # --- ROI / Deal Explanation ---
-                    if listing_type.lower() == "buy":
-                        exp_title = "How is the ROI Index calculated?"
-                        exp_text = """
-                        The **Investment ROI Index** (0-10) is a composite score calculated as:
-                        - **Base Score (5.0)**: The starting baseline.
-                        - **Yield Bonus**: Up to **+5.0** based on annual rental yield (benchmarked at 2-6%).
-                        - **Metro Bonus**: **+2.0** if the property is within 500m of a Metro station.
-                        - **Risk Penalty**: Up to **-3.0** deducted if the property is overvalued vs. its H3 micro-market median.
-                        """
-                        section_title = "Top Investment Targets"
-                    else:
-                        exp_title = "How is the Deal Rating calculated?"
-                        exp_text = """
-                        The **Deal Rating** (0-10) is a value-metric for tenants calculated as:
-                        - **Market Comparison**: Comparing current rent vs. the **H3 Spatial Median** for the exact neighborhood.
-                        - **Savings Bonus**: Points added if the rent is significantly lower than similar properties.
-                        - **Location Quality**: Includes proximity to transit and local amenities.
-                        """
-                        section_title = "Top Rental Picks"
-
-                    with st.expander(exp_title, expanded=False):
-                        st.markdown(exp_text)
-
-                    # --- Result Cards Grid ---
-                    st.markdown(f"### {section_title}")
-                    
-                    # Wrap cards in a div for CSS Grid control
-                    cards_html = ""
-                    for item in data:
-                        # Logic for tenant-centric vs investor metrics
-                        if listing_type.lower() == "buy":
-                            metric_label = "Yield"
-                            metric_val = f"{item['rental_yield_pct']}%"
-                            score_label = f"ROI: {item['roi_index']}/10"
-                            badge = "Great Value" if item['value_score'] > 0.05 else "Fair Value" if item['value_score'] > -0.05 else "Premium Price"
-                        else:
-                            h3_med = item.get('h3_median_price', 0)
-                            if h3_med > 0:
-                                savings = h3_med - item['price']
-                                if savings > 0:
-                                    metric_label = "Savings"
-                                    metric_val = f"₹ {format_indian_number(savings)}"
-                                else:
-                                    metric_label = "Premium"
-                                    metric_val = f"₹ {format_indian_number(abs(savings))}"
-                            else:
-                                metric_label = "Area"
-                                metric_val = f"{item['area']} sqft"
-
-                            score_label = f"Deal: {item['roi_index']}/10"
-                            badge = "Budget Pick" if item['value_score'] > 0.05 else "Fair Deal" if item['value_score'] > -0.05 else "Luxury Living"
-
-                        cards_html += f"""
-                        <div class="info-card">
-                            <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px;">{item['locality']}, {item['city']}</div>
-                            <div style="font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; line-height: 1.2;">{item['society']}</div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="font-weight: 600; color: #3b82f6;">{item['bhk']} BHK</span>
-                                <span style="font-weight: 600; color: #10b981;">₹ {format_indian_number(item['price'])}</span>
-                            </div>
-                            <div style="font-size: 0.85rem; color: #94a3b8; display: flex; justify-content: space-between; border-top: 1px solid #334155; padding-top: 8px;">
-                                <span>Area: {item['area']} sqft</span>
-                                <span>{metric_label}: {metric_val}</span>
-                            </div>
-                            <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between;">
-                                <div style="background: #1e293b; color: #3b82f6; border: 1px solid #3b82f6; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 700;">
-                                    {score_label}
-                                </div>
-                                <div style="font-size: 0.75rem; font-weight: 600; color: {'#10b981' if item['value_score'] > 0 else '#ef4444'};">
-                                    {badge}
-                                </div>
-                            </div>
-                        </div>
-                        """
-                    
-                    st.markdown(f'<div class="results-grid">{cards_html}</div>', unsafe_allow_html=True)
+                st.session_state.discovery_results = res.json().get("listings", [])
+                st.session_state.page = 0
             except Exception as e:
-                st.error(f"Discovery failure: {e}")
+                st.error(f"Search failed: {e}")
+
+    # ── 2. Map (Stable Toggle) ──────────────────────────
+    st.markdown("---")
+    show_discovery_map = st.checkbox(
+        "View Market Intelligence Map", value=False, key="show_rec_map_chk"
+    )
+    if show_discovery_map:
+        results_data = st.session_state.discovery_results
+        try:
+            map_city = rec_city if "rec_city" in dir() else CITIES[1]
+            hotspot_res = requests.get(
+                HOTSPOTS_URL, params={"listing_type": intent.lower(), "city": map_city}, timeout=5
+            )
+            hotspot_data = hotspot_res.json().get("hotspots", [])
+            center = CITY_CENTERS.get(map_city, {"lat": 28.5, "lon": 77.3})
+
+            if results_data:
+                # Mode 3: Show discovery results as towers
+                st.caption(
+                    f"Visualizing top {min(30, len(results_data))} discovery results in {map_city}"
+                )
+                render_hotspot_map(
+                    listings=results_data,
+                    center_lat=center["lat"],
+                    center_lon=center["lon"],
+                    zoom=11,
+                )
+            else:
+                # Mode 1: Show general hotspots
+                render_hotspot_map(
+                    hotspots=hotspot_data,
+                    center_lat=center["lat"],
+                    center_lon=center["lon"],
+                    zoom=9,
+                )
+        except Exception:
+            st.caption("Map data unavailable.")
+
+    # ── 3. Featured ───────────────────────────────────────────
+    featured = []
+    try:
+        featured_res = requests.get(
+            HOTSPOTS_URL, params={"listing_type": intent.lower(), "city": rec_city}, timeout=5
+        )
+        featured = featured_res.json().get("featured", [])
+    except Exception:
+        pass
+
+    # ── 4. Discovery Results or Landing Page ──────────────────
+    results_data = st.session_state.discovery_results
+    if not results_data:
+        # Discovery Landing Page (Welcome State)
+        st.markdown(f"### Discover Your Next Property in {rec_city}")
+        st.caption("AI-powered search across 43,000+ real-world NCR property transaction records.")
+
+        st.markdown(
+            """
+        <div class="landing-stat-row">
+            <div class="landing-stat"><p class="ls-val">Yield-First</p><p class="ls-lbl">Arbitrage Detection</p></div>
+            <div class="landing-stat"><p class="ls-val">30+</p><p class="ls-lbl">Strict UI Filters</p></div>
+            <div class="landing-stat"><p class="ls-val">GPS</p><p class="ls-lbl">Verified Coordinates</p></div>
+            <div class="landing-stat"><p class="ls-val">H3</p><p class="ls-lbl">Micro-Market Data</p></div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """<h3 style="margin-bottom:12px;">How to Discover</h3>""", unsafe_allow_html=True
+        )
+        st.markdown(
+            """
+        <div class="landing-grid">
+            <div class="landing-card">
+                <p class="lc-icon">01</p>
+                <h4>Configure Search</h4>
+                <p>Select your target city and budget range. Choose whether you are looking to Buy or Rent your next investment.</p>
+            </div>
+            <div class="landing-card">
+                <p class="lc-icon">02</p>
+                <h4>AI Targeting</h4>
+                <p>Apply strictly verified filters: <b>Near Metro</b>, <b>Vastu Compliant</b>, <b>Corner Property</b>, or <b>Luxury</b> segments.</p>
+            </div>
+            <div class="landing-card">
+                <p class="lc-icon">03</p>
+                <h4>Surface Deals</h4>
+                <p>Click 'Discover' to scan 43,000+ records. The engine returns the top 30 matching deals sorted by price, yield, or score.</p>
+            </div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """<h3 style="margin-bottom:12px;">Discovery Intelligence</h3>""",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            """
+        <div class="landing-grid">
+            <div class="landing-card">
+                <h4>Yield Arbitrage</h4>
+                <p>Surface properties with the highest predicted rental returns before they reach the mass market.</p>
+            </div>
+            <div class="landing-card">
+                <h4>High-Fidelity Filters</h4>
+                <p>Filter by Metro proximity (verified 1.5km radius) or specific plot features (Park Facing, Corner Lot).</p>
+            </div>
+            <div class="landing-card">
+                <h4>Verified H3 Mapping</h4>
+                <p>All discovery results are mapped with high-precision spatial coordinates for 3D tower visualization.</p>
+            </div>
+            <div class="landing-card">
+                <h4>Deal Benchmarking</h4>
+                <p>Every discovery result includes a real-time 'Deal Score' comparing the listing to its specific sector median.</p>
+            </div>
+            <div class="landing-card">
+                <h4>Smart Pagination</h4>
+                <p>Easily browse through dozens of verified matches with our optimized grid view and pagination system.</p>
+            </div>
+            <div class="landing-card">
+                <h4>Market Transparency</h4>
+                <p>Access historical transaction data points to understand actual market pricing vs asking price premiums.</p>
+            </div>
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
+
     else:
-        show_property_recommender_dashboard()
+        # ── 5. Discovery Grid ─────────────────────────────────────
+        page_size = 9
+        total_pages = math.ceil(len(results_data) / page_size)
+        if st.session_state.page >= total_pages:
+            st.session_state.page = 0
+
+        start = st.session_state.page * page_size
+        page_data = results_data[start : start + page_size]
+
+        st.markdown(f"### Discovery Results ({len(results_data)} properties)")
+
+        cols = st.columns(3)
+        for i, item in enumerate(page_data):
+            with cols[i % 3]:
+                render_property_card(item)
+
+        # Pagination
+        st.markdown("---")
+        p1, p2, p3 = st.columns([1, 2, 1])
+        with p1:
+            if st.button("← Previous") and st.session_state.page > 0:
+                st.session_state.page -= 1
+                st.rerun()
+        with p2:
+            st.markdown(
+                f"<center>Page {st.session_state.page + 1} of {total_pages}</center>",
+                unsafe_allow_html=True,
+            )
+        with p3:
+            if st.button("Next →") and st.session_state.page < total_pages - 1:
+                st.session_state.page += 1
+                st.rerun()

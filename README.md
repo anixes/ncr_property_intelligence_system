@@ -1,77 +1,64 @@
 # NCR Property Intelligence 🏙️
 
-The **NCR Property Intelligence** suite is an enterprise-grade investment discovery platform that leverages hyper-local spatial intelligence and machine learning to identify high-yield real estate opportunities across the National Capital Region (Gurgaon, Noida, and Ghaziabad).
+The **NCR Property Intelligence** suite is an enterprise-grade investment discovery platform that leverages hyper-local spatial intelligence and machine learning to identify high-yield real estate opportunities across the National Capital Region (Gurgaon, Noida, Delhi, Greater Noida, Ghaziabad, and Faridabad).
 
 ## 🚀 Key Production Features
 
 - **AI Investment Auditor**: Every listing is cross-referenced against a **Hyper-Local H3 Spatial Median** to assign visual value badges (🟢 Great Value, Good Deal, Premium).
-- **"Best Deal" Discovery**: Aggressive **Alpha-Normalized Deduplication** filters out agent-listing noise, ensuring only the most competitive price variant for any given property is surfaced.
-- **Locality Healer**: Integrated neighborhood recovery for Ghaziabad, populating **165+ verified localities** (Indirapuram, Raj Nagar, etc.) that were previously invisible in research datasets.
+- **"Best Deal" Discovery**: Aggressive deduplication filters out agent-listing noise, ensuring only the most competitive price variant for any given property is surfaced.
+- **Market Analyzer Dashboard**: Dual-mode UI allows micro-market analysis, verified comparable generation, and 3D H3 hotspot visualizations.
 - **Micro-Market Analysis**: Real-time rental yield and ROI calculations based on localized rental benchmark indices.
-
----
-
-## 🌐 Live Access
-
-- 🏠 **Investment Dashboard**: [http://13.204.212.148:8501/](http://13.204.212.148:8501/)
-- ⚙️ **Intelligence API (Swagger)**: [http://13.204.212.148:8000/docs](http://13.204.212.148:8000/docs)
 
 ---
 
 ## 📐 System Architecture
 
-```mermaid
-graph LR
-    User([User]) --> UI[Streamlit Frontend]
-    UI --> API[FastAPI Intelligence Layer]
-    subgraph "Inference & Audit Engine"
-    API --> H3[H3 Spatial Auditor]
-    API --> ML[CatBoost Pricing Pipeline]
-    H3 --> DB[(Last-Mile Pool)]
-    end
-    subgraph "Data Storage"
-    DB <--> DVC[DVC Registry]
-    end
-```
+The suite is architected as a fully decoupled, containerized micro-service environment designed for EC2 deployments:
 
-## 🏗️ Technical Component Overview
-
-The suite is architected as a decoupled micro-service environment:
-
-1. **Intelligence Engine (`ncr_property_price_estimation/intelligence`)**
+1. **Intelligence Engine (FastAPI Backend)**
    - **H3 Auditor**: Uses Uber's H3 spatial indexing to cluster and benchmark property values.
-   - **Engine**: Handles similarity matching and the "Best Deal" priority logic.
+   - **Inference Engine**: Handles ML-driven price predictions using pre-cached CatBoost models.
+   - **Container**: Packaged via `Dockerfile` (optimized multi-stage build).
 
-2. **Backend API (`FastAPI`)**
-   - High-performance layer serving predictions and discovery results.
-   - Pydantic-validated endpoints for `/predict`, `/discover`, and `/locality/list`.
+2. **Frontend Dashboard (Streamlit)**
+   - Interactive, sleek UI rendering premium property cards and 3D PyDeck maps.
+   - Mobile-responsive layout decoupled from massive ML backend libraries.
+   - **Container**: Packaged via `Dockerfile.frontend` securely bridging internal API networks.
 
-3. **Frontend Application (`Streamlit`)**
-   - High-fidelity visual dashboard with zero-indentation HTML rendering for premium property cards.
-   - Mobile-responsive layout with nested spatial visualizations.
+---
+
+## 📦 Containerization & Deployment (Docker)
+
+The repository is built for **GitHub Actions CI/CD** and automated deployment to AWS EC2. 
+Both containers are strictly optimized utilizing **`python:3.11-slim`** base images and multi-stage builds to ensure incredibly small footprint deployment sizes (perfect for AWS Free Tier constraints).
+
+### Quickstart (Local Docker-Compose)
+To spin up the entire isolated network (UI + API) locally:
+```bash
+docker-compose up -d --build
+```
+- **UI Dashboard**: `http://localhost:8501`
+- **Backend API Docs**: `http://localhost:8000/docs`
 
 ---
 
 ## 🗂️ Project Structure
 
 ```text
-ncr_property_price_estimation/
-├── .dvc/                   # Data Version Control metadata
-├── .github/workflows/      # CI/CD (GitHub Actions)
-├── data.dvc                # Consolidated DVC pointer for the data/ registry
+ncr_property_intelligence_system/
 ├── frontend/               # UI Dashboard (Streamlit)
-│   ├── app.py              # Main frontend logic & CSS
-│   └── Dockerfile          # UI container definition
-├── models/                 # Serialized ML Artifacts (Tracked by DVC)
+│   ├── app.py              # Main frontend layout
+│   └── style.css           # Custom sleek UI designs
 ├── ncr_property_price_estimation/
 │   ├── intelligence/       # AI Auditor & Matching Engine
-│   ├── api.py              # FastAPI Service & Endpoints
-│   ├── config.py           # Project Configuration
-│   └── features.py         # Advanced Feature Pipeline
-├── pyproject.toml          # Build configuration
-├── Makefile                # Deployment & dev convenience
-├── requirements_*.txt      # Frozen dependency manifests
-└── README.md               # You are here
+│   └── api.py              # FastAPI Service & Endpoints
+├── data/                   # H3 Spatial indices & lookup tables
+├── docker-compose.yml      # Local dev multi-container orchestrator
+├── deploy_ec2.sh           # Remote server deployment script
+├── Dockerfile              # Heavy Backend ML Image Build
+├── Dockerfile.frontend     # Lightweight Streamlit Image Build
+├── requirements_api.txt    # ML and FastApi Dependencies
+└── requirements_frontend.txt # UI-only dependencies (Streamlit, PyDeck)
 ```
 
 ---
@@ -80,74 +67,23 @@ ncr_property_price_estimation/
 
 This project uses a production-hardened data pipeline to ensure reproducibility and high-performance inference.
 
-### 1. Data Version Control (DVC)
-Since the property databases and ML artifacts are multi-megabyte files, they are managed via **DVC**.
-
-- **Retrieve Data**: Run `dvc pull` to synchronize the latest production models and geocoding indices.
-- **Tracking**: The actual data stays outside of Git, while the `.dvc` pointers are committed to track versions.
-
-### 2. Experiment Tracking
-Training experiments, including hyperparameters for the **CatBoost** and **XGBoost** engines, are tracked via **MLflow**.
-
-- **Model Registry**: High-performing pipelines are promoted to the production stage and synced via DVC.
+- **DVC (Data Version Control)**: Since property databases and serialized `.pkl`/`.cbm` ML artifacts are large, they are managed via **DVC**. Run `dvc pull` to synchronize the latest production models before local system builds.
+- **MLflow**: Training experiments, including hyperparameters for the scoring engines are tracked via **MLflow**.
 
 ---
 
-## 🔧 Troubleshooting & Diagnostics
-
-We've added advanced diagnostic endpoints to help identify scaling or versioning issues in production.
-
-### Debug Endpoints
-- **`GET /health`**: Verifies if the ML models are loaded into memory across the worker pool.
-- **`GET /intelligence/hotspots`**: Returns the current localized H3 clusters used by the AI Auditor.
-
----
-
-## 🔌 API Contract
-
-The backend provides a stable REST interface for property estimations and investment discovery.
-
-### `POST /predict`
-Estimates the price and assigns an investment audit for a single property configuration.
-
-**Request Body:**
-```json
-{
-  "city": "Gurugram",
-  "sector": "Sector 50",
-  "area": 1200.0,
-  "bedrooms": 3,
-  "bathrooms": 2,
-  "prop_type": "Apartment"
-}
-```
-
-### `POST /discover`
-The primary discovery engine for the Investment Marketplace. Surfaces real-world listings matching a search profile, filtered by the **Best Deal** strategy.
-
----
-
-## 🧪 Testing and CI/CD
-
-The repository includes a comprehensive `pytest` suite for the ML features, pipelines, and FastAPI endpoints.
-
-To run the test suite locally:
-```bash
-pytest -v
-```
-
----
-
-## 🚀 How to Run Locally
+## 🚀 How to Run Locally (Without Docker)
 
 ### 1. Environment Setup
 ```bash
 git clone https://github.com/anixes/ncr_property_intelligence_system.git
 cd ncr_property_intelligence_system
 python -m venv venv
-# Windows: venv\Scripts\activate
+
+# Windows
+venv\Scripts\activate
+# MacOS/Linux
 source venv/bin/activate
-pip install -r requirements_production.txt
 ```
 
 ### 2. Pull Production Assets
@@ -156,19 +92,13 @@ dvc pull
 ```
 
 ### 3. Start Services
+Open two terminal windows:
 ```bash
-# Terminal 1: API
-uvicorn ncr_property_price_estimation.api:app --host 0.0.0.0 --port 8000
+# Terminal 1: Install & Start Backend
+pip install -r requirements_api.txt
+uvicorn ncr_property_price_estimation.api:app --host 0.0.0.0 --port 8000 --reload
 
-# Terminal 2: UI
+# Terminal 2: Install & Start UI
+pip install -r requirements_frontend.txt
 streamlit run frontend/app.py
 ```
-
----
-
-## 🗺️ Roadmap
-
-- **[DONE] Property Recommender**: Intelligent engine to surface high-yield alternatives in neighboring sectors.
-- **[DONE] Enhanced Scraper**: Production-grade pipelines for Gurgaon, Noida, and Ghaziabad.
-- **[NEXT] MLflow Migration**: Transitioning to a shared SQLite-backed MLflow server for multi-agent experimentation.
-- **[NEXT] Time-Series Analysis**: adding historical price appreciation charts to the Market Analyzer.

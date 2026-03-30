@@ -13,7 +13,7 @@ PROPERTY_SCHEMA = DataFrameSchema(
         # Range: 5 Lakhs to 50 Crores (NCR luxury market)
         "price": Column(
             float,
-            checks=[Check.in_range(5000, 500000000)], # Floor at 5k for rent
+            checks=[Check.in_range(5000, 500000000)],  # Floor at 5k for rent
             nullable=False,
             coerce=True,
         ),
@@ -31,8 +31,8 @@ PROPERTY_SCHEMA = DataFrameSchema(
         # Rejects calculation errors (e.g., tiny area causing huge rate)
         "price_per_sqft": Column(
             float,
-            checks=[Check.in_range(10, 100000)], # Support rent (~10-60) & sale (~1.5k-100k)
-            nullable=False, 
+            checks=[Check.in_range(10, 100000)],  # Support rent (~10-60) & sale (~1.5k-100k)
+            nullable=False,
             coerce=True,
         ),
         # --- PHYSICAL SPECS ---
@@ -79,8 +79,12 @@ PROPERTY_SCHEMA = DataFrameSchema(
         "listing_mode": Column(str, checks=[Check.isin(["buy", "rent"])], nullable=False),
         "ready_to_move": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
         "is_luxury": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
-        "is_gated_community": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
-        "is_vastu_compliant": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
+        "is_gated_community": Column(
+            float, checks=[Check.isin([0, 1])], nullable=True, coerce=True
+        ),
+        "is_vastu_compliant": Column(
+            float, checks=[Check.isin([0, 1])], nullable=True, coerce=True
+        ),
         # Physical/Room Flags
         "is_servant_room": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
         "is_study_room": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
@@ -89,19 +93,21 @@ PROPERTY_SCHEMA = DataFrameSchema(
         # Furnishing & Legal
         "furnishing_status": Column(str, nullable=True),
         "legal_status": Column(str, nullable=True),
-        "is_rera_registered": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
+        "is_rera_registered": Column(
+            float, checks=[Check.isin([0, 1])], nullable=True, coerce=True
+        ),
         "has_pool": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
         "has_gym": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
         "has_lift": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
-        
         # Premium NLP Flags
         "is_near_metro": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
         "has_power_backup": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
-        "is_corner_property": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
+        "is_corner_property": Column(
+            float, checks=[Check.isin([0, 1])], nullable=True, coerce=True
+        ),
         "is_park_facing": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
         "no_brokerage": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
         "bachelors_allowed": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
-        
         # Identity & Asset Type
         "is_standalone": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
         "is_owner_listing": Column(float, checks=[Check.isin([0, 1])], nullable=True, coerce=True),
@@ -138,7 +144,7 @@ def validate_dataframe(df):
     except pa.errors.SchemaErrors as e:
         # Identify failed rows
         failure_indices = e.failure_cases["index"].dropna().unique()
-        clean_df = df.drop(index=failure_indices, errors='ignore')
+        clean_df = df.drop(index=failure_indices, errors="ignore")
 
         stats = {
             "total_rows": len(df),

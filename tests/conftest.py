@@ -23,8 +23,20 @@ def sample_df():
             "prop_type": ["Apartment", "Apartment", "Villa", "Studio Apartment", "Apartment"],
             "city": ["Gurugram", "Noida", "Delhi", "Gurugram", "Noida"],
             "sector": ["Sector 50", "Sector 75", "Prithviraj Road", "Sector 50", "Sector 75"],
-            "society": ["Emaar Palm Drive", "Supertech CapeTown", "Standalone", "Global Foyer", "Golf Estate"],
-            "furnishing_status": ["Semi-Furnished", "Unfurnished", "Furnished", "Unfurnished", "Semi-Furnished"],
+            "society": [
+                "Emaar Palm Drive",
+                "Supertech CapeTown",
+                "Standalone",
+                "Global Foyer",
+                "Golf Estate",
+            ],
+            "furnishing_status": [
+                "Semi-Furnished",
+                "Unfurnished",
+                "Furnished",
+                "Unfurnished",
+                "Semi-Furnished",
+            ],
             "facing": ["East", "North", "South", "West", "East"],
             "legal_status": ["RERA", "RERA", "Freehold", "RERA", "RERA"],
             # Amenity / NLP Flags

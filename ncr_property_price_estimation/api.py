@@ -1,21 +1,16 @@
 """
-Yields hyper-local spatial audits (H3 Spatial Medians), 
+Yields hyper-local spatial audits (H3 Spatial Medians),
 "Best Deal" discovery, and ML-driven price benchmarks.
 """
 
 import os
 from contextlib import asynccontextmanager
-from typing import Literal, Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-
-# Project-level imports at module load (not mid-file)
-from ncr_property_price_estimation.intelligence.engine import IntelligenceEngine
-from ncr_property_price_estimation.data.geo_enrichment import GeoEnrichmentService
 
 # ---------------------------------------------------------------------------
 # Ensure package imports work when running via uvicorn
@@ -24,10 +19,11 @@ from ncr_property_price_estimation.config import (
     API_HOST,
     API_PORT,
     MLFLOW_EXPERIMENT_NAME,
-    MLFLOW_MODEL_NAME,
-    MLFLOW_TRACKING_URI,
-    MODELS_DIR,
 )
+from ncr_property_price_estimation.data.geo_enrichment import GeoEnrichmentService
+
+# Project-level imports at module load (not mid-file)
+from ncr_property_price_estimation.intelligence.engine import IntelligenceEngine
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -68,86 +64,12 @@ PIPELINE_INPUT_COLUMNS = [
 # ---------------------------------------------------------------------------
 # Pydantic schemas — strict Literal constraints for categoricals
 # ---------------------------------------------------------------------------
-class PropertyInput(BaseModel):
-    """Input schema for a single property prediction."""
-
-    area: float = Field(..., gt=0, description="Built-up area in sqft")
-    bedrooms: int = Field(..., ge=1, description="Number of bedrooms")
-    bathrooms: int | None = Field(None, ge=0, description="Number of bathrooms")
-
-    prop_type: Literal["Apartment", "Builder Floor", "Independent House"] = Field(
-        ..., description="Property type"
-    )
-    furnishing_status: Literal["Fully-Furnished", "Semi-Furnished", "Unfurnished", "Unknown"] = Field(
-        "Semi-Furnished", description="Furnishing status"
-    )
-    legal_status: Literal["Freehold", "Leasehold", "Power of Attorney", "Unknown"] = Field(
-        "Unknown", description="Legal ownership status"
-    )
-
-    city: str = Field(..., description="NCR City (e.g., Gurgaon, Noida)")
-    sector: str = Field(..., description="Sector or Locality Name")
-    property_name: str | None = Field(None, description="Optional Project or Apartment name")
-
-    # High-Performance Binary Catalyst Flags
-    is_rera_registered: bool = False
-    is_luxury: bool = False
-    is_gated_community: bool = False
-    is_vastu_compliant: bool = False
-    is_servant_room: bool = False
-    is_study_room: bool = False
-    is_store_room: bool = False
-    is_pooja_room: bool = False
-    has_pool: bool = False
-    has_gym: bool = False
-    has_lift: bool = False
-    is_near_metro: bool = False
-    has_power_backup: bool = False
-    is_corner_property: bool = False
-    is_park_facing: bool = False
-    no_brokerage: bool = False
-    bachelors_allowed: bool = False
-    is_standalone: bool = False
-    is_owner_listing: bool = False
-
-
-class PredictionResponse(BaseModel):
-    """Output schema for a single prediction."""
-
-    price_per_sqft: float = Field(..., description="Predicted price in ₹/sqft")
-    estimated_market_value: float = Field(
-        ..., description="Estimated total price (price_per_sqft × area)"
-    )
-    predicted_monthly_rent: float = Field(..., description="Predicted monthly rent")
-    property_name: str | None = Field(None, description="Project or Property name provided")
-    intelligence_suite: dict[str, Any] = Field(..., description="ROI Intelligence analysis")
-    recommendations: list[dict[str, Any]] = Field(default_factory=list, description="Top 5 alternative localities")
-    similar_listings: list[dict[str, Any]] = Field(default_factory=list, description="Top 5 real-world historical matches")
-
-
-class HealthResponse(BaseModel):
-    status: str
-    model_loaded: bool
-    model_stage: str | None = None
-
-
-class DiscoverRequest(BaseModel):
-    city: str
-    listing_type: Literal["buy", "rent"]
-    bhk: list[int]
-    budget_min: float
-    budget_max: float
-    area_min: float | None = None
-    area_max: float | None = None
-    sort_by: Literal["yield", "price_low", "price_high", "roi", "area"] = "yield"
-
-
-
-class ModelInfoResponse(BaseModel):
-    sales_version: str | None = None
-    rentals_version: str | None = None
-    experiment_name: str
-
+from ncr_property_price_estimation.schemas import (
+    DiscoverRequest,
+    ModelInfoResponse,
+    PredictionResponse,
+    PropertyInput,
+)
 
 # ---------------------------------------------------------------------------
 # Global state — populated during lifespan
@@ -158,50 +80,8 @@ _model_meta: dict[str, Any] = {}
 _locality_index: dict[str, Any] = {}
 _discovery_pool: pd.DataFrame = pd.DataFrame()
 _hotspots_cache: dict[str, list] = {"buy": [], "rent": []}
-
-
-# ---------------------------------------------------------------------------
-# Model loading helpers
-# ---------------------------------------------------------------------------
-def _try_mlflow_load(mode: str):
-    """Attempt to load a model from MLflow registry (Staging stage)."""
-    try:
-        import mlflow
-        import mlflow.sklearn
-
-        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-
-        # We look for staging models
-        model_name = f"{MLFLOW_MODEL_NAME}_{mode}"
-        model_uri = f"models:/{model_name}/Staging"
-        model = mlflow.sklearn.load_model(model_uri)
-
-        client = mlflow.tracking.MlflowClient()
-        version = None
-        try:
-            versions = client.get_latest_versions(model_name, stages=["Staging"])
-            if versions:
-                version = versions[0].version
-        except Exception:
-            pass
-
-        return model, {"version": version, "source": f"mlflow_registry_{mode}"}
-    except Exception as exc:
-        print(f"[model-load] Failed for {mode}: {exc}")
-        return None, None
-
-def _try_joblib_load(mode: str):
-    """Fallback to local joblib."""
-    path = MODELS_DIR / mode / f"pipeline_{mode}.joblib"
-    if not path.exists():
-        return None, None
-    try:
-        import joblib
-        model = joblib.load(path)
-        return model, {"version": "local", "source": str(path)}
-    except Exception as e:
-        print(f"[joblib] Failed to load {mode}: {e}")
-        return None, None
+_featured_cache: dict[str, list] = {"buy": [], "rent": []}
+_metro_stations: list[dict[str, Any]] = []
 
 
 # ---------------------------------------------------------------------------
@@ -210,49 +90,71 @@ def _try_joblib_load(mode: str):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _models, _model_meta
-    
+
+    from ncr_property_price_estimation.modeling.model_loader import load_model
+    from ncr_property_price_estimation.spatial.h3_engine import H3Engine
+
+    # 1. Load ML Models
     for mode in ["sales", "rentals"]:
-        model, meta = _try_mlflow_load(mode)
-        if model is None:
-            model, meta = _try_joblib_load(mode)
-        
+        model, meta = load_model(mode)
         if model is None:
             print(f"[CRITICAL] Could not load {mode} model!")
-            continue # Try next or raise? 
-            
+            continue
+
         _models[mode] = model
         _model_meta[mode] = meta
         print(f"[model-load] {mode.upper()} loaded from {meta['source']}")
 
-    # Load Locality Intelligence Index
+    # 2. Load Locality Intelligence Index
     try:
         import json
-        from ncr_property_price_estimation.config import PROJ_ROOT, DATA_DIR, logger
+
+        from ncr_property_price_estimation.config import DATA_DIR, logger
+
         index_path = DATA_DIR / "locality_intelligence_index.json"
-        
+
         if index_path.exists():
-            with open(index_path, "r") as f:
+            with open(index_path) as f:
                 data = json.load(f)
+                # Normalize city keys to match parquet convention
+                _KEY_NORMALIZE = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}
+                normalized = {}
+                for k, v in data.items():
+                    normalized[_KEY_NORMALIZE.get(k, k)] = v
                 _locality_index.clear()
-                _locality_index.update(data)
-            logger.info(f"[model-load] Locality Intelligence Index loaded with {len(_locality_index)} cities from {index_path}")
+                _locality_index.update(normalized)
+            logger.info(
+                f"[model-load] Locality Intelligence Index loaded with {len(_locality_index)} cities: {list(_locality_index.keys())}"
+            )
         else:
-            logger.warning(f"[model-load] WARNING: locality_intelligence_index.json not found at {index_path.absolute()}")
+            logger.warning(
+                f"[model-load] WARNING: locality_intelligence_index.json not found at {index_path.absolute()}"
+            )
     except Exception as e:
         logger.error(f"[model-load] Failed to load locality index: {e}")
 
-    # Load Discovery Pool
+    # 3. Load Discovery Pool
     try:
-        from ncr_property_price_estimation.config import PROJ_ROOT
+        from ncr_property_price_estimation.config import PROJ_ROOT, logger
+
         s_path = PROJ_ROOT / "data" / "model" / "model_sales.parquet"
         r_path = PROJ_ROOT / "data" / "model" / "model_rentals.parquet"
-        
+
         needed_cols = [
-            "city", "sector", "society", "listing_type", 
-            "bedrooms", "bathrooms", "area", "price_per_sqft",
-            "h3_res8", "h3_median_price", "h3_listings_count"
+            "city",
+            "sector",
+            "society",
+            "listing_type",
+            "bedrooms",
+            "bathrooms",
+            "area",
+            "price_per_sqft",
+            "h3_res8",
+            "h3_median_price",
+            "h3_listings_count",
+            "prop_type",
         ]
-        
+
         if s_path.exists() and r_path.exists():
             s_pool = pd.read_parquet(s_path, columns=needed_cols)
             r_pool = pd.read_parquet(r_path, columns=needed_cols)
@@ -260,81 +162,135 @@ async def lifespan(app: FastAPI):
             r_pool["total_price"] = (r_pool["price_per_sqft"] * r_pool["area"]).round(0)
             s_pool["area"] = s_pool["area"].round(0)
             r_pool["area"] = r_pool["area"].round(0)
-            
-            # Pre-concat deduplication for speed
+
             s_pool.drop_duplicates(inplace=True)
             r_pool.drop_duplicates(inplace=True)
-            
+
             global _discovery_pool, _hotspots_cache
             _discovery_pool = pd.concat([s_pool, r_pool], ignore_index=True)
             _discovery_pool["society"] = _discovery_pool["society"].astype(str).str.strip()
-            
-            # --- Locality Healer (Recover Unknown sectors from Society Names) ---
-            # This handles the data quality gap in Ghaziabad by back-filling info from known indices
+
+            # Locality Healer (Recover Unknown sectors from Society Names)
             def _heal_locality(row):
                 curr_sector = str(row["sector"])
                 if curr_sector.lower() == "unknown":
                     soci = str(row["society"])
-                    db_city = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(row["city"], row["city"])
-                    # Check if society name is actually a known sector in this city
+                    db_city = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(
+                        row["city"], row["city"]
+                    )
                     if soci in _locality_index.get(db_city, {}):
                         return soci
-                    # Fallback to city name for broad matching
                     return f"{row['city']} (General)"
                 return curr_sector
 
             _discovery_pool["sector"] = _discovery_pool.apply(_heal_locality, axis=1)
-            
             _discovery_pool.drop_duplicates(
-                subset=["city", "sector", "society", "bedrooms", "area", "total_price", "listing_type"],
-                inplace=True
+                subset=[
+                    "city",
+                    "sector",
+                    "society",
+                    "bedrooms",
+                    "area",
+                    "total_price",
+                    "listing_type",
+                ],
+                inplace=True,
             )
-            # Final safety pass: drop any perfectly identical rows
             _discovery_pool.drop_duplicates(inplace=True)
-            
-            # 2. Faster H3 coordinate resolution...
-            # This is ~88x faster than per-row .apply()
-            import h3
-            unique_h3 = _discovery_pool["h3_res8"].unique()
-            h3_map = {}
-            for h in unique_h3:
-                try:
-                    lat, lng = h3.cell_to_latlng(h)
-                    h3_map[h] = {"latitude": lat, "longitude": lng}
-                except:
-                    h3_map[h] = {"latitude": None, "longitude": None}
-            
-            _discovery_pool["latitude"] = _discovery_pool["h3_res8"].map(lambda x: h3_map[x]["latitude"])
-            _discovery_pool["longitude"] = _discovery_pool["h3_res8"].map(lambda x: h3_map[x]["longitude"])
 
-            # 3. Pre-compute Market Hotspots for Heatmap (Zero-Load Strategy)
+            # H3 Coordinate Resolution (via H3Engine)
+            _discovery_pool, h3_map = H3Engine.resolve_coordinates(_discovery_pool)
+
+            # Back-fill Locality Index with H3 Coordinates
+            H3Engine.backfill_locality_coordinates(_discovery_pool, _locality_index)
+
+            # Pre-compute Hotspots and Featured Properties
             for listing_type in ["buy", "rent"]:
-                sub_df = _discovery_pool[_discovery_pool["listing_type"].str.lower() == listing_type].copy()
-                if sub_df.empty:
-                    continue
-                
-                # Group by H3 and calculate median price + density
-                hotspots = sub_df.groupby(["h3_res8", "city"]).agg(
-                    median_price_sqft=("price_per_sqft", "median"),
-                    density=("price_per_sqft", "count")
-                ).reset_index()
-                
-                # Attach coordinates from our fast map
-                hotspots["latitude"] = hotspots["h3_res8"].map(lambda x: h3_map[x]["latitude"])
-                hotspots["longitude"] = hotspots["h3_res8"].map(lambda x: h3_map[x]["longitude"])
-                
-                _hotspots_cache[listing_type] = hotspots.dropna(subset=["latitude"]).to_dict(orient="records")
+                _hotspots_cache[listing_type] = H3Engine.compute_hotspots(
+                    _discovery_pool, h3_map, listing_type
+                )
+                _featured_cache[listing_type] = H3Engine.compute_featured(
+                    _discovery_pool, listing_type, _locality_index
+                )
 
-            logger.info(f"[model-load] Discovery Pool loaded ({len(_discovery_pool)} listings). Hotspots cached: Buy({len(_hotspots_cache['buy'])}), Rent({len(_hotspots_cache['rent'])})")
+            logger.info(
+                f"[model-load] Discovery Pool loaded ({len(_discovery_pool)} listings). "
+                f"Hotspots cached: Buy({len(_hotspots_cache['buy'])}), Rent({len(_hotspots_cache['rent'])})"
+            )
         else:
             logger.warning("[model-load] Discovery Parquet files missing!")
     except Exception as e:
         logger.error(f"[model-load] Failed to load discovery pool: {e}")
 
+    # 4. Load Metro Stations for Proximity Engine
+    try:
+        from ncr_property_price_estimation.config import DATA_DIR
+
+        metro_path = DATA_DIR / "metro_stations.json"
+        if metro_path.exists():
+            with open(metro_path) as f:
+                _metro_stations.clear()
+                _metro_stations.extend(json.load(f))
+            print(
+                f"[model-load] Metro Proximity Engine active with {len(_metro_stations)} stations."
+            )
+    except Exception as e:
+        print(f"[model-load] Failed to load metro stations: {e}")
+
+    # 5. Pre-Compute Vectorized Spatial Proximity
+    try:
+        from ncr_property_price_estimation.config import logger
+
+        if not _discovery_pool.empty and _metro_stations:
+            import numpy as np
+
+            logger.info(
+                "[model-load] Running highly-optimized vectorized GPS distance calculation on 43,000+ records..."
+            )
+
+            metro_lats = np.array([s["lat"] for s in _metro_stations])
+            metro_lons = np.array([s["lon"] for s in _metro_stations])
+
+            prop_lats = _discovery_pool["latitude"].to_numpy(dtype=float)
+            prop_lons = _discovery_pool["longitude"].to_numpy(dtype=float)
+
+            # Handle possible NaNs in properties coordinates
+            valid_mask = ~np.isnan(prop_lats) & ~np.isnan(prop_lons)
+
+            # Broadcasting: prop_lats shape (N, 1), metro_lats shape (M,) -> (N, M)
+            lat1 = np.radians(prop_lats[valid_mask, None])
+            lon1 = np.radians(prop_lons[valid_mask, None])
+            lat2 = np.radians(metro_lats)
+            lon2 = np.radians(metro_lons)
+
+            dlon = lon2 - lon1
+            dlat = lat2 - lat1
+            a = np.sin(dlat / 2.0) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2.0) ** 2
+            c = 2 * np.arcsin(np.sqrt(a))
+            distances_km = 6371 * c
+
+            min_dist = np.min(distances_km, axis=1)
+
+            # Backfill into dataframe
+            _discovery_pool["gps_dist_to_metro"] = np.nan
+            _discovery_pool["gps_is_near_metro"] = False
+
+            _discovery_pool.loc[valid_mask, "gps_dist_to_metro"] = min_dist
+            _discovery_pool.loc[valid_mask, "gps_is_near_metro"] = min_dist <= 1.5
+
+            near_metro_count = int(_discovery_pool["gps_is_near_metro"].sum())
+            logger.info(
+                f"[model-load] Vectorized Spatial Pre-computation complete. {near_metro_count} total properties are transit-oriented."
+            )
+
+    except Exception as e:
+        logger.error(f"[model-load] Failed spatial pre-computation: {e}")
+
     yield
     _models.clear()
     _locality_index.clear()
     _discovery_pool = pd.DataFrame()
+    _metro_stations.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -366,6 +322,7 @@ app.add_middleware(
 _intelligence = IntelligenceEngine()
 _geo_service = GeoEnrichmentService()
 
+
 def _sanitize_float(val: Any) -> float:
     """Ensure float is JSON compliant (No NaN or Inf)."""
     try:
@@ -376,24 +333,31 @@ def _sanitize_float(val: Any) -> float:
     except (ValueError, TypeError):
         return 0.0
 
+
 async def _predict_internal(inputs: list[PropertyInput]):
     """Dual-model Prediction with ROI Intelligence."""
     from ncr_property_price_estimation.features import (
-        NUMERIC_FEATURES, AMENITY_FEATURES, CATEGORICAL_FEATURES
+        AMENITY_FEATURES,
+        CATEGORICAL_FEATURES,
+        NUMERIC_FEATURES,
     )
-    
+
     # ── Pure ML Inference (No Hardcoding) ────────────────────
     PIPELINE_FEATURES = (
-        ["society", "sector", "city"] + 
-        NUMERIC_FEATURES + 
-        AMENITY_FEATURES + 
-        CATEGORICAL_FEATURES
+        ["society", "sector", "city"] + NUMERIC_FEATURES + AMENITY_FEATURES + CATEGORICAL_FEATURES
     )
 
     rows = []
     for inp in inputs:
-        row = inp.dict()
-        
+        # Create a flat dictionary for the pipeline while maintaining the grouped API
+        row = inp.dict(by_alias=True)
+
+        # Flatten grouped fields for ML Pipeline (Strictly Internal)
+        for group in ["amenities", "location_score", "features"]:
+            if group in row and isinstance(row[group], dict):
+                group_data = row.pop(group)
+                row.update(group_data)
+
         # Pass through city (CityNormalizer in pipeline handles Gurugram)
         row["city"] = inp.city
         row["society"] = inp.property_name or "Unknown"
@@ -401,16 +365,46 @@ async def _predict_internal(inputs: list[PropertyInput]):
         # Explicit numeric coercion for safety
         row["area"] = float(inp.area)
         row["bedrooms"] = int(inp.bedrooms)
-        row["bathrooms"] = int(inp.bathrooms)
-        
+        row["bathrooms"] = int(inp.bathrooms or 0)
+
         row["h3_median_price"] = np.nan
         row["h3_listings_count"] = np.nan
-        
+
+        # Extract metadata for Intelligence Engines
+        is_metro_input = getattr(inp.location, "is_near_metro", False)
+
+        # ── Automated Metro Proximity Engine ───────────────────
+        # Use sector-level coordinates to verify metro access
+        db_city = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(inp.city, inp.city)
+        sector_info = _locality_index.get(db_city, {}).get(inp.sector, {})
+        lat, lon = sector_info.get("lat"), sector_info.get("lon")
+
+        is_metro = is_metro_input
+        dist_to_metro = None
+
+        if lat and lon and _metro_stations:
+            # Simple Haversine (Vectorized-ish via min)
+            from math import asin, cos, radians, sin, sqrt
+
+            def haversine(la1, lo1, la2, lo2):
+                la1, lo1, la2, lo2 = map(radians, [la1, lo1, la2, lo2])
+                dlo = lo2 - lo1
+                dla = la2 - la1
+                a = sin(dla / 2) ** 2 + cos(la1) * cos(la2) * sin(dlo / 2) ** 2
+                return 2 * asin(sqrt(a)) * 6371  # KM
+
+            distances = [haversine(lat, lon, s["lat"], s["lon"]) for s in _metro_stations]
+            if distances:
+                dist_to_metro = min(distances)
+                # Auto-threshold: 1.5km is generally considered 'near' in NCR
+                if dist_to_metro <= 1.5:
+                    is_metro = True
+
         # ── Inference Schema Healer ──────────────────────────────
         for col in PIPELINE_FEATURES:
             if col not in row and col != "geo_median":
                 row[col] = 0 if col not in CATEGORICAL_FEATURES else "Unknown"
-        
+
         ordered_row = {col: row.get(col, 0) for col in PIPELINE_FEATURES if col != "geo_median"}
         rows.append(ordered_row)
 
@@ -418,63 +412,69 @@ async def _predict_internal(inputs: list[PropertyInput]):
 
     # 1. SALES PREDICTION (Batch)
     sales_price_sqft = np.expm1(_models["sales"].predict(df))
-    
+
     # 2. RENTALS PREDICTION (Batch)
     rent_sqft = np.expm1(_models["rentals"].predict(df))
 
     results = []
     for i, inp in enumerate(inputs):
-        # ── Pure ML Discovery 
+        # ── Pure ML Discovery
         price_sqft = sales_price_sqft[i]
-        
+
+        # ML Model Logic for "Any"
+        # Since the model needs a categorical input, we default to "Apartment" for weight calculation
+        actual_prop_type = inp.prop_type
+        if actual_prop_type == "Any":
+            actual_prop_type = "Apartment"
+        # ── Pure ML Discovery
+        price_sqft = sales_price_sqft[i]
+
         # Localized reference for ROI analysis only
-        localized_median = _locality_index.get(inp.city, {}).get(inp.sector, {}).get("median_price_sqft", 0)
-        
+        db_city = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(inp.city, inp.city)
+        localized_median = (
+            _locality_index.get(db_city, {}).get(inp.sector, {}).get("median_price_sqft", 0)
+        )
+
         # Calculate totals
         price = price_sqft * inp.area
         rent = rent_sqft[i] * inp.area
-        
+
         # Resolve Geo-Median for risk scoring
-        ref_median = localized_median if localized_median > 0 else 0
+        # localized_median is price_per_sqft → convert to total price for comparison
+        ref_median = (localized_median * inp.area) if localized_median > 0 else 0
 
         # Intelligence Analysis (typed scalar API — no dict key ambiguity)
         analysis = _intelligence.evaluate_property(
             total_price=price,
             monthly_rent=rent,
-            is_near_metro=inp.is_near_metro,
+            is_near_metro=is_metro,
             geo_median=ref_median,
         )
 
-        # Generate Alternatives
+        # Generate Alternatives (V2: Proximity Distance Aware)
+        current_loc = _locality_index.get(db_city, {}).get(inp.sector, {})
         alternatives = _intelligence.recommend_alternatives(
             locality_index=_locality_index,
-            current_city=inp.city,
+            current_city=db_city,
             current_sector=inp.sector,
             user_budget_sqft=float(sales_price_sqft[i]),
-            current_yield=analysis.get("rental_yield_pct", 0)
+            current_yield=analysis.get("yield_pct", 0),
+            current_lat=current_loc.get("lat"),
+            current_lon=current_loc.get("lon"),
         )
 
         # Generate Discovery Matches
         listing_matches = _intelligence.find_similar_listings(
             pool_df=_discovery_pool,
             city=inp.city,
-            listing_type="buy" if inp.prop_type != "Rent" else "rent", # Map prop_type if needed
+            listing_type=inp.listing_type,
             target_price=price,
             target_area=inp.area,
-            target_bhk=inp.bedrooms
+            target_bhk=inp.bedrooms,
+            target_sector=inp.sector,
+            locality_index=_locality_index,
+            target_prop_type=inp.prop_type,
         )
-
-        # Last-Mile "Best Deal" Deduplication (Alpha-Normalized)
-        import re
-        best_deals = {}
-        for l_match in listing_matches:
-            # Alpha-only key to ignore hidden spaces/special chars
-            norm_soc = re.sub(r'[^a-z0-9]', '', str(l_match["society"]).lower())
-            lt = l_match.get("listing_type", "buy")
-            key = (norm_soc, round(l_match.get("area", 0), 0), l_match.get("bhk", 0), lt)
-            
-            if key not in best_deals or l_match["price"] < best_deals[key]["price"]:
-                best_deals[key] = l_match
 
         # ── 4. Build sanitized response ──────────────────────────────────
         results.append(
@@ -485,7 +485,7 @@ async def _predict_internal(inputs: list[PropertyInput]):
                 property_name=inp.property_name,
                 intelligence_suite=analysis,
                 recommendations=alternatives,
-                similar_listings=list(best_deals.values())
+                similar_listings=listing_matches,
             )
         )
 
@@ -507,7 +507,7 @@ def health():
     return {
         "status": "healthy",
         "sales_loaded": "sales" in _models,
-        "rentals_loaded": "rentals" in _models
+        "rentals_loaded": "rentals" in _models,
     }
 
 
@@ -544,42 +544,32 @@ def discover(req: DiscoverRequest):
     """Discover real properties based on criteria."""
     if _discovery_pool.empty:
         raise HTTPException(status_code=503, detail="Discovery pool not loaded")
-        
+
     results = _intelligence.discover_properties(
         pool_df=_discovery_pool,
         locality_index=_locality_index,
-        city=req.city,
-        listing_type=req.listing_type,
-        bhk_list=req.bhk,
-        budget_min=req.budget_min,
-        budget_max=req.budget_max,
-        area_min=req.area_min,
-        area_max=req.area_max,
-        sort_by=req.sort_by
+        req=req,
     )
-    # Last-Mile "Best Deal" Deduplication (Alpha-Normalized)
-    import re
-    best_deals = {}
-    for res in results:
-        norm_soc = re.sub(r'[^a-z0-9]', '', str(res["society"]).lower())
-        lt = res.get("listing_type", req.listing_type)
-        key = (norm_soc, round(res.get("area", 0), 0), res.get("bhk", 0), lt)
-        
-        if key not in best_deals or res["price"] < best_deals[key]["price"]:
-            best_deals[key] = res
-            
-    return {"listings": list(best_deals.values())}
+    return {"listings": results}
 
 
 @app.get("/intelligence/hotspots")
-async def get_hotspots(listing_type: Literal["buy", "rent"] = "buy"):
-    """Fetch pre-cached H3 price density hotspots."""
+async def get_hotspots(listing_type: Literal["buy", "rent"] = "buy", city: str | None = None):
+    """Fetch pre-cached H3 price density hotspots and featured properties."""
+    featured = _featured_cache.get(listing_type, [])
+    hotspots = _hotspots_cache.get(listing_type, [])
+
+    if city and city != "Entire NCR":
+        db_city = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(city, city)
+        featured = [f for f in featured if f.get("city") == db_city]
+        hotspots = [h for h in hotspots if h.get("city") == db_city]
+
     return {
         "status": "success",
         "listing_type": listing_type,
-        "hotspots": _hotspots_cache.get(listing_type, []),
+        "hotspots": hotspots,
+        "featured": featured,
     }
-
 
 
 @app.get("/debug/model")
@@ -591,7 +581,9 @@ def debug_model():
             "type": str(type(model)),
             "meta": _model_meta.get(mode),
             "steps": [str(s) for s in model.steps] if hasattr(model, "steps") else None,
-            "features": list(model.feature_names_in_) if hasattr(model, "feature_names_in_") else None,
+            "features": list(model.feature_names_in_)
+            if hasattr(model, "feature_names_in_")
+            else None,
         }
     return info
 
@@ -603,7 +595,7 @@ def debug_locality():
         "is_empty": len(_locality_index) == 0,
         "cities": list(_locality_index.keys()),
         "sample_localities": {c: list(v.keys())[:5] for c, v in _locality_index.items()},
-        "total_cities": len(_locality_index)
+        "total_cities": len(_locality_index),
     }
 
 
@@ -636,6 +628,13 @@ def model_info():
         rentals_version=_model_meta.get("rentals", {}).get("version"),
         experiment_name=MLFLOW_EXPERIMENT_NAME,
     )
+
+
+@app.get("/locality/list")
+def locality_list(city: str):
+    """Return sorted list of localities for a given city."""
+    city_data = _locality_index.get(city, {})
+    return {"city": city, "localities": sorted(list(city_data.keys()))}
 
 
 # ---------------------------------------------------------------------------

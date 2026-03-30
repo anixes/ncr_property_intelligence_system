@@ -1,5 +1,5 @@
 """
-Model Quality Gate tests. 
+Model Quality Gate tests.
 
 These tests run on the ACTUAL trained model artifacts and datasets.
 Deployment should FAIL if these tests do not pass.
@@ -7,11 +7,12 @@ Deployment should FAIL if these tests do not pass.
 Highlight: R^2 > 0.40 threshold for both Sales and Rentals.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
 from joblib import load
-from pathlib import Path
 from sklearn.metrics import r2_score
 
 # ---------------------------------------------------------------------------
@@ -32,34 +33,37 @@ RENTALS_DATA_PATH = DATA_DIR / "model_rentals.parquet"
 # Shared Validation Logic
 # ---------------------------------------------------------------------------
 
+
 def validate_model_performance(model_path, data_path, threshold=0.40):
     """Common logic for R^2 quality gate."""
     if not model_path.exists():
         pytest.fail(f"Model artifact missing: {model_path}")
     if not data_path.exists():
         pytest.fail(f"Dataset missing: {data_path}")
-        
+
     # Load model and data
     pipeline = load(model_path)
     df = pd.read_parquet(data_path)
-    
+
     # Prepare X, y
     X = df.drop(columns=["price_per_sqft"])
     print(f"\n[DEBUG] X columns: {X.columns.tolist()}")
     y_true = np.log1p(df["price_per_sqft"])
-    
+
     # Predict
     y_pred = pipeline.predict(X)
-    
+
     # Metric
     r2 = r2_score(y_true, y_pred)
-    
+
     assert r2 > threshold, f"Model R^2 ({r2:.4f}) is below threshold ({threshold})"
     return r2
+
 
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestSalesModelQuality:
     @pytest.mark.skipif(not SALES_MODEL_PATH.exists(), reason="Sales model not found")
@@ -73,9 +77,9 @@ class TestSalesModelQuality:
         pipeline = load(SALES_MODEL_PATH)
         df = pd.read_parquet(SALES_DATA_PATH).head(100)
         X = df.drop(columns=["price_per_sqft"])
-        
+
         preds = pipeline.predict(X)
-        
+
         assert np.all(np.isfinite(preds)), "Model produced non-finite predictions"
         # 7.0 (exp ~1100) to 14.0 (exp ~1.2M)
         assert preds.min() > 7.0, f"Min prediction {preds.min():.2f} too low"
@@ -94,9 +98,9 @@ class TestRentalsModelQuality:
         pipeline = load(RENTALS_MODEL_PATH)
         df = pd.read_parquet(RENTALS_DATA_PATH).head(100)
         X = df.drop(columns=["price_per_sqft"])
-        
+
         preds = pipeline.predict(X)
-        
+
         assert np.all(np.isfinite(preds)), "Model produced non-finite predictions"
         # 2.0 (exp ~6) to 10.0 (exp ~22k)
         assert preds.min() > 2.0, f"Min prediction {preds.min():.2f} too low"
