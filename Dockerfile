@@ -52,7 +52,7 @@ COPY --from=builder /install/bin /usr/local/bin
 # Copy source code and artifacts with correct ownership
 COPY --chown=appuser:appgroup ncr_property_price_estimation/ ncr_property_price_estimation/
 COPY --chown=appuser:appgroup models/ models/
-COPY --chown=appuser:appgroup data/locality_intelligence_index.json data/
+COPY --chown=appuser:appgroup data/ data/
 
 # Switch to non-root user
 USER appuser

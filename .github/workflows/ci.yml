@@ -90,4 +90,4 @@ jobs:
       - name: Build API image
         run: docker build -t ncr-property-api:test .
       - name: Build Frontend image
-        run: docker build -t ncr-property-frontend:test ./frontend
+        run: docker build -t ncr-property-frontend:test -f Dockerfile.frontend .
