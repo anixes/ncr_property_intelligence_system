@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 # ---------------------------------------------------------------------------
@@ -18,11 +18,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from ncr_property_price_estimation.config import (
     API_HOST,
     API_PORT,
+    DATA_DIR,
     MLFLOW_EXPERIMENT_NAME,
+    PROJ_ROOT,
 )
 from ncr_property_price_estimation.data.geo_enrichment import GeoEnrichmentService
-
-# Project-level imports at module load (not mid-file)
 from ncr_property_price_estimation.intelligence.engine import IntelligenceEngine
 
 # ---------------------------------------------------------------------------
@@ -108,8 +108,7 @@ async def lifespan(app: FastAPI):
     # 2. Load Locality Intelligence Index
     try:
         import json
-
-        from ncr_property_price_estimation.config import DATA_DIR, logger
+        from ncr_property_price_estimation.config import logger
 
         index_path = DATA_DIR / "locality_intelligence_index.json"
 
@@ -135,7 +134,7 @@ async def lifespan(app: FastAPI):
 
     # 3. Load Discovery Pool
     try:
-        from ncr_property_price_estimation.config import PROJ_ROOT, logger
+        from ncr_property_price_estimation.config import logger
 
         s_path = PROJ_ROOT / "data" / "model" / "model_sales.parquet"
         r_path = PROJ_ROOT / "data" / "model" / "model_rentals.parquet"
@@ -224,8 +223,6 @@ async def lifespan(app: FastAPI):
 
     # 4. Load Metro Stations for Proximity Engine
     try:
-        from ncr_property_price_estimation.config import DATA_DIR
-
         metro_path = DATA_DIR / "metro_stations.json"
         if metro_path.exists():
             with open(metro_path) as f:
@@ -325,6 +322,7 @@ _geo_service = GeoEnrichmentService()
 
 def _sanitize_float(val: Any) -> float:
     """Ensure float is JSON compliant (No NaN or Inf)."""
+    import numpy as np
     try:
         f_val = float(val)
         if np.isnan(f_val) or np.isinf(f_val):
@@ -336,6 +334,7 @@ def _sanitize_float(val: Any) -> float:
 
 async def _predict_internal(inputs: list[PropertyInput]):
     """Dual-model Prediction with ROI Intelligence."""
+    import numpy as np
     from ncr_property_price_estimation.features import (
         AMENITY_FEATURES,
         CATEGORICAL_FEATURES,
@@ -506,7 +505,7 @@ def health(response: Response):
     """Liveness check with model status."""
     if _discovery_pool.empty:
         response.status_code = 503
-        
+
     return {
         "status": "healthy" if not _discovery_pool.empty else "degraded",
         "sales_loaded": "sales" in _models,
@@ -652,8 +651,6 @@ def debug_hotspots():
 @app.get("/debug/fs")
 def debug_fs():
     """List filesystem contents for data directory debug."""
-    import os
-    from ncr_property_price_estimation.config import DATA_DIR, PROJ_ROOT
     try:
         data_model = os.listdir(PROJ_ROOT / "data" / "model")
     except Exception as e:
