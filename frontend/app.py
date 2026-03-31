@@ -531,33 +531,32 @@ if mode == "Market Analyzer":
         else:
             metro_box = ""  # Plan: collapse entirely when null, don't show "Unknown"
 
+        overval = intel.get("overvaluation_pct", 0)
+
         if intent == "Rent":
-            roi_html = f"""
-            <div class="roi-row">
-                <div class="roi-item">
-                    <p class="roi-label">Market Position</p>
-                    <p class="roi-value">{intel.get("overvaluation_pct", 0)}%</p>
-                </div>
-            """ + metro_box + "</div>"
-            st.markdown(roi_html, unsafe_allow_html=True)
+            parts = [
+                '<div class="roi-row">',
+                '<div class="roi-item"><p class="roi-label">Market Position</p>',
+                f'<p class="roi-value">{overval}%</p></div>',
+                metro_box,
+                "</div>",
+            ]
+            st.markdown("".join(parts), unsafe_allow_html=True)
         else:
-            roi_html = f"""
-            <div class="roi-row">
-                <div class="roi-item">
-                    <p class="roi-label">Rental Yield</p>
-                    <p class="roi-value">{intel.get("yield_pct", 0)}%</p>
-                </div>
-                <div class="roi-item">
-                    <p class="roi-label">Market Risk</p>
-                    <p class="roi-value">{risk_data.get("label", "N/A")}</p>
-                </div>
-            """ + metro_box + f"""
-                <div class="roi-item">
-                    <p class="roi-label">Market Position</p>
-                    <p class="roi-value">{intel.get("overvaluation_pct", 0)}%</p>
-                </div>
-            </div>"""
-            st.markdown(roi_html, unsafe_allow_html=True)
+            yld_pct = intel.get("yield_pct", 0)
+            risk_label = risk_data.get("label", "N/A")
+            parts = [
+                '<div class="roi-row">',
+                '<div class="roi-item"><p class="roi-label">Rental Yield</p>',
+                f'<p class="roi-value">{yld_pct}%</p></div>',
+                '<div class="roi-item"><p class="roi-label">Market Risk</p>',
+                f'<p class="roi-value">{risk_label}</p></div>',
+                metro_box,
+                '<div class="roi-item"><p class="roi-label">Market Position</p>',
+                f'<p class="roi-value">{overval}%</p></div>',
+                "</div>",
+            ]
+            st.markdown("".join(parts), unsafe_allow_html=True)
 
         # ── 3. Score Bar ─────────────────────────────────────
         st.progress(max(0.0, min(1.0, score / 10.0)))
