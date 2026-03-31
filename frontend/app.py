@@ -19,8 +19,8 @@ import streamlit as st
 # ---------------------------------------------------------------------------
 # Configuration & Constants
 # ---------------------------------------------------------------------------
-# Default to the internal docker-compose bridge if available, else localhost/LAN
-DEFAULT_API_URL = "http://192.168.29.249:8000"
+# Default to the internal docker-compose bridge if available, else localhost
+DEFAULT_API_URL = "http://localhost:8000"
 API_BASE_URL = os.getenv("API_BASE_URL", DEFAULT_API_URL)
 
 PREDICT_URL = f"{API_BASE_URL}/predict"
@@ -280,7 +280,7 @@ def render_hotspot_map(hotspots=None, listings=None, center_lat=None, center_lon
         layers=layers,
         initial_view_state=view_state,
         tooltip=tooltip,
-        map_style="mapbox://styles/mapbox/dark-v10",
+        map_style="light",  # Standard style (switching from mapbox style to avoid black void)
         height=450,
     )
 
@@ -588,8 +588,8 @@ if mode == "Market Analyzer":
                 )
                 render_hotspot_map(hotspots=hotspot_data, center_lat=28.5, center_lon=77.2, zoom=8)
                 st.markdown("<br>", unsafe_allow_html=True)
-        except Exception:
-            pass
+        except Exception as e:
+            st.error(f"Intelligence Layer Unavailable: {e}")
 
         st.markdown("""<h3 style="margin-bottom:12px;">How it works</h3>""", unsafe_allow_html=True)
         st.markdown(
