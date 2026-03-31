@@ -33,14 +33,18 @@ class H3Engine:
         h3_map: dict[str, dict[str, float | None]] = {}
 
         for h in unique_h3:
-            try:
-                lat, lng = h3.cell_to_latlng(h)
-                h3_map[h] = {"latitude": lat, "longitude": lng}
-            except Exception:
-                h3_map[h] = {"latitude": None, "longitude": None}
+            if not h or pd.isna(h):
+                continue
 
-        pool_df["latitude"] = pool_df["h3_res8"].map(lambda x: h3_map[x]["latitude"])
-        pool_df["longitude"] = pool_df["h3_res8"].map(lambda x: h3_map[x]["longitude"])
+            try:
+                # v4 function
+                lat, lng = h3.cell_to_latlng(str(h))
+                h3_map[str(h)] = {"latitude": float(lat), "longitude": float(lng)}
+            except Exception:
+                h3_map[str(h)] = {"latitude": None, "longitude": None}
+
+        pool_df["latitude"] = pool_df["h3_res8"].map(lambda x: h3_map.get(str(x), {}).get("latitude"))
+        pool_df["longitude"] = pool_df["h3_res8"].map(lambda x: h3_map.get(str(x), {}).get("longitude"))
 
         return pool_df, h3_map
 

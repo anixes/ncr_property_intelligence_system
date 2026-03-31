@@ -620,6 +620,31 @@ def debug_geocoder(mode: Literal["sales", "rentals"] = "sales"):
     }
 
 
+@app.get("/debug/pool")
+def debug_pool():
+    """Inspect the internal discovery pool."""
+    if _discovery_pool.empty:
+        return {"status": "empty", "pool_size": 0}
+    return {
+        "status": "loaded",
+        "pool_size": len(_discovery_pool),
+        "columns": list(_discovery_pool.columns),
+        "sample": _discovery_pool.head(5).to_dict(orient="records"),
+        "city_counts": _discovery_pool["city"].value_counts().to_dict(),
+    }
+
+
+@app.get("/debug/hotspots")
+def debug_hotspots():
+    """Inspect the internal hotspots cache."""
+    return {
+        "buy_count": len(_hotspots_cache.get("buy", [])),
+        "rent_count": len(_hotspots_cache.get("rent", [])),
+        "sample_buy": _hotspots_cache.get("buy", [])[:3],
+        "metro_stations_count": len(_metro_stations),
+    }
+
+
 @app.get("/model-info", response_model=ModelInfoResponse)
 def model_info():
     """Return current model metadata."""
