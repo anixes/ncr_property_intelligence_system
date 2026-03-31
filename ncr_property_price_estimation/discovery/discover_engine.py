@@ -169,7 +169,8 @@ class DiscoverEngine:
                     else None,
                     "dist_to_metro_km": round(dist_val, 2) if dist_val is not None else None,
                     "furnishing_status": str(row["furnishing_status"])
-                    if pd.notna(row.get("furnishing_status")) and str(row.get("furnishing_status", "")).strip() not in ("", "nan", "None")
+                    if pd.notna(row.get("furnishing_status"))
+                    and str(row.get("furnishing_status", "")).strip() not in ("", "nan", "None")
                     else "Unknown",
                 }
             )

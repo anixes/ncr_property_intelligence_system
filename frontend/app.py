@@ -470,7 +470,9 @@ if mode == "Market Analyzer":
         risk_data = intel.get("risk_analysis", {})
 
         if intent == "Rent":
-            st.markdown(f"### Rental Market Analysis: {bedrooms} BHK {prop_type} in {sector}, {city}")
+            st.markdown(
+                f"### Rental Market Analysis: {bedrooms} BHK {prop_type} in {sector}, {city}"
+            )
         else:
             st.markdown(f"### Investment Analysis: {bedrooms} BHK {prop_type} in {sector}, {city}")
 
@@ -486,7 +488,7 @@ if mode == "Market Analyzer":
                 f'<p class="kpi-value">₹{round(rent_sqft, 2)}</p></div>',
                 '<div class="kpi-box"><p class="kpi-label">Value Score</p>',
                 f'<p class="kpi-value"><span class="score-badge {score_class(score)}">{score}/10</span></p></div>',
-                '</div>',
+                "</div>",
             ]
             st.markdown("".join(kpi_parts), unsafe_allow_html=True)
         else:
@@ -514,13 +516,15 @@ if mode == "Market Analyzer":
         metro_dist = data.get("dist_to_metro_km")
         if metro_dist is not None:
             if metro_dist <= 1.5:
-                metro_color = "#4CAF50" # Green (Near)
+                metro_color = "#4CAF50"  # Green (Near)
             elif metro_dist <= 3.0:
-                metro_color = "#FFC107" # Yellow (Moderate)
+                metro_color = "#FFC107"  # Yellow (Moderate)
             else:
-                metro_color = "#F44336" # Red (Far)
+                metro_color = "#F44336"  # Red (Far)
             metro_html = f'<p class="roi-value" style="color: {metro_color}">{metro_dist} km</p>'
-            metro_box = f"<div class='roi-item'><p class='roi-label'>Metro Dist</p>{metro_html}</div>"
+            metro_box = (
+                f"<div class='roi-item'><p class='roi-label'>Metro Dist</p>{metro_html}</div>"
+            )
         else:
             metro_box = ""  # Plan: collapse entirely when null, don't show "Unknown"
 
@@ -651,8 +655,16 @@ if mode == "Market Analyzer":
 
         # Landing Page Alignment (Market Analyzer)
         st.markdown("""<h3 style="margin-bottom:12px;">How it works</h3>""", unsafe_allow_html=True)
-        how_it_works_p2 = "predicts fair-market rent and value-for-money score" if intent == "Rent" else "predict market value, rental yield, and investment score"
-        how_it_works_p3 = "rental market report: predicted rent, area benchmarks, and comparables." if intent == "Rent" else "full investment report: valuation, ROI breakdown, and verified comparables."
+        how_it_works_p2 = (
+            "predicts fair-market rent and value-for-money score"
+            if intent == "Rent"
+            else "predict market value, rental yield, and investment score"
+        )
+        how_it_works_p3 = (
+            "rental market report: predicted rent, area benchmarks, and comparables."
+            if intent == "Rent"
+            else "full investment report: valuation, ROI breakdown, and verified comparables."
+        )
 
         st.markdown(
             f"""
@@ -678,9 +690,17 @@ if mode == "Market Analyzer":
         )
 
         st.markdown("""<h3 style="margin-bottom:12px;">What you get</h3>""", unsafe_allow_html=True)
-        val_p = "AI-predicted monthly rent and area benchmarking based on 43,000+ local NCR records." if intent == "Rent" else "AI-predicted market price per sqft and total value based on 43,000+ local NCR records."
+        val_p = (
+            "AI-predicted monthly rent and area benchmarking based on 43,000+ local NCR records."
+            if intent == "Rent"
+            else "AI-predicted market price per sqft and total value based on 43,000+ local NCR records."
+        )
         score_name = "Value Scores" if intent == "Rent" else "Deal Scores"
-        score_desc = "rent-to-value scores for budget optimization" if intent == "Rent" else "bargain properties comparing list price to market median"
+        score_desc = (
+            "rent-to-value scores for budget optimization"
+            if intent == "Rent"
+            else "bargain properties comparing list price to market median"
+        )
 
         st.markdown(
             f"""
@@ -925,8 +945,16 @@ elif mode == "Property Recommender":
             unsafe_allow_html=True,
         )
         intel_1_h = "Value Arbitrage" if intent == "Rent" else "Yield Arbitrage"
-        intel_1_p = "Surface properties with best value for your budget before they reach the mass market." if intent == "Rent" else "Surface properties with the highest predicted rental returns before they reach the mass market."
-        intel_4_p = "comparison of rent against sector averages." if intent == "Rent" else "comparing the listing to its specific sector median."
+        intel_1_p = (
+            "Surface properties with best value for your budget before they reach the mass market."
+            if intent == "Rent"
+            else "Surface properties with the highest predicted rental returns before they reach the mass market."
+        )
+        intel_4_p = (
+            "comparison of rent against sector averages."
+            if intent == "Rent"
+            else "comparing the listing to its specific sector median."
+        )
 
         st.markdown(
             f"""

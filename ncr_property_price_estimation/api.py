@@ -153,6 +153,8 @@ async def lifespan(app: FastAPI):
             "h3_median_price",
             "h3_listings_count",
             "prop_type",
+            "furnishing_status",
+            "legal_status",
         ]
 
         if s_path.exists() and r_path.exists():
@@ -510,7 +512,7 @@ def health(response: Response):
         "status": "healthy" if not _discovery_pool.empty else "degraded",
         "sales_loaded": "sales" in _models,
         "rentals_loaded": "rentals" in _models,
-        "discovery_size": len(_discovery_pool) if not _discovery_pool.empty else 0
+        "discovery_size": len(_discovery_pool) if not _discovery_pool.empty else 0,
     }
 
 
@@ -602,6 +604,53 @@ def debug_locality():
     }
 
 
+@app.post("/debug/predict-raw")
+async def debug_predict_raw(req: PropertyInput):
+    """Dump the raw model input dictionary and prediction value for parity testing."""
+    if not _models:
+        raise HTTPException(status_code=503, detail="No models loaded")
+
+    # We use predict_batch but override to capture the dataframe state before predict
+    # However, since _predict_internal doesn't return the raw dataframe, we can just
+    # replicate the raw dict conversion for debugging
+    from ncr_property_price_estimation.features import (
+        AMENITY_FEATURES,
+        CATEGORICAL_FEATURES,
+        NUMERIC_FEATURES,
+    )
+
+    PIPELINE_FEATURES = (
+        ["society", "sector", "city"] + NUMERIC_FEATURES + AMENITY_FEATURES + CATEGORICAL_FEATURES
+    )
+
+    row = req.dict(by_alias=True)
+    for group in ["amenities", "location_score", "features"]:
+        if group in row and isinstance(row[group], dict):
+            row.update(row.pop(group))
+
+    row["city"] = req.city
+    row["society"] = req.property_name or "Unknown"
+    row["area"] = float(req.area)
+    row["bedrooms"] = int(req.bedrooms)
+    row["bathrooms"] = int(req.bathrooms or 0)
+    row["h3_median_price"] = 0.0
+    row["h3_listings_count"] = 0.0
+
+    ordered_row = {col: row.get(col, 0) for col in PIPELINE_FEATURES if col != "geo_median"}
+
+    results = await predict_batch([req])
+
+    return {
+        "ordered_row": ordered_row,
+        "prediction": results[0].dict() if results else None,
+        "package_versions": {
+            "pandas": pd.__version__,
+            "numpy": np.__version__,
+            "catboost": "1.2.10",  # Hardcoded or fetched if imported
+        },
+    }
+
+
 @app.get("/debug/geocoder")
 def debug_geocoder(mode: Literal["sales", "rentals"] = "sales"):
     """Inspect the internal state of the GeoMedianEncoder for a specific model."""
@@ -666,7 +715,7 @@ def debug_fs():
         "data_dir": str(DATA_DIR),
         "data_contents": data_root,
         "model_contents": data_model,
-        "cwd": os.getcwd()
+        "cwd": os.getcwd(),
     }
 
 
@@ -696,11 +745,21 @@ def debug_files():
     s_path = data_model / "model_sales.parquet"
     if s_path.exists():
         import pandas as pd
+
         try:
             needed_cols = [
-                "city", "sector", "society", "bedrooms", "area",
-                "price_per_sqft", "h3_res8", "h3_median_price",
-                "h3_listings_count", "prop_type"
+                "city",
+                "sector",
+                "society",
+                "bedrooms",
+                "area",
+                "price_per_sqft",
+                "h3_res8",
+                "h3_median_price",
+                "h3_listings_count",
+                "prop_type",
+                "furnishing_status",
+                "legal_status",
             ]
             pd.read_parquet(s_path, columns=needed_cols)
         except Exception:
@@ -710,7 +769,7 @@ def debug_files():
         "exists": data_model.exists(),
         "files": files,
         "read_error": read_error,
-        "s_path_size": s_path.stat().st_size if s_path.exists() else 0
+        "s_path_size": s_path.stat().st_size if s_path.exists() else 0,
     }
 
 
