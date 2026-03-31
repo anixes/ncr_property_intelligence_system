@@ -213,10 +213,10 @@ def main():
 Examples:
   # Predict price for a 3BHK in Gurugram
   python product.py --mode predict --area 1200 --bhk 3 --city Gurugram --sector "Sector 50"
-  
+
   # Full analysis with comparables and deal scoring
   python product.py --mode analyze --area 1500 --bhk 3 --city Noida --sector "Sector 150" --price 8500000
-  
+
   # Find similar properties
   python product.py --mode recommend --area 1200 --bhk 2 --city Gurugram --sector "Sector 49"
         """,

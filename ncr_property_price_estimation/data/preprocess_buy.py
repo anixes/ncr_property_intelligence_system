@@ -37,7 +37,7 @@ class BuyPreprocessor:
                 elif "k" in unit or "million" in unit:
                     val *= 1000 if "k" in unit else 1000000
                 return val
-            except:
+            except Exception:
                 pass
 
         # 2. Backup: Look for plain numbers with ₹ symbol
@@ -290,7 +290,7 @@ class BuyPreprocessor:
         def extract_society_from_desc(desc, title):
             if not isinstance(desc, str) or not isinstance(title, str):
                 return None
-            lines = [l.strip() for l in desc.split("\n") if l.strip()]
+            lines = [ln.strip() for ln in desc.split("\n") if ln.strip()]
             title_clean = title.strip().lower()
             for i, line in enumerate(lines):
                 if line.lower() == title_clean:
