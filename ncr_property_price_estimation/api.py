@@ -649,6 +649,30 @@ def debug_hotspots():
     }
 
 
+@app.get("/debug/fs")
+def debug_fs():
+    """List filesystem contents for data directory debug."""
+    import os
+    from ncr_property_price_estimation.config import DATA_DIR, PROJ_ROOT
+    try:
+        data_model = os.listdir(PROJ_ROOT / "data" / "model")
+    except Exception as e:
+        data_model = str(e)
+        
+    try:
+        data_root = os.listdir(PROJ_ROOT / "data")
+    except Exception as e:
+        data_root = str(e)
+        
+    return {
+        "proj_root": str(PROJ_ROOT),
+        "data_dir": str(DATA_DIR),
+        "data_contents": data_root,
+        "model_contents": data_model,
+        "cwd": os.getcwd()
+    }
+
+
 @app.get("/model-info", response_model=ModelInfoResponse)
 def model_info():
     """Return current model metadata."""
