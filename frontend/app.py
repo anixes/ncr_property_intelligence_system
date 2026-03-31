@@ -200,7 +200,7 @@ def render_hotspot_map(hotspots=None, listings=None, center_lat=None, center_lon
             # Resolve H3 index to coordinates if missing
             if ("latitude" not in item or "longitude" not in item) and "h3_res8" in item:
                 try:
-                    lat, lon = h3.h3_to_geo(item["h3_res8"])
+                    lat, lon = h3.cell_to_latlng(item["h3_res8"])
                     item["latitude"] = lat
                     item["longitude"] = lon
                 except Exception:
