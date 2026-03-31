@@ -120,7 +120,7 @@ def render_property_card(item, intent="Buy"):
     # Adaptive metric labels and values
     price_label = "Rent" if intent == "Rent" else "Price"
     psqft_label = "₹/sqft (Rent)" if intent == "Rent" else "₹/sqft"
-    
+
     # Second row adaptive metric (Yield for Buy, Furnishing for Rent)
     if intent == "Rent":
         secondary_metric_label = "Furnishing"
@@ -166,7 +166,7 @@ def render_alternative_card(item, intent="Buy"):
     psqft_label = "Avg Rent/sqft" if intent == "Rent" else "Avg ₹/sqft"
     secondary_label = "Exp. Yield"
     secondary_value = f"{yld}%"
-    
+
     listing_count = item.get("listing_count", None)
     if intent == "Rent":
         secondary_label = "Listings"

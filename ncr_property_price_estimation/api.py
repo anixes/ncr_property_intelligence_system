@@ -108,6 +108,7 @@ async def lifespan(app: FastAPI):
     # 2. Load Locality Intelligence Index
     try:
         import json
+
         from ncr_property_price_estimation.config import logger
 
         index_path = DATA_DIR / "locality_intelligence_index.json"
@@ -322,7 +323,6 @@ _geo_service = GeoEnrichmentService()
 
 def _sanitize_float(val: Any) -> float:
     """Ensure float is JSON compliant (No NaN or Inf)."""
-    import numpy as np
     try:
         f_val = float(val)
         if np.isnan(f_val) or np.isinf(f_val):
@@ -334,7 +334,6 @@ def _sanitize_float(val: Any) -> float:
 
 async def _predict_internal(inputs: list[PropertyInput]):
     """Dual-model Prediction with ROI Intelligence."""
-    import numpy as np
     from ncr_property_price_estimation.features import (
         AMENITY_FEATURES,
         CATEGORICAL_FEATURES,
@@ -656,12 +655,12 @@ def debug_fs():
         data_model = os.listdir(PROJ_ROOT / "data" / "model")
     except Exception as e:
         data_model = str(e)
-        
+
     try:
         data_root = os.listdir(PROJ_ROOT / "data")
     except Exception as e:
         data_root = str(e)
-        
+
     return {
         "proj_root": str(PROJ_ROOT),
         "data_dir": str(DATA_DIR),
@@ -685,13 +684,14 @@ def model_info():
 def debug_files():
     import os
     import traceback
+
     from ncr_property_price_estimation.config import PROJ_ROOT
-    
+
     data_model = PROJ_ROOT / "data" / "model"
     files = []
     if data_model.exists():
         files = os.listdir(data_model)
-        
+
     read_error = None
     s_path = data_model / "model_sales.parquet"
     if s_path.exists():
@@ -705,7 +705,7 @@ def debug_files():
             pd.read_parquet(s_path, columns=needed_cols)
         except Exception:
             read_error = traceback.format_exc()
-            
+
     return {
         "exists": data_model.exists(),
         "files": files,

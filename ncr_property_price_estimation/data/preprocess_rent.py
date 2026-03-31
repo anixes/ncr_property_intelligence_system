@@ -42,7 +42,7 @@ class RentPreprocessor:
                 elif "k" in unit:
                     val *= 1000
                 return val
-            except:
+            except Exception:
                 pass
 
         return np.nan
@@ -263,7 +263,7 @@ class RentPreprocessor:
             """
             if not isinstance(desc, str) or not isinstance(title, str):
                 return None
-            lines = [l.strip() for l in desc.split("\n") if l.strip()]
+            lines = [line.strip() for line in desc.split("\n") if line.strip()]
             title_clean = title.strip().lower()
             for i, line in enumerate(lines):
                 if line.lower() == title_clean:

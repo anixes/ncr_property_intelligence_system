@@ -68,7 +68,7 @@ class ResilientTracker:
         if self.checkpoint_path.exists():
             try:
                 return json.loads(self.checkpoint_path.read_text())
-            except:
+            except Exception:
                 return {}
         return {}
 
@@ -83,7 +83,7 @@ class ResilientTracker:
                 for rec in content.get("data", []):
                     sig = self.get_signature(rec)
                     self.seen_signatures.add(sig)
-            except:
+            except Exception:
                 continue
         logger.info(f"✅ Loaded {len(self.seen_signatures)} unique property signatures.")
 
@@ -164,7 +164,7 @@ class HousingExtractor:
         """
         try:
             return await page.evaluate(js_code, js_args)
-        except:
+        except Exception:
             return []
 
     @staticmethod
@@ -176,7 +176,7 @@ class HousingExtractor:
                     await btn.click()
                     await asyncio.sleep(4)
                     return True
-            except:
+            except Exception:
                 continue
         return False
 
