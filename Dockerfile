@@ -59,6 +59,9 @@ USER appuser
 
 EXPOSE 8000
 
+# Debug data directory contents during build
+RUN ls -lah /app/data/model || echo "Model folder missing!"
+
 # Health check (Standardized)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1

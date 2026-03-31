@@ -88,6 +88,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 30m
           script: |
             mkdir -p ~/apps/ncr-app
             cd ~/apps/ncr-app
@@ -110,6 +111,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 30m
           script: |
             echo "Waiting 15s for 'Pure ML' model loading and container warmup..."
             sleep 15
