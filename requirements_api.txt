@@ -1,5 +1,6 @@
 # Core
 pandas==2.3.2
+pyarrow>=14.0.0
 numpy==1.26.4
 scikit-learn==1.8.0
 joblib==1.5.3

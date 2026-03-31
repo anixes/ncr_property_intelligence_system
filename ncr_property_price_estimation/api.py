@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 # ---------------------------------------------------------------------------
@@ -502,12 +502,16 @@ def root():
 
 
 @app.get("/health")
-def health():
+def health(response: Response):
     """Liveness check with model status."""
+    if _discovery_pool.empty:
+        response.status_code = 503
+        
     return {
-        "status": "healthy",
+        "status": "healthy" if not _discovery_pool.empty else "degraded",
         "sales_loaded": "sales" in _models,
         "rentals_loaded": "rentals" in _models,
+        "discovery_size": len(_discovery_pool) if not _discovery_pool.empty else 0
     }
 
 
