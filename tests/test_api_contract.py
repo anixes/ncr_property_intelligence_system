@@ -25,10 +25,13 @@ def test_root_endpoint():
 
 
 def test_health_endpoint():
-    # Mock global _models state for predictable response
+    # Mock global _models and _discovery_pool state for a predictable response
     with patch(
         "ncr_property_price_estimation.api._models", {"sales": MagicMock(), "rentals": MagicMock()}
-    ):
+    ), patch(
+        "ncr_property_price_estimation.api._discovery_pool"
+    ) as mock_pool:
+        mock_pool.empty = False
         response = client.get("/health")
         assert response.status_code == 200
         data = response.json()
