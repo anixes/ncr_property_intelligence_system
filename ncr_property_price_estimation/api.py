@@ -655,6 +655,39 @@ def model_info():
     )
 
 
+@app.get("/debug/files")
+def debug_files():
+    import os
+    import traceback
+    from ncr_property_price_estimation.config import PROJ_ROOT
+    
+    data_model = PROJ_ROOT / "data" / "model"
+    files = []
+    if data_model.exists():
+        files = os.listdir(data_model)
+        
+    read_error = None
+    s_path = data_model / "model_sales.parquet"
+    if s_path.exists():
+        import pandas as pd
+        try:
+            needed_cols = [
+                "city", "sector", "society", "bedrooms", "area",
+                "price_per_sqft", "h3_res8", "h3_median_price",
+                "h3_listings_count", "prop_type"
+            ]
+            pd.read_parquet(s_path, columns=needed_cols)
+        except Exception:
+            read_error = traceback.format_exc()
+            
+    return {
+        "exists": data_model.exists(),
+        "files": files,
+        "read_error": read_error,
+        "s_path_size": s_path.stat().st_size if s_path.exists() else 0
+    }
+
+
 @app.get("/locality/list")
 def locality_list(city: str):
     """Return sorted list of localities for a given city."""
