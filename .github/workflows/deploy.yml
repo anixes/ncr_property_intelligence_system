@@ -89,6 +89,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           timeout: 30m
+          command_timeout: 30m
           script: |
             mkdir -p ~/apps/ncr-app
             cd ~/apps/ncr-app

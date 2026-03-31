@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 # ---------------------------------------------------------------------------
@@ -506,12 +506,12 @@ def health(response: Response):
     """Liveness check with model status."""
     if _discovery_pool.empty:
         response.status_code = 503
-        
+
     return {
         "status": "healthy" if not _discovery_pool.empty else "degraded",
         "sales_loaded": "sales" in _models,
         "rentals_loaded": "rentals" in _models,
-        "discovery_size": len(_discovery_pool) if not _discovery_pool.empty else 0
+        "discovery_size": len(_discovery_pool) if not _discovery_pool.empty else 0,
     }
 
 
@@ -653,23 +653,25 @@ def debug_hotspots():
 def debug_fs():
     """List filesystem contents for data directory debug."""
     import os
+
     from ncr_property_price_estimation.config import DATA_DIR, PROJ_ROOT
+
     try:
         data_model = os.listdir(PROJ_ROOT / "data" / "model")
     except Exception as e:
         data_model = str(e)
-        
+
     try:
         data_root = os.listdir(PROJ_ROOT / "data")
     except Exception as e:
         data_root = str(e)
-        
+
     return {
         "proj_root": str(PROJ_ROOT),
         "data_dir": str(DATA_DIR),
         "data_contents": data_root,
         "model_contents": data_model,
-        "cwd": os.getcwd()
+        "cwd": os.getcwd(),
     }
 
 
@@ -687,32 +689,41 @@ def model_info():
 def debug_files():
     import os
     import traceback
+
     from ncr_property_price_estimation.config import PROJ_ROOT
-    
+
     data_model = PROJ_ROOT / "data" / "model"
     files = []
     if data_model.exists():
         files = os.listdir(data_model)
-        
+
     read_error = None
     s_path = data_model / "model_sales.parquet"
     if s_path.exists():
         import pandas as pd
+
         try:
             needed_cols = [
-                "city", "sector", "society", "bedrooms", "area",
-                "price_per_sqft", "h3_res8", "h3_median_price",
-                "h3_listings_count", "prop_type"
+                "city",
+                "sector",
+                "society",
+                "bedrooms",
+                "area",
+                "price_per_sqft",
+                "h3_res8",
+                "h3_median_price",
+                "h3_listings_count",
+                "prop_type",
             ]
             pd.read_parquet(s_path, columns=needed_cols)
         except Exception:
             read_error = traceback.format_exc()
-            
+
     return {
         "exists": data_model.exists(),
         "files": files,
         "read_error": read_error,
-        "s_path_size": s_path.stat().st_size if s_path.exists() else 0
+        "s_path_size": s_path.stat().st_size if s_path.exists() else 0,
     }
 
 

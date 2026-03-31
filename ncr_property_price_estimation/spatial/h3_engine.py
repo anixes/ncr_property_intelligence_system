@@ -43,8 +43,12 @@ class H3Engine:
             except Exception:
                 h3_map[str(h)] = {"latitude": None, "longitude": None}
 
-        pool_df["latitude"] = pool_df["h3_res8"].map(lambda x: h3_map.get(str(x), {}).get("latitude"))
-        pool_df["longitude"] = pool_df["h3_res8"].map(lambda x: h3_map.get(str(x), {}).get("longitude"))
+        pool_df["latitude"] = pool_df["h3_res8"].map(
+            lambda x: h3_map.get(str(x), {}).get("latitude")
+        )
+        pool_df["longitude"] = pool_df["h3_res8"].map(
+            lambda x: h3_map.get(str(x), {}).get("longitude")
+        )
 
         return pool_df, h3_map
 
