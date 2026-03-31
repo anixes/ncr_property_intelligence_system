@@ -476,26 +476,19 @@ if mode == "Market Analyzer":
 
         # ── 1. KPI Row (Adaptive) ────────────────────────
         if intent == "Rent":
-            rent_sqft = data["predicted_monthly_rent"] / data["area"] if data["area"] > 0 else 0
-            st.markdown(
-                f"""
-            <div class="kpi-row">
-                <div class="kpi-box">
-                    <p class="kpi-label">Predicted Rent</p>
-                    <p class="kpi-value">{fmt(data["predicted_monthly_rent"])}</p>
-                </div>
-                <div class="kpi-box">
-                    <p class="kpi-label">₹/sqft (Rent)</p>
-                    <p class="kpi-value">₹{round(rent_sqft, 2)}</p>
-                </div>
-                <div class="kpi-box">
-                    <p class="kpi-label">Value Score</p>
-                    <p class="kpi-value"><span class="score-badge {score_class(score)}">{score}/10</span></p>
-                </div>
-            </div>
-            """,
-                unsafe_allow_html=True,
-            )
+            pred_rent = data.get("predicted_monthly_rent", 0)
+            rent_sqft = pred_rent / area if area > 0 else 0
+            kpi_parts = [
+                '<div class="kpi-row">',
+                '<div class="kpi-box"><p class="kpi-label">Predicted Rent</p>',
+                f'<p class="kpi-value">{fmt(pred_rent)}</p></div>',
+                '<div class="kpi-box"><p class="kpi-label">₹/sqft (Rent)</p>',
+                f'<p class="kpi-value">₹{round(rent_sqft, 2)}</p></div>',
+                '<div class="kpi-box"><p class="kpi-label">Value Score</p>',
+                f'<p class="kpi-value"><span class="score-badge {score_class(score)}">{score}/10</span></p></div>',
+                '</div>',
+            ]
+            st.markdown("".join(kpi_parts), unsafe_allow_html=True)
         else:
             st.markdown(
                 f"""
