@@ -104,7 +104,7 @@ def score_class(s):
     return "score-low"
 
 
-def render_property_card(item):
+def render_property_card(item, intent="Buy"):
     """Compact HTML property card — no st.metric bloat."""
     society = item.get("society", "Unknown")
     loc = item.get("locality", item.get("sector", ""))
@@ -115,6 +115,21 @@ def render_property_card(item):
     yld = item.get("yield_pct", 0)
     score = item.get("unified_score", 0)
     bhk = item.get("bhk", "–")
+    furnishing = item.get("furnishing_status", "Unknown")
+
+    # Adaptive metric labels and values
+    price_label = "Rent" if intent == "Rent" else "Price"
+    psqft_label = "₹/sqft (Rent)" if intent == "Rent" else "₹/sqft"
+    
+    # Second row adaptive metric (Yield for Buy, Furnishing for Rent)
+    if intent == "Rent":
+        secondary_metric_label = "Furnishing"
+        secondary_metric_value = furnishing[:10] + ".." if len(furnishing) > 10 else furnishing
+        score_label = "Value Score"
+    else:
+        secondary_metric_label = "Yield"
+        secondary_metric_value = f"{yld}%"
+        score_label = "Deal Score"
 
     st.markdown(
         f"""
@@ -122,15 +137,15 @@ def render_property_card(item):
         <p class="card-title" title="{society}">{society}</p>
         <p class="card-loc">{loc}, {city}</p>
         <div class="card-row">
-            <div class="card-kv"><p class="kv-label">Price</p><p class="kv-value">{fmt(price)}</p></div>
+            <div class="card-kv"><p class="kv-label">{price_label}</p><p class="kv-value">{fmt(price)}</p></div>
             <div class="card-kv"><p class="kv-label">Area</p><p class="kv-value">{int(area)} sqft</p></div>
             <div class="card-kv"><p class="kv-label">BHK</p><p class="kv-value">{bhk}</p></div>
         </div>
         <div class="card-divider"></div>
         <div class="card-row">
-            <div class="card-kv"><p class="kv-label">₹/sqft</p><p class="kv-value">{psqft:,.0f}</p></div>
-            <div class="card-kv"><p class="kv-label">Yield</p><p class="kv-value">{yld}%</p></div>
-            <div class="card-kv"><p class="kv-label">Deal Score</p><p class="kv-value"><span class="score-badge {score_class(score)}">{score}/10</span></p></div>
+            <div class="card-kv"><p class="kv-label">{psqft_label}</p><p class="kv-value">{psqft:,.0f}</p></div>
+            <div class="card-kv"><p class="kv-label">{secondary_metric_label}</p><p class="kv-value">{secondary_metric_value}</p></div>
+            <div class="card-kv"><p class="kv-label">{score_label}</p><p class="kv-value"><span class="score-badge {score_class(score)}">{score}/10</span></p></div>
         </div>
     </div>
     """,
@@ -138,7 +153,7 @@ def render_property_card(item):
     )
 
 
-def render_alternative_card(item):
+def render_alternative_card(item, intent="Buy"):
     """Modern box UI for investment alternatives."""
     loc = item.get("locality", "Unknown")
     city = item.get("city", "")
@@ -147,6 +162,16 @@ def render_alternative_card(item):
     score = item.get("composite_score", 0)
     dist = item.get("distance_km")
 
+    # Adaptive labels
+    psqft_label = "Avg Rent/sqft" if intent == "Rent" else "Avg ₹/sqft"
+    secondary_label = "Exp. Yield"
+    secondary_value = f"{yld}%"
+    
+    listing_count = item.get("listing_count", None)
+    if intent == "Rent":
+        secondary_label = "Listings"
+        secondary_value = str(listing_count) if listing_count is not None else "—"
+
     st.markdown(
         f"""
     <div class="prop-card">
@@ -154,8 +179,8 @@ def render_alternative_card(item):
         <p class="card-loc">{city}{f" · {dist}km away" if dist else ""}</p>
         <div class="card-divider"></div>
         <div class="card-row">
-            <div class="card-kv"><p class="kv-label">Avg ₹/sqft</p><p class="kv-value">{fmt(psqft)}</p></div>
-            <div class="card-kv"><p class="kv-label">Exp. Yield</p><p class="kv-value">{yld}%</p></div>
+            <div class="card-kv"><p class="kv-label">{psqft_label}</p><p class="kv-value">{fmt(psqft)}</p></div>
+            <div class="card-kv"><p class="kv-label">{secondary_label}</p><p class="kv-value">{secondary_value}</p></div>
             <div class="card-kv"><p class="kv-label">Sector Grade</p><p class="kv-value"><span class="score-badge {score_class(score)}">{score}/10</span></p></div>
         </div>
     </div>
@@ -280,7 +305,7 @@ def render_hotspot_map(hotspots=None, listings=None, center_lat=None, center_lon
         layers=layers,
         initial_view_state=view_state,
         tooltip=tooltip,
-        map_style="light",  # Standard style (switching from mapbox style to avoid black void)
+        map_style="dark",  # High-contrast style matching dark mode theme
         height=450,
     )
 
@@ -361,7 +386,6 @@ if mode == "Market Analyzer":
 
         with st.expander("Advanced Analytics Options"):
             st.caption("Location & Orientation")
-            is_near_metro = st.checkbox("Near Metro Proximity", value=True)
             is_corner = st.checkbox("Corner Property")
             is_park_facing = st.checkbox("Park / Green Facing")
             is_vastu = st.checkbox("Vastu Compliant")
@@ -414,7 +438,7 @@ if mode == "Market Analyzer":
                 "has_power_backup": has_power,
             },
             "location": {
-                "is_near_metro": is_near_metro,
+                "is_near_metro": False,
                 "is_corner_property": is_corner,
                 "is_park_facing": is_park_facing,
                 "is_vastu_compliant": is_vastu,
@@ -445,53 +469,95 @@ if mode == "Market Analyzer":
         score = intel.get("unified_score", 0)
         risk_data = intel.get("risk_analysis", {})
 
-        st.markdown(f"### Investment Analysis: {bedrooms} BHK {prop_type} in {sector}, {city}")
+        if intent == "Rent":
+            st.markdown(f"### Rental Market Analysis: {bedrooms} BHK {prop_type} in {sector}, {city}")
+        else:
+            st.markdown(f"### Investment Analysis: {bedrooms} BHK {prop_type} in {sector}, {city}")
 
-        # ── 1. KPI Row (compact HTML) ────────────────────────
-        st.markdown(
-            f"""
-        <div class="kpi-row">
-            <div class="kpi-box">
-                <p class="kpi-label">Valuation</p>
-                <p class="kpi-value">{fmt(data["estimated_market_value"])}</p>
+        # ── 1. KPI Row (Adaptive) ────────────────────────
+        if intent == "Rent":
+            rent_sqft = data["predicted_monthly_rent"] / data["area"] if data["area"] > 0 else 0
+            st.markdown(
+                f"""
+            <div class="kpi-row">
+                <div class="kpi-box">
+                    <p class="kpi-label">Predicted Rent</p>
+                    <p class="kpi-value">{fmt(data["predicted_monthly_rent"])}</p>
+                </div>
+                <div class="kpi-box">
+                    <p class="kpi-label">₹/sqft (Rent)</p>
+                    <p class="kpi-value">₹{round(rent_sqft, 2)}</p>
+                </div>
+                <div class="kpi-box">
+                    <p class="kpi-label">Value Score</p>
+                    <p class="kpi-value"><span class="score-badge {score_class(score)}">{score}/10</span></p>
+                </div>
             </div>
-            <div class="kpi-box">
-                <p class="kpi-label">Monthly Rent</p>
-                <p class="kpi-value">{fmt(data["predicted_monthly_rent"])}</p>
+            """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f"""
+            <div class="kpi-row">
+                <div class="kpi-box">
+                    <p class="kpi-label">Valuation</p>
+                    <p class="kpi-value">{fmt(data["estimated_market_value"])}</p>
+                </div>
+                <div class="kpi-box">
+                    <p class="kpi-label">Monthly Rent</p>
+                    <p class="kpi-value">{fmt(data["predicted_monthly_rent"])}</p>
+                </div>
+                <div class="kpi-box">
+                    <p class="kpi-label">Investment Score</p>
+                    <p class="kpi-value"><span class="score-badge {score_class(score)}">{score}/10</span></p>
+                </div>
             </div>
-            <div class="kpi-box">
-                <p class="kpi-label">{score_label}</p>
-                <p class="kpi-value"><span class="score-badge {score_class(score)}">{score}/10</span></p>
-            </div>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
+            """,
+                unsafe_allow_html=True,
+            )
 
-        # ── 2. ROI Breakdown (compact HTML) ──────────────────
-        st.markdown(
-            f"""
-        <div class="roi-row">
-            <div class="roi-item">
-                <p class="roi-label">Rental Yield</p>
-                <p class="roi-value">{intel.get("yield_pct", 0)}%</p>
-            </div>
-            <div class="roi-item">
-                <p class="roi-label">Market Risk</p>
-                <p class="roi-value">{risk_data.get("label", "N/A")}</p>
-            </div>
-            <div class="roi-item">
-                <p class="roi-label">Metro Dist</p>
-                <p class="roi-value">{f"{data.get('dist_to_metro_km', 'N/A')} km" if data.get("dist_to_metro_km") is not None else "Unknown"}</p>
-            </div>
-            <div class="roi-item">
-                <p class="roi-label">Market Position</p>
-                <p class="roi-value">{intel.get("overvaluation_pct", 0)}%</p>
-            </div>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        # ── 2. ROI/Metric Breakdown (Adaptive) ──────────────
+        metro_dist = data.get("dist_to_metro_km")
+        if metro_dist is not None:
+            if metro_dist <= 1.5:
+                metro_color = "#4CAF50" # Green (Near)
+            elif metro_dist <= 3.0:
+                metro_color = "#FFC107" # Yellow (Moderate)
+            else:
+                metro_color = "#F44336" # Red (Far)
+            metro_html = f'<p class="roi-value" style="color: {metro_color}">{metro_dist} km</p>'
+            metro_box = f"<div class='roi-item'><p class='roi-label'>Metro Dist</p>{metro_html}</div>"
+        else:
+            metro_box = ""  # Plan: collapse entirely when null, don't show "Unknown"
+
+        if intent == "Rent":
+            roi_html = f"""
+            <div class="roi-row">
+                <div class="roi-item">
+                    <p class="roi-label">Market Position</p>
+                    <p class="roi-value">{intel.get("overvaluation_pct", 0)}%</p>
+                </div>
+            """ + metro_box + "</div>"
+            st.markdown(roi_html, unsafe_allow_html=True)
+        else:
+            roi_html = f"""
+            <div class="roi-row">
+                <div class="roi-item">
+                    <p class="roi-label">Rental Yield</p>
+                    <p class="roi-value">{intel.get("yield_pct", 0)}%</p>
+                </div>
+                <div class="roi-item">
+                    <p class="roi-label">Market Risk</p>
+                    <p class="roi-value">{risk_data.get("label", "N/A")}</p>
+                </div>
+            """ + metro_box + f"""
+                <div class="roi-item">
+                    <p class="roi-label">Market Position</p>
+                    <p class="roi-value">{intel.get("overvaluation_pct", 0)}%</p>
+                </div>
+            </div>"""
+            st.markdown(roi_html, unsafe_allow_html=True)
 
         # ── 3. Score Bar ─────────────────────────────────────
         st.progress(max(0.0, min(1.0, score / 10.0)))
@@ -539,7 +605,7 @@ if mode == "Market Analyzer":
             cols = st.columns(3)
             for i, item in enumerate(similar[:6]):
                 with cols[i % 3]:
-                    render_property_card(item)
+                    render_property_card(item, intent=intent)
 
         # ── 6. Alternatives ──────────────────────────────────
         recs = data.get("recommendations", [])
@@ -551,7 +617,7 @@ if mode == "Market Analyzer":
             grid_cols = st.columns(3)
             for i, rec in enumerate(recs[:6]):
                 with grid_cols[i % 3]:
-                    render_alternative_card(rec)
+                    render_alternative_card(rec, intent=intent)
         elif not similar:
             st.caption("No comparables or alternatives found.")
 
@@ -591,24 +657,28 @@ if mode == "Market Analyzer":
         except Exception as e:
             st.error(f"Intelligence Layer Unavailable: {e}")
 
+        # Landing Page Alignment (Market Analyzer)
         st.markdown("""<h3 style="margin-bottom:12px;">How it works</h3>""", unsafe_allow_html=True)
+        how_it_works_p2 = "predicts fair-market rent and value-for-money score" if intent == "Rent" else "predict market value, rental yield, and investment score"
+        how_it_works_p3 = "rental market report: predicted rent, area benchmarks, and comparables." if intent == "Rent" else "full investment report: valuation, ROI breakdown, and verified comparables."
+
         st.markdown(
-            """
+            f"""
         <div class="landing-grid">
             <div class="landing-card">
                 <p class="lc-icon">01</p>
                 <h4>Configure Property</h4>
-                <p>Select city, locality, area, BHK, and property type in the sidebar. Adjust advanced options like metro access or luxury segment.</p>
+                <p>Select city, locality, area, BHK, and property type. Adjust advanced options like corner property or luxury segment.</p>
             </div>
             <div class="landing-card">
                 <p class="lc-icon">02</p>
                 <h4>Run Analytics</h4>
-                <p>Our ML models predict market value, rental yield, and investment score using spatial H3 indexing across the NCR region.</p>
+                <p>Our ML models {how_it_works_p2} using spatial H3 indexing across the NCR region.</p>
             </div>
             <div class="landing-card">
                 <p class="lc-icon">03</p>
                 <h4>Review Intelligence</h4>
-                <p>Get a full investment report: valuation, ROI breakdown, verified comparables, and better-performing sectors nearby.</p>
+                <p>Get a {how_it_works_p3}</p>
             </div>
         </div>
         """,
@@ -616,24 +686,28 @@ if mode == "Market Analyzer":
         )
 
         st.markdown("""<h3 style="margin-bottom:12px;">What you get</h3>""", unsafe_allow_html=True)
+        val_p = "AI-predicted monthly rent and area benchmarking based on 43,000+ local NCR records." if intent == "Rent" else "AI-predicted market price per sqft and total value based on 43,000+ local NCR records."
+        score_name = "Value Scores" if intent == "Rent" else "Deal Scores"
+        score_desc = "rent-to-value scores for budget optimization" if intent == "Rent" else "bargain properties comparing list price to market median"
+
         st.markdown(
-            """
+            f"""
         <div class="landing-grid">
             <div class="landing-card">
-                <h4>Valuation Report</h4>
-                <p>AI-predicted market price per sqft, total value, and estimated monthly rent based on 43,000+ local NCR records.</p>
+                <h4>{"Rent Benchmark" if intent == "Rent" else "Valuation Report"}</h4>
+                <p>{val_p}</p>
             </div>
             <div class="landing-card">
-                <h4>Dual Scoring</h4>
-                <p>Specific <b>Deal Scores</b> for bargain properties and <b>Sector Grades</b> for overall neighborhood potential.</p>
+                <h4>{score_name}</h4>
+                <p>Specific <b>{score_name}</b> for {score_desc}.</p>
             </div>
             <div class="landing-card">
                 <h4>Verified Proximity</h4>
                 <p>Automated GPS-based distance to the nearest Metro station for accurate 'Transit Premium' valuations.</p>
             </div>
             <div class="landing-card">
-                <h4>Market Position</h4>
-                <p>Real-time entry risk: see exactly how much of a 'Discount' or 'Premium' you are paying vs the sector median.</p>
+                <h4>Dual Scoring</h4>
+                <p>Specific <b>Deal Scores</b> for bargain properties and <b>Sector Grades</b> for overall neighborhood potential.</p>
             </div>
             <div class="landing-card">
                 <h4>Verified Comparables</h4>
@@ -643,7 +717,7 @@ if mode == "Market Analyzer":
                 <h4>Spatial Intelligence</h4>
                 <p>3D-tower visualization of market hotspots and results using H3 hexagonal spatial indexing.</p>
             </div>
-</div>
+        </div>
         """,
             unsafe_allow_html=True,
         )
@@ -679,7 +753,6 @@ elif mode == "Property Recommender":
 
         with st.expander("Advanced Discovery Options"):
             st.caption("Location Preferences")
-            near_metro_rec = st.checkbox("Near Metro Proximity", value=True, key="metro_rec")
             corner_rec = st.checkbox("Corner Property", key="corner_rec")
             park_facing_rec = st.checkbox("Park / Green Facing", key="park_rec")
             vastu_rec = st.checkbox("Vastu Compliant", key="vastu_rec")
@@ -735,7 +808,7 @@ elif mode == "Property Recommender":
                 "has_power_backup": power_rec,
             },
             "location_score": {
-                "is_near_metro": near_metro_rec,
+                "is_near_metro": False,
                 "is_corner_property": corner_rec,
                 "is_park_facing": park_facing_rec,
                 "is_vastu_compliant": vastu_rec,
@@ -814,10 +887,13 @@ elif mode == "Property Recommender":
         st.markdown(f"### Discover Your Next Property in {rec_city}")
         st.caption("AI-powered search across 43,000+ real-world NCR property transaction records.")
 
+        stat_1_val = "Budget-First" if intent == "Rent" else "Yield-First"
+        stat_1_lbl = "Value Detection" if intent == "Rent" else "Arbitrage Detection"
+
         st.markdown(
-            """
+            f"""
         <div class="landing-stat-row">
-            <div class="landing-stat"><p class="ls-val">Yield-First</p><p class="ls-lbl">Arbitrage Detection</p></div>
+            <div class="landing-stat"><p class="ls-val">{stat_1_val}</p><p class="ls-lbl">{stat_1_lbl}</p></div>
             <div class="landing-stat"><p class="ls-val">30+</p><p class="ls-lbl">Strict UI Filters</p></div>
             <div class="landing-stat"><p class="ls-val">GPS</p><p class="ls-lbl">Verified Coordinates</p></div>
             <div class="landing-stat"><p class="ls-val">H3</p><p class="ls-lbl">Micro-Market Data</p></div>
@@ -840,7 +916,7 @@ elif mode == "Property Recommender":
             <div class="landing-card">
                 <p class="lc-icon">02</p>
                 <h4>AI Targeting</h4>
-                <p>Apply strictly verified filters: <b>Near Metro</b>, <b>Vastu Compliant</b>, <b>Corner Property</b>, or <b>Luxury</b> segments.</p>
+                <p>Apply strictly verified filters: <b>Vastu Compliant</b>, <b>Corner Property</b>, <b>Furnishing Status</b>, or <b>Luxury</b> segments.</p>
             </div>
             <div class="landing-card">
                 <p class="lc-icon">03</p>
@@ -856,16 +932,20 @@ elif mode == "Property Recommender":
             """<h3 style="margin-bottom:12px;">Discovery Intelligence</h3>""",
             unsafe_allow_html=True,
         )
+        intel_1_h = "Value Arbitrage" if intent == "Rent" else "Yield Arbitrage"
+        intel_1_p = "Surface properties with best value for your budget before they reach the mass market." if intent == "Rent" else "Surface properties with the highest predicted rental returns before they reach the mass market."
+        intel_4_p = "comparison of rent against sector averages." if intent == "Rent" else "comparing the listing to its specific sector median."
+
         st.markdown(
-            """
+            f"""
         <div class="landing-grid">
             <div class="landing-card">
-                <h4>Yield Arbitrage</h4>
-                <p>Surface properties with the highest predicted rental returns before they reach the mass market.</p>
+                <h4>{intel_1_h}</h4>
+                <p>{intel_1_p}</p>
             </div>
             <div class="landing-card">
                 <h4>High-Fidelity Filters</h4>
-                <p>Filter by Metro proximity (verified 1.5km radius) or specific plot features (Park Facing, Corner Lot).</p>
+                <p>Filter by specific plot features (Park Facing, Corner Lot) with strictly verified metadata.</p>
             </div>
             <div class="landing-card">
                 <h4>Verified H3 Mapping</h4>
@@ -903,7 +983,7 @@ elif mode == "Property Recommender":
         cols = st.columns(3)
         for i, item in enumerate(page_data):
             with cols[i % 3]:
-                render_property_card(item)
+                render_property_card(item, intent=intent)
 
         # Pagination
         st.markdown("---")

@@ -25,7 +25,7 @@ RUN find /install -name "nvidia*" -type d -exec rm -rf {} + || true
 # ---------- 2. RUNTIME STAGE ----------
 FROM python:3.11-slim
 
-LABEL maintainer="Anixes <anixes@dagshub.com>"
+LABEL maintainer="anixes <anixes@dagshub.com>"
 LABEL version="2.0.0"
 LABEL description="NCR Property Intelligence - Production API"
 

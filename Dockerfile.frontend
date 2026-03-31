@@ -46,6 +46,7 @@ COPY --from=builder /install/bin /usr/local/bin
 
 # Copy frontend source code and data assets
 COPY --chown=appuser:appgroup frontend/ /app/frontend/
+COPY --chown=appuser:appgroup frontend/.streamlit/ /app/.streamlit/
 COPY --chown=appuser:appgroup data/ /app/data/
 
 # Switch to non-root user

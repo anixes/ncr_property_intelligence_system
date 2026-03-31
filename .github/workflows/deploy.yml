@@ -30,16 +30,22 @@ jobs:
           dvc remote modify origin auth basic
 
       - name: Pull model from DVC
-        run: dvc pull
-
-      - name: Verify models exist
         run: |
-          ls -lh models/sales/pipeline_sales.joblib
-          ls -lh models/rentals/pipeline_rentals.joblib
-          echo "Checking DVC data output:"
-          pwd
-          ls -lah data/
-          ls -lah data/model/
+          dvc pull -v || { echo "CRITICAL: DVC PULL FAILED"; exit 1; }
+
+      - name: Verify data integrity & Asset Hash Audit
+        run: |
+          echo "=== Model Binary Hashes ==="
+          sha256sum models/sales/pipeline_sales.joblib
+          sha256sum models/rentals/pipeline_rentals.joblib
+          
+          echo "=== Intelligence Layer Data Hashes ==="
+          sha256sum data/locality_intelligence_index.json
+          sha256sum data/model/model_sales.parquet
+          sha256sum data/model/model_rentals.parquet
+          
+          echo "=== Full Data Inventory ==="
+          ls -R data/
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3

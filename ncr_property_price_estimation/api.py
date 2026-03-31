@@ -485,6 +485,7 @@ async def _predict_internal(inputs: list[PropertyInput]):
                 intelligence_suite=analysis,
                 recommendations=alternatives,
                 similar_listings=listing_matches,
+                dist_to_metro_km=round(dist_to_metro, 2) if dist_to_metro is not None else None,
             )
         )
 
