@@ -87,6 +87,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Create empty DVC directories for build verification
+        run: mkdir -p data/ models/
       - name: Build API image
         run: docker build -t ncr-property-api:test .
       - name: Build Frontend image
