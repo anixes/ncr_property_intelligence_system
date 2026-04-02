@@ -32,6 +32,7 @@ import LocalitiesView from './LocalitiesView';
 import DiagnosticsView from './DiagnosticsView';
 import ValuationHUD from './ValuationHUD';
 import RoiAnalyticsView from './RoiAnalyticsView';
+import MarketTrendsView from './MarketTrendsView';
 import api from '@/lib/api';
 
 const CITIES = ['Entire NCR', 'Gurgaon', 'Noida', 'Greater Noida'];
@@ -87,26 +88,31 @@ const AnalyticalDashboard = () => {
         </div>
 
         <nav className="flex-1 space-y-2">
-          <NavItem icon={<LayoutDashboard />} label="Command Center" active={activeView === 'Command Center'} onClick={() => setActiveView('Command Center')} />
-          <NavItem icon={<MapIcon />} label="Spatial Index" active={activeView === 'Spatial Index'} onClick={() => setActiveView('Spatial Index')} />
-          <NavItem icon={<Activity />} label="Valuation Engine" active={activeView === 'Valuation Engine'} onClick={() => setActiveView('Valuation Engine')} />
-          <NavItem icon={<Globe />} label="Market Trends" active={activeView === 'Market Trends'} onClick={() => setActiveView('Market Trends')} />
+          <NavItem icon={<LayoutDashboard className="w-4 h-4" />} label="Command Center" active={activeView === 'Command Center'} onClick={() => setActiveView('Command Center')} />
+          <NavItem icon={<MapIcon className="w-4 h-4" />} label="Spatial Index" active={activeView === 'Spatial Index'} onClick={() => setActiveView('Spatial Index')} />
+          <NavItem icon={<Activity className="w-4 h-4" />} label="Valuation Engine" active={activeView === 'Valuation Engine'} onClick={() => setActiveView('Valuation Engine')} />
+          <NavItem icon={<Globe className="w-4 h-4" />} label="Market Trends" active={activeView === 'Market Trends'} onClick={() => setActiveView('Market Trends')} />
           <div className="h-px bg-white/5 my-6" />
-          <NavItem icon={<Layers />} label="Localities" active={activeView === 'Localities'} onClick={() => setActiveView('Localities')} />
-          <NavItem icon={<TrendingUp />} label="ROI Analytics" active={activeView === 'ROI Analytics'} onClick={() => setActiveView('ROI Analytics')} />
+          <NavItem icon={<Layers className="w-4 h-4" />} label="Localities" active={activeView === 'Localities'} onClick={() => setActiveView('Localities')} />
+          <NavItem icon={<TrendingUp className="w-4 h-4" />} label="ROI Analytics" active={activeView === 'ROI Analytics'} onClick={() => setActiveView('ROI Analytics')} />
         </nav>
 
         <div className="pt-8 border-t border-white/5 space-y-6">
-          <div className="px-5 py-4 bg-white/[0.02] rounded-2xl border border-white/5">
-            <div className="flex justify-between items-center mb-3">
-              <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Processing</p>
-              <span className="text-[9px] font-black text-primary">42.8%</span>
+          <div className="px-5 py-4 bg-white/[0.02] rounded-2xl border border-white/5 space-y-3">
+            <div className="flex justify-between items-center">
+              <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Global Sync</p>
+              <span className="text-[9px] font-black text-primary">LIVE</span>
             </div>
             <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-              <motion.div animate={{ width: '42.8%' }} className="h-full bg-primary" />
+              <motion.div 
+                initial={{ width: '0%' }}
+                animate={{ width: '100%' }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                className="h-full bg-primary" 
+              />
             </div>
           </div>
-          <NavItem icon={<Settings />} label="Diagnostics" active={activeView === 'Diagnostics'} onClick={() => setActiveView('Diagnostics')} />
+          <NavItem icon={<Settings className="w-4 h-4" />} label="Diagnostics" active={activeView === 'Diagnostics'} onClick={() => setActiveView('Diagnostics')} />
         </div>
       </aside>
 
@@ -271,7 +277,7 @@ const AnalyticalDashboard = () => {
     if (activeView === 'Command Center') return renderCommandCenter();
     if (activeView === 'Spatial Index') return renderSpatialIndex();
     if (activeView === 'Valuation Engine') return <ValuationHUD initialCity={activeCity} />;
-    if (activeView === 'Market Trends') return renderMarketTrends();
+    if (activeView === 'Market Trends') return <MarketTrendsView />;
     if (activeView === 'Localities') return <LocalitiesView city={activeCity === 'Entire NCR' ? 'Gurgaon' : activeCity} />;
     if (activeView === 'ROI Analytics') return <RoiAnalyticsView />;
     if (activeView === 'Diagnostics') return <DiagnosticsView />;
@@ -356,14 +362,14 @@ const NavItem = ({ icon, label, active = false, onClick, disabled = false }: any
     onClick={!disabled ? onClick : undefined}
     disabled={disabled}
     className={`
-    w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[11px] font-bold transition-all group border border-transparent uppercase tracking-[0.2cm]
+    w-full flex items-center gap-4 px-4 py-3 rounded-xl text-[11px] font-bold transition-all group border border-transparent uppercase tracking-widest
     ${disabled ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer'}
     ${active 
-      ? 'bg-brand/10 text-brand border-brand/20 shadow-[0_0_20px_rgba(var(--brand-rgb),0.1)]' 
+      ? 'bg-primary/10 text-primary border-primary/20 shadow-[0_0_20px_rgba(139,92,246,0.1)]' 
       : 'text-white/20 hover:text-white/70 hover:bg-white/[0.04]'}
   `}>
-    <span className={`w-4 h-4 transition-transform duration-300 group-hover:scale-110 ${active ? 'text-brand' : 'text-white/30 group-hover:text-white/60'}`}>
-      {React.cloneElement(icon as React.ReactElement, { size: 14, strokeWidth: 2.5 })}
+    <span className={`transition-transform duration-300 group-hover:scale-110 ${active ? 'text-primary' : 'text-white/30 group-hover:text-white/60'}`}>
+      {icon}
     </span>
     {label}
   </button>

@@ -2,11 +2,12 @@
 
 ## Current Position
 - **Phase**: 1 (Institutional Portal Completion)
-- **Plan**: 2 (Valuation HUD & ROI Analytics)
-- **Status**: Executing Wave 2
+- **Plan**: 3 (Market Trends & Polish)
+- **Status**: Executing Wave 3
 
 ## Completed Work
 - [2026-04-03] Plan 1.1: Localities and Diagnostics HUDs.
+- [2026-04-03] Plan 1.2: Valuation HUD and ROI Analytics.
 
 ## Accumulated Decisions
 - [2026-04-03] Using Next.js 16 App Router for the web-app.
