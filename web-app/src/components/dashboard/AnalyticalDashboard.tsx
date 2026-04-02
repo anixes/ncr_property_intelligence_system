@@ -30,6 +30,8 @@ import {
 import OpportunityHeatmap from './OpportunityHeatmap';
 import LocalitiesView from './LocalitiesView';
 import DiagnosticsView from './DiagnosticsView';
+import ValuationHUD from './ValuationHUD';
+import RoiAnalyticsView from './RoiAnalyticsView';
 import api from '@/lib/api';
 
 const CITIES = ['Entire NCR', 'Gurgaon', 'Noida', 'Greater Noida'];
@@ -91,7 +93,7 @@ const AnalyticalDashboard = () => {
           <NavItem icon={<Globe />} label="Market Trends" active={activeView === 'Market Trends'} onClick={() => setActiveView('Market Trends')} />
           <div className="h-px bg-white/5 my-6" />
           <NavItem icon={<Layers />} label="Localities" active={activeView === 'Localities'} onClick={() => setActiveView('Localities')} />
-          <NavItem icon={<TrendingUp />} label="ROI Analytics" disabled />
+          <NavItem icon={<TrendingUp />} label="ROI Analytics" active={activeView === 'ROI Analytics'} onClick={() => setActiveView('ROI Analytics')} />
         </nav>
 
         <div className="pt-8 border-t border-white/5 space-y-6">
@@ -268,9 +270,10 @@ const AnalyticalDashboard = () => {
   const renderViewContent = () => {
     if (activeView === 'Command Center') return renderCommandCenter();
     if (activeView === 'Spatial Index') return renderSpatialIndex();
-    if (activeView === 'Valuation Engine') return renderValuationEngine();
+    if (activeView === 'Valuation Engine') return <ValuationHUD initialCity={activeCity} />;
     if (activeView === 'Market Trends') return renderMarketTrends();
     if (activeView === 'Localities') return <LocalitiesView city={activeCity === 'Entire NCR' ? 'Gurgaon' : activeCity} />;
+    if (activeView === 'ROI Analytics') return <RoiAnalyticsView />;
     if (activeView === 'Diagnostics') return <DiagnosticsView />;
     return null;
   };
