@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+:root {
+  /* Sovereign Obsidian Palette — Intense Institutional Mode */
+  --void-black: #050505;        /* The Obsidian Base */
+  --slate-navy: #0b1326;        /* Deep Surface */
+  --brand-purple: #5b13ec;      /* High-Precision Accent */
+  --brand-purple-glow: rgba(91, 19, 236, 0.5);
+  
+  /* Glassmorphism Refinement */
+  --glass-white: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 40px;           /* Deep institutional blur */
+  
+  /* Semantic Tokens */
+  --background: var(--void-black);
+  --foreground: #e5e2e1;
+  --color-primary: var(--brand-purple);
+  --color-card: var(--slate-navy);
+  
+  /* UI Scaling (Institutional Standard) */
+  --radius-card: 1.5rem;       /* 24px Radius as seen in Render */
+  --radius-inner: 1rem;
+  --text-hero: clamp(4rem, 12vw, 10rem); /* Giant Porter Header */
+  --text-label: 0.75rem;       /* Metadata Precision */
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--color-primary);
+  --color-card: var(--color-card);
+  --color-card-border: var(--color-card-border);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --radius-card: var(--radius-card);
+  --radius-pill: var(--radius-pill);
+}
+
+body {
+  @apply bg-background text-foreground antialiased selection:bg-primary/30 font-sans;
+  min-height: 100vh;
+  overflow-x: hidden;
+  /* Signature Blueprint Texture */
+  background-image: 
+    linear-gradient(var(--glass-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+@layer components {
+  /* The "Porter" Card System */
+  .institutional-card {
+    @apply bg-white/[0.02] backdrop-blur-[var(--glass-blur)] border border-white/[0.06] rounded-[var(--radius-card)] transition-all duration-700 overflow-hidden;
+  }
+  
+  .institutional-card:hover {
+    @apply border-primary/50 shadow-[0_0_80px_-20px_rgba(91,19,236,0.25)] bg-white/[0.05] -translate-y-1;
+  }
+
+  .glass-panel {
+    @apply bg-black/40 backdrop-blur-3xl border border-white/[0.08];
+  }
+
+  /* Bento Layouts */
+  .bento-grid {
+    @apply grid gap-6 grid-cols-1 md:grid-cols-4 lg:grid-cols-6;
+  }
+
+  .bento-item {
+    @apply institutional-card p-8 flex flex-col justify-between h-full min-h-[280px];
+  }
+
+  /* Typography Scales */
+  .text-power-hero {
+    @apply font-black tracking-tighter leading-[0.85] text-white uppercase;
+    font-size: var(--text-hero);
+  }
+
+  .text-power-price {
+    @apply font-black tracking-tighter leading-none text-white;
+    font-size: var(--text-price);
+  }
+
+  .label-eyebrow {
+    @apply font-black uppercase tracking-[0.25em] text-white/40 leading-none;
+    font-size: var(--text-label);
+  }
+
+  .btn-premium {
+    @apply h-14 px-8 bg-primary text-white font-black uppercase tracking-[0.2em] text-[10px] 
+           rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-95 shadow-xl shadow-primary/40 
+           flex items-center justify-center gap-3;
+  }
+
+  /* The Intel Badge Layer */
+  .intel-badge {
+    @apply px-3 py-1.5 bg-primary rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-primary/30;
+  }
+
+  .intel-badge-glass {
+    @apply px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest text-white border border-white/10;
+  }
+
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .animate-ticker {
+    animation: ticker 40s linear infinite;
+    display: flex;
+    width: fit-content;
+  }
+}
