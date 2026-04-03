@@ -1,236 +1,228 @@
-"use client";
+import React from 'react'
+import Link from 'next/link'
+import { Search, ArrowRight, MapPin } from 'lucide-react'
 
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { 
-  Search, 
-  Map as MapIcon, 
-  ChevronRight, 
-  ArrowUpRight,
-  TrendingUp,
-  Zap,
-  Shield
-} from "lucide-react";
-import { getHotspots } from "@/lib/api";
-import { Hotspot } from "@/types";
-
-export default function InstitutionalTerminal() {
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [hotspots, setHotspots] = useState<Hotspot[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function init() {
-      try {
-        const data = await getHotspots("Gurgaon", "buy");
-        setHotspots(data.slice(0, 3));
-      } catch (e) {
-        console.error("API Sync Failed", e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    init();
-  }, []);
-
+export default function Home() {
   return (
-    <main className="relative min-h-screen pt-20 pb-32 overflow-hidden bg-background">
-      {/* --- HERO: ARCHITECTURAL BACKDROP --- */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background to-background z-10" />
-        <img 
-          src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2000" 
-          alt="Architectural Backdrop"
-          className="object-cover w-full h-full grayscale brightness-50"
-        />
-      </div>
-
-      <div className="relative z-10 px-6 mx-auto max-w-7xl">
+    <div className="bg-background text-on-background min-h-screen">
+      
+      {/* 🚀 ADAPTIVE HERO (PC: IMMERSIVE | MOBILE: TACTICAL) */}
+      <section className="relative">
         
-        {/* --- SECTION 1: SEARCH PORTER --- */}
-        <section className="flex flex-col items-center justify-center py-24 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <h1 className="text-power-hero mb-6">
-              Search<br />Porter
-            </h1>
-            <p className="text-white/40 font-bold uppercase tracking-[0.3em] text-[10px] mb-12">
-              Select a Sector, Building, or Address...
-            </p>
+        {/* PC ONLY: IMMERSIVE BACKGROUND */}
+        <div className="absolute inset-0 z-0 hidden lg:block pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0e0e0f]/80 to-[#0e0e0f] z-10" />
+          <img 
+            className="w-full h-full object-cover scale-105" 
+            src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop" 
+            alt="Institutional Architecture" 
+          />
+        </div>
+
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+          <div className="pt-16 pb-20 lg:py-32">
             
-            <div className={`relative max-w-2xl mx-auto transition-all duration-500 transform ${searchFocused ? 'scale-105' : 'scale-100'}`}>
-              <div className={`absolute -inset-2 rounded-3xl bg-primary/20 blur-3xl transition-opacity duration-500 ${searchFocused ? 'opacity-100' : 'opacity-0'}`} />
-              <div className="relative flex items-center bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl transition-colors hover:bg-white/[0.05]">
-                <Search className="ml-6 text-white/40" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Gurgaon Sectors, Noida Buildings..."
-                  className="w-full h-20 px-6 text-xl font-medium text-white placeholder-white/20 bg-transparent outline-none"
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setSearchFocused(false)}
-                />
-                <button className="h-16 w-16 mr-2 flex items-center justify-center text-white transition-all bg-primary rounded-xl hover:bg-primary/80 shadow-lg shadow-primary/20">
-                  <ArrowUpRight size={24} />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* --- SECTION 2: IN MARKETS (QUICK FEED) --- */}
-        <section className="mt-20">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <span className="label-eyebrow">Institutional Alpha</span>
-              <h2 className="text-4xl font-black text-white mt-2 uppercase tracking-tighter">In Markets</h2>
-            </div>
-            <button className="flex items-center gap-2 text-primary font-black uppercase tracking-widest text-[10px] hover:translate-x-2 transition-transform">
-              View All Intelligence <ChevronRight size={16} />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {hotspots.length > 0 ? hotspots.map((property, idx) => (
-              <motion.div 
-                key={`${property.locality}-${idx}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="institutional-card group"
-              >
-                <div className="relative h-64 overflow-hidden">
-                  <img 
-                    src={`https://images.unsplash.com/photo-1545324418-f1d3c5b5a572?auto=format&fit=crop&q=80&w=800&h=600&sig=${idx}`} 
-                    className="object-cover w-full h-full transition-transform duration-1000 group-hover:scale-110 grayscale group-hover:grayscale-0"
-                    alt={property.locality}
-                  />
-                  <div className="absolute top-4 left-4 flex gap-2">
-                    <span className="intel-badge">Value Score: {property.score}</span>
-                    <span className="intel-badge-glass">ROI: +{property.growth_potential}%</span>
-                  </div>
-                </div>
-                <div className="p-8">
-                  <div className="flex justify-between items-start mb-6">
-                    <div>
-                      <h3 className="text-2xl font-black text-white tracking-tighter leading-tight mb-2">{property.locality}</h3>
-                      <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">{property.city} • Institutional Grade</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-black text-white leading-none">₹{(property.median_price / 10000000).toFixed(1)} Cr</p>
-                      <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mt-1">Avg Asset</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 pt-6 mt-6 border-t border-white/[0.05]">
-                    <div>
-                      <p className="label-eyebrow mb-1">Yield</p>
-                      <p className="text-xs font-black text-white">4.8%</p>
-                    </div>
-                    <div>
-                      <p className="label-eyebrow mb-1">Growth</p>
-                      <p className="text-xs font-black text-primary">High</p>
-                    </div>
-                    <div>
-                      <p className="label-eyebrow mb-1">Risk</p>
-                      <p className="text-xs font-black text-white">Low</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )) : (
-              [1, 2, 3].map(i => (
-                <div key={i} className="h-96 rounded-[var(--radius-card)] bg-white/5 animate-pulse" />
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* --- SECTION 3: INTELLIGENCE BENTO GRID --- */}
-        <section className="mt-32">
-          <div className="bento-grid">
-            
-            {/* LARGE QUAD: SPATIAL INTELLIGENCE */}
-            <div className="md:col-span-3 md:row-span-2 bento-item group p-0 overflow-hidden relative border-primary/20 bg-slate-950">
-              <div className="p-10 relative z-10">
-                <MapIcon className="text-primary mb-6" size={32} />
-                <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Spatial Intelligence</h3>
-                <p className="text-white/50 text-sm leading-relaxed max-w-sm">
-                  Neural analysis of transit nodes, absorption metrics, and asset-level appreciation velocity.
+            {/* Split logic: Center on PC, Stack on Mobile */}
+            <div className="flex flex-col lg:items-center lg:text-center space-y-12 lg:space-y-16">
+              
+              {/* Core Intel */}
+              <div className="space-y-6 lg:max-w-4xl lg:mx-auto">
+                <span className="text-primary text-[10px] sm:text-xs font-black tracking-[0.4em] uppercase block">Institutional Gateway</span>
+                <h1 className="font-headline text-4xl sm:text-6xl lg:text-8xl font-black tracking-tightest leading-[0.9] text-white">
+                  NCR Property <br className="hidden sm:block"/>
+                  <span className="text-primary">Intelligence.</span>
+                </h1>
+                <p className="text-[#adaaab] text-base sm:text-lg lg:text-xl max-w-2xl lg:mx-auto leading-relaxed font-body">
+                  An institutional-grade editorial perspective on the National Capital Region. Direct access to the FastAPI intelligence engine.
                 </p>
               </div>
               
-              <div className="absolute inset-0 z-0 pointer-events-none">
-                 <div className="absolute inset-0 bg-primary/5 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
-                 <div className="grid grid-cols-12 h-full opacity-20">
-                    {Array.from({length: 144}).map((_, i) => (
-                      <div key={i} className="border-[0.5px] border-white/5" />
-                    ))}
-                 </div>
-                 <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-slate-950 to-transparent" />
-              </div>
-              
-              <div className="absolute bottom-10 left-10 p-4 rounded-xl bg-primary/20 border border-primary/30 backdrop-blur-xl">
-                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Engine Online v4.2</span>
-              </div>
-            </div>
-
-            {/* HIGH-CAPS STATS */}
-            <div className="md:col-span-3 bento-item bg-white/[0.02]">
-              <div className="flex justify-between items-start">
-                <div>
-                   <span className="label-eyebrow text-primary">Institutional Access</span>
-                   <p className="text-xl font-bold text-white mt-4 max-w-xs leading-snug">
-                     Capital inflow detected in Gurgaon Sector 54 Institutional Belt.
-                   </p>
-                </div>
-                <TrendingUp className="text-primary" size={24} />
-              </div>
-              <div className="flex items-center gap-4 mt-8">
-                <div className="flex -space-x-3">
-                  {[1,2,3,4].map(i => <div key={i} className="w-10 h-10 rounded-full border-4 border-background bg-slate-800" />)}
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Analysts Active Recently</span>
-              </div>
-            </div>
-
-            {/* VALUE METRIC */}
-            <div className="md:col-span-1 bento-item text-center items-center justify-center border-white/5">
-               <div className="text-4xl font-black text-white tracking-widest">₹8.2K Cr</div>
-               <p className="label-eyebrow text-white/40 mt-4">Liquidity Swept</p>
-            </div>
-
-            {/* GROWTH CTA */}
-            <div className="md:col-span-2 bento-item bg-primary/10 border-primary/40 group relative overflow-hidden">
-               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-primary/20 blur-[100px] group-hover:scale-150 transition-transform duration-1000" />
-               <div className="relative z-10 h-full flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-5xl font-black text-white">13m+</h4>
-                    <p className="label-eyebrow text-white/60 mt-1">Acres Appraised</p>
+              {/* Search HUD (Responsive Width) */}
+              <div className="w-full lg:max-w-2xl group">
+                <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center bg-[#131314] rounded-2xl sm:rounded-full p-2 border border-white/10 shadow-3xl gap-2">
+                  <div className="flex items-center flex-1 px-4">
+                    <Search className="text-[#adaaab] w-5 h-5 flex-shrink-0" />
+                    <input 
+                      className="w-full bg-transparent border-none focus:ring-0 text-white placeholder:text-[#adaaab] px-4 py-4 font-body outline-none text-base sm:text-lg min-h-[44px]" 
+                      placeholder="Explore Sector or H3 Index..." 
+                      type="text" 
+                    />
                   </div>
-                  <button className="w-full py-4 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-white hover:text-primary transition-all shadow-xl shadow-primary/20">
-                    Generate Alpha Report
-                  </button>
-               </div>
-            </div>
+                  <Link href="/dashboard" className="bg-primary text-black px-10 py-4 rounded-xl sm:rounded-full font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all hover:brightness-110 active:scale-95 no-underline text-center min-h-[44px] flex items-center justify-center whitespace-nowrap">
+                    Analyze Region
+                  </Link>
+                </div>
+              </div>
 
+              {/* MOBILE ONLY: TACTICAL IMAGE CARD */}
+              <div className="lg:hidden relative w-full h-[250px] sm:h-[400px] rounded-[32px] sm:rounded-[40px] overflow-hidden border border-white/5 shadow-2xl group">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0e0e0f] via-transparent to-transparent z-10" />
+                <img 
+                  className="w-full h-full object-cover transition-transform duration-[2000ms] group-hover:scale-110" 
+                  src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop" 
+                  alt="NCR Skyline" 
+                />
+                <div className="absolute bottom-6 left-6 z-20 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Live Context</span>
+                  <div className="flex items-center gap-2 text-white text-[10px] font-black">
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                    GURUGRAM SECTOR 45
+                  </div>
+                </div>
+              </div>
+
+              {/* PC ONLY: CONTEXT HUD */}
+              <div className="hidden lg:flex items-center gap-6 text-[10px] font-black uppercase tracking-[0.3em] text-[#adaaab]">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_8px_#bd9dff]" />
+                  LIVE CONTEXT: GURUGRAM SECTOR 45
+                </div>
+                <span className="opacity-10 text-white">|</span>
+                <div className="flex items-center gap-2">
+                  ALPHA INDEX: <span className="text-white">94.2</span>
+                </div>
+                <span className="opacity-10 text-white">|</span>
+                <div className="flex items-center gap-2">
+                  VOL: <span className="text-white">HIGH</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 🏙️ MAIN CONTENT HUB */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24 space-y-24 md:space-y-32">
+        
+        {/* Top Value Picks */}
+        <section className="space-y-12">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
+            <div className="space-y-2">
+              <span className="text-primary text-[10px] font-black tracking-[0.4em] uppercase block">Market Alpha</span>
+              <h2 className="font-headline text-3xl sm:text-4xl font-black tracking-tightest">Top Value Picks</h2>
+            </div>
+            <button className="text-[#adaaab] hover:text-primary transition-all text-[10px] font-black uppercase tracking-widest flex items-center gap-3 group min-h-[44px]">
+              View All Intelligence
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10 items-stretch">
+            <ValueCard 
+              image="https://images.unsplash.com/photo-1545324418-f1d3ac157304?q=80&w=1935&auto=format&fit=crop"
+              tag="High Yield"
+              tagColor="bg-primary/20 text-primary"
+              name="Magnolia Skyline Tower"
+              yieldRate="8.4%"
+              growth="+12%"
+              risk="Low"
+            />
+            <ValueCard 
+              image="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop"
+              tag="Tech District"
+              tagColor="bg-white/10 text-white"
+              name="MBM Tech-Nexus Center"
+              yieldRate="6.1%"
+              growth="+24%"
+              risk="Medium"
+            />
+            <ValueCard 
+              image="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop"
+              tag="Premium Core"
+              tagColor="bg-primary/20 text-primary"
+              name="Centurion Global Plaza"
+              yieldRate="5.8%"
+              growth="+9.5%"
+              risk="Low"
+            />
           </div>
         </section>
 
+        {/* Spatial Intelligence & Feed */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6 lg:gap-10">
+          
+          {/* Spatial Card */}
+          <div className="bg-[#131314] rounded-[32px] sm:rounded-[48px] overflow-hidden flex flex-col md:flex-row shadow-2xl border border-white/5 items-stretch">
+            <div className="w-full md:w-2/5 p-8 sm:p-12 flex flex-col justify-center space-y-6 sm:space-y-8">
+              <div className="space-y-4">
+                <span className="text-primary text-[10px] font-black tracking-[0.4em] uppercase">Visual Hub</span>
+                <h2 className="font-headline text-3xl font-black leading-tight">Spatial <br className="hidden md:block"/> Intelligence</h2>
+              </div>
+              <p className="text-[#adaaab] text-xs sm:text-sm font-body leading-relaxed">
+                Cross-reference property performance with regional economic heatmaps and infrastructure signals.
+              </p>
+              <Link href="/discovery" className="w-full sm:w-max bg-white/[0.03] text-white px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/[0.07] transition-all no-underline border border-white/5 text-center min-h-[44px] flex items-center justify-center">
+                Launch Map Analysis
+              </Link>
+            </div>
+            <div className="w-full md:w-3/5 min-h-[250px] sm:min-h-[300px] relative bg-[#0e0e0f]">
+               <div className="absolute inset-0 bg-gradient-to-r from-[#131314] via-transparent to-transparent z-10" />
+               <div className="absolute inset-0 flex items-center justify-center z-20">
+                  <div className="w-20 h-20 bg-primary/10 rounded-full animate-pulse flex items-center justify-center border border-primary/20">
+                    <MapPin className="text-primary w-6 h-6" />
+                  </div>
+               </div>
+               <img className="w-full h-full object-cover grayscale opacity-20 contrast-125" src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2074&auto=format&fit=crop" alt="Spatial Plot" />
+            </div>
+          </div>
+
+          {/* Institutional Feed */}
+          <div className="bg-[#131314] rounded-[32px] sm:rounded-[48px] p-8 sm:p-12 shadow-2xl border border-white/5 space-y-10 flex flex-col justify-between">
+            <div className="space-y-10">
+              <div className="flex items-center justify-between">
+                <h2 className="font-headline text-lg sm:text-xl font-black uppercase tracking-tight">Institutional Feed</h2>
+                <div className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_10px_#bd9dff]" />
+              </div>
+              <div className="space-y-10">
+                <FeedItem time="2h ago" category="Markets" title="Fed rates steady: Implications for Class-A assets." desc="Institutional lenders maintain conservative LTV ratios..." />
+                <div className="h-px bg-white/5" />
+                <FeedItem time="5h ago" category="Regional" title="Tech corridor expansion: Austin and Phoenix lead." desc="Secondary markets seeing record-high yield premiums..." />
+                <div className="h-px bg-white/5" />
+                <FeedItem time="Yesterday" category="Alpha" title="NCR Metro Phase 4: Local appreciation index." desc="Infrastructure signals point to 15% upside in Sector 80-102..." />
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
-      
-      {/* --- PERSISTENT MARKET PULSE --- */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-3xl border-t border-white/5 z-50 flex items-center overflow-hidden">
-        <div className="animate-ticker flex gap-16 text-white/30 text-[10px] font-black uppercase tracking-[0.3em] px-12">
-          {[...['Gurgaon Sec-54: +12.4%', 'Noida Sec-150: Bullish', 'DLF Phase 5: Low Inventory', 'G. Noida: Buy Signal', 'Macro: Repo Rate Stable'], ...['Gurgaon Sec-54: +12.4%', 'Noida Sec-150: Bullish', 'DLF Phase 5: Low Inventory', 'G. Noida: Buy Signal', 'Macro: Repo Rate Stable']].map((t, i) => (
-            <span key={`ticker-${i}`} className="flex items-center gap-4 whitespace-nowrap">
-              <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_12px_var(--brand-purple)]" />
-              {t}
-            </span>
-          ))}
+    </div>
+  )
+}
+
+const ValueCard = ({ image, tag, tagColor, name, yieldRate, growth, risk }: any) => (
+  <div className="group relative bg-[#131314] rounded-[32px] sm:rounded-[40px] overflow-hidden shadow-2xl transition-all duration-700 hover:-translate-y-2 border border-white/5 flex flex-col h-full">
+    <div className="aspect-[4/3] md:aspect-auto h-56 sm:h-64 relative overflow-hidden">
+      <img className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" src={image} alt={name} />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#131314] via-transparent to-transparent"></div>
+      <div className={`absolute top-6 left-6 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${tagColor}`}>
+        {tag}
+      </div>
+    </div>
+    <div className="p-8 space-y-6 flex flex-col flex-1 justify-between">
+      <h3 className="font-headline text-xl sm:text-2xl font-black tracking-tight leading-tight text-white">{name}</h3>
+      <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/5">
+        <div>
+          <span className="text-[#adaaab] text-[8px] uppercase font-black tracking-widest block mb-1">Yield</span>
+          <span className="text-primary text-base sm:text-lg font-black font-headline">{yieldRate}</span>
+        </div>
+        <div>
+          <span className="text-[#adaaab] text-[8px] uppercase font-black tracking-widest block mb-1">Growth</span>
+          <span className="text-white text-base sm:text-lg font-black font-headline">{growth}</span>
+        </div>
+        <div>
+          <span className="text-[#adaaab] text-[8px] uppercase font-black tracking-widest block mb-1">Risk</span>
+          <span className="text-[#bd9dff] text-base sm:text-lg font-black font-headline">{risk}</span>
         </div>
       </div>
-    </main>
-  );
-}
+    </div>
+  </div>
+)
+
+const FeedItem = ({ time, category, title, desc }: any) => (
+  <div className="group cursor-pointer space-y-2">
+    <span className="text-[9px] text-primary font-black uppercase tracking-widest block">{time} • {category}</span>
+    <h4 className="text-sm font-black font-headline text-white group-hover:text-primary transition-colors leading-tight">{title}</h4>
+    <p className="text-[11px] text-[#adaaab] font-body line-clamp-2 leading-relaxed font-light">{desc}</p>
+  </div>
+)
