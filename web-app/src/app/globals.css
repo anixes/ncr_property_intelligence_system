@@ -21,6 +21,10 @@
   --font-headline: "Manrope", sans-serif;
   --font-body: "Inter", sans-serif;
   --font-label: "Inter", sans-serif;
+
+  /* Atmospheric Spacing Scale */
+  --spacing-safe-mobile: 1.5rem;
+  --spacing-safe-desktop: 2.5rem;
 }
 
 @layer base {
@@ -34,10 +38,13 @@
     color: #ffffff;
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, .font-manrope {
     font-family: 'Manrope', sans-serif;
+    letter-spacing: -0.04em;
+    font-weight: 900;
   }
 }
 
@@ -46,18 +53,37 @@
     background: linear-gradient(180deg, #131314 0%, #0e0e0f 100%);
   }
 
-  .glass-panel {
-    backdrop-filter: blur(24px);
-    background: rgba(31, 31, 33, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+  /* Luxe Multi-Layer Glass */
+  .glass-panel-luxe {
+    backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(19, 19, 20, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+      0 4px 30px rgba(0, 0, 0, 0.1),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   }
 
-  .thumb-zone-cta {
-    min-height: 56px;
-    padding: 0 32px;
+  /* Mobile Decompression Helper: Raw CSS for Build Parity */
+  .mobile-decompress {
+     padding: 2.5rem 1.5rem;
   }
-  
-  .text-shadow-premium {
-     text-shadow: 0 0 30px rgba(189, 157, 255, 0.3);
+  @media (min-width: 640px) {
+    .mobile-decompress {
+      padding: 3rem 2rem;
+    }
+  }
+
+  .text-glow-primary {
+      text-shadow: 0 0 40px rgba(189, 157, 255, 0.4);
+  }
+
+  .premium-card {
+    border-radius: 32px;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @media (min-width: 640px) {
+    .premium-card {
+      border-radius: 40px;
+    }
   }
 }
