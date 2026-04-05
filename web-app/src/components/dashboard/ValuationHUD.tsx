@@ -28,14 +28,19 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
       
       {/* 6-GRID INTELLIGENCE HUD */}
       <section className="space-y-10">
-        <header className="space-y-2">
+        <header className="space-y-4">
            <div className="flex items-center gap-3 text-primary text-[10px] font-black uppercase tracking-[0.4em]">
               <ChartBar className="w-4 h-4" />
               <span>Intelligence Analytics HUD</span>
            </div>
-           <h3 className="text-3xl sm:text-4xl font-black font-headline tracking-tighter text-white">
-              Market <span className="text-white/40">Performance.</span>
-           </h3>
+           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+             <h3 className="text-3xl sm:text-4xl font-black font-headline tracking-tighter text-white">
+                Market <span className="text-white/40">Performance.</span>
+             </h3>
+             <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] animate-pulse">
+                Click any asset below for Strategic Deep Dive
+             </p>
+           </div>
         </header>
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">

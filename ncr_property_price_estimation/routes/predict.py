@@ -1,7 +1,14 @@
+# Standard Library Imports
+import logging
 from typing import List
-from fastapi import APIRouter, HTTPException
+
+# Internal Imports
+from ncr_property_price_estimation.config import logger
+
+# Third-Party Imports
 import pandas as pd
 import numpy as np
+from fastapi import APIRouter, HTTPException
 
 from ncr_property_price_estimation import state
 from ncr_property_price_estimation.schemas import PropertyInput, PredictionResponse
@@ -63,9 +70,17 @@ async def _predict_internal(inputs: List[PropertyInput]):
         row["h3_listings_count"] = np.nan
         
         # Automated Metro Proximity Validation
+        # Automated Metro Proximity Validation
         db_city = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(inp.city, inp.city)
-        sector_info = state.locality_index.get(db_city, {}).get(inp.sector, {})
+        # Institutional Sector Normalization (Ensures data parity between frontend and backend)
+        target_sector = inp.sector.strip()
+        
+        sector_info = state.locality_index.get(db_city, {}).get(target_sector, {})
         lat, lon = sector_info.get("lat"), sector_info.get("lon")
+        
+        # Diagnostic Audit: Log locality index hits
+        if not sector_info:
+            logger.warning(f"[predict] Locality Insight Failure: {db_city} | {target_sector} not found in index.")
         
         is_metro = getattr(inp.location, "is_near_metro", False)
         dist_to_metro = None
@@ -75,7 +90,10 @@ async def _predict_internal(inputs: List[PropertyInput]):
             from math import radians, cos, sin, acos
             def h(lat1, lon1, lat2, lon2):
                 lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
-                return 6371 * acos(sin(lat1)*sin(lat2) + cos(lat1)*cos(lat2)*cos(lon2-lon1))
+                try:
+                    return 6371 * acos(sin(lat1)*sin(lat2) + cos(lat1)*cos(lat2)*cos(lon2-lon1))
+                except (ValueError, ZeroDivisionError):
+                    return 0 # Identical points
             
             dists = [h(lat, lon, s["lat"], s["lon"]) for s in state.metro_stations]
             if dists:
@@ -87,6 +105,10 @@ async def _predict_internal(inputs: List[PropertyInput]):
             if col not in row:
                 row[col] = 0 if col not in CATEGORICAL_FEATURES else "Unknown"
         
+        # Ensure normalized sector/city reach the ML pipeline
+        row["city"] = db_city
+        row["sector"] = target_sector
+        
         rows.append({col: row.get(col, 0) for col in PIPELINE_FEATURES if col != "geo_median"})
 
     df = pd.DataFrame(rows)
@@ -95,6 +117,7 @@ async def _predict_internal(inputs: List[PropertyInput]):
         raise HTTPException(status_code=503, detail="Analytical models not hydrated.")
 
     # Model Inference
+    # The models are fitted pipelines that include the MicroMarketEncoder
     sales_price_sqft = np.expm1(state.models["sales"].predict(df))
     rent_sqft = np.expm1(state.models["rentals"].predict(df))
 
@@ -106,7 +129,8 @@ async def _predict_internal(inputs: List[PropertyInput]):
         
         # Intelligence Benchmarking
         db_city = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(inp.city, inp.city)
-        loc_data = state.locality_index.get(db_city, {}).get(inp.sector, {})
+        target_sector = inp.sector.strip()
+        loc_data = state.locality_index.get(db_city, {}).get(target_sector, {})
         
         # Select relevant benchmark based on intent
         if inp.listing_type == 'rent':
@@ -134,7 +158,7 @@ async def _predict_internal(inputs: List[PropertyInput]):
             recommendations=_intelligence.recommend_alternatives(
                 locality_index=state.locality_index,
                 current_city=db_city,
-                current_sector=inp.sector,
+                current_sector=target_sector,
                 user_budget_sqft=float(price_sqft),
                 current_yield=analysis.get("yield_pct", 0),
                 current_lat=lat,

@@ -78,7 +78,7 @@ export default function Home() {
               <BarChart3 className="text-primary w-5 h-5" />
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-white font-headline font-black text-lg group-hover:text-primary transition-colors leading-tight">Price<br/>Estimator</span>
+              <span className="text-white font-headline font-black text-lg group-hover:text-primary transition-colors leading-tight">Market<br/>Analyzer</span>
             </div>
             <ArrowRight className="w-5 h-5 text-white/20 group-hover:text-primary group-hover:translate-x-2 transition-all ml-auto" />
           </Link>

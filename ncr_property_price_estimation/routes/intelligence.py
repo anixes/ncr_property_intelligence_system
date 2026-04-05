@@ -21,9 +21,10 @@ def get_locality_list(city: str):
     target_key = _NORM_MAP.get(city, city)
     city_data = state.locality_index.get(target_key, {})
     
-    if not city_data and "_" not in target_key:
-        # Fallback heuristic for other space-separated cities
-        city_data = state.locality_index.get(city.replace(" ", "_"), {})
+    if not city_data:
+        # Fallback heuristic for space handling
+        alt_key = target_key.replace(" ", "_").replace("-", "_")
+        city_data = state.locality_index.get(alt_key, {})
         
     return {"city": city, "localities": sorted(list(city_data.keys()))}
 

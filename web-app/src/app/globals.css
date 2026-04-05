@@ -40,6 +40,8 @@
     color: #ffffff;
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     overflow-x: hidden;
   }
 
@@ -55,13 +57,13 @@
     background: linear-gradient(180deg, #131314 0%, #0e0e0f 100%);
   }
 
-  /* Luxe Multi-Layer Glass */
+  /* Luxe Multi-Layer Glass - Calibrated for Clarity */
   .glass-panel-luxe {
-    backdrop-filter: blur(20px) saturate(180%);
-    background: rgba(19, 19, 20, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px) saturate(160%);
+    background: rgba(19, 19, 20, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 
-      0 4px 30px rgba(0, 0, 0, 0.1),
+      0 4px 30px rgba(0, 0, 0, 0.2),
       inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   }
 

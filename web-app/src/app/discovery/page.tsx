@@ -31,7 +31,7 @@ export default function Discovery() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const [filters, setFilters] = useState<DiscoverRequest>({
-    city: 'Gurgaon',
+    city: 'Noida',
     listing_type: 'buy',
     bhk: [2, 3],
     budget_min: 5000000,
@@ -139,7 +139,7 @@ export default function Discovery() {
               />
               
               <InputPorter 
-                label="BHK Blueprint"
+                label="BHK Configuration"
                 value={(filters.bhk || []).map(String)}
                 onChange={(v) => setFilters({...filters, bhk: v.map(Number)})}
                 icon={Building}
@@ -149,7 +149,7 @@ export default function Discovery() {
               />
 
               <InputPorter 
-                label="Asset Integrity"
+                label="Property Type"
                 value={filters.prop_type}
                 onChange={(v) => setFilters({...filters, prop_type: v})}
                 icon={Ruler}
@@ -186,7 +186,7 @@ export default function Discovery() {
            <div className="p-8 sm:p-10 bg-white/[0.01] border border-white/5 rounded-3xl border-dashed">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16">
                 <InputPorter 
-                  label={filters.listing_type === 'buy' ? "Strategic Capital Spectrum" : "Monthly Rental Spectrum"}
+                  label={filters.listing_type === 'buy' ? "Price Range" : "Monthly Rent Range"}
                   value={[filters.budget_min, filters.budget_max]}
                   onChange={([min, max]) => setFilters({...filters, budget_min: min, budget_max: max})}
                   icon={Coins}
@@ -222,7 +222,7 @@ export default function Discovery() {
                 className="flex-1 w-full sm:w-auto bg-primary text-black font-black text-xs sm:text-sm uppercase tracking-[0.3em] rounded-2xl h-16 sm:h-20 flex items-center justify-center gap-4 hover:brightness-110 active:scale-95 transition-all shadow-2xl shadow-primary/20"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Radar className="w-5 h-5" />}
-                Execute Fleet Scan
+                Search Properties
               </button>
               
               <button 
@@ -230,7 +230,7 @@ export default function Discovery() {
                 className="w-full sm:w-auto h-14 sm:h-20 px-6 sm:px-8 rounded-2xl bg-white/[0.03] border border-white/5 text-[#adaaab] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 sm:gap-4 hover:bg-white/[0.06] active:scale-95 transition-all"
               >
                 <Settings2 className="w-4 h-4" />
-                Tactical Protocol
+                Advanced Filters
                 <ChevronDown className={`w-4 h-4 transition-transform duration-500 ${showAdvanced ? 'rotate-180' : ''}`} />
               </button>
            </div>
@@ -244,7 +244,7 @@ export default function Discovery() {
                 className="overflow-hidden pt-8 border-t border-white/5"
               >
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <PropertyCommandCard title="Amenities Signal" icon={Waves}>
+                    <PropertyCommandCard title="Amenities" icon={Waves}>
                       <div className="grid grid-cols-1 gap-3">
                         <Toggle label="Swimming Pool" icon={Waves} active={filters.amenities.has_pool} onClick={() => setFilters({...filters, amenities: {...filters.amenities, has_pool: !filters.amenities.has_pool}})} />
                         <Toggle label="Health Club/Gym" icon={Dumbbell} active={filters.amenities.has_gym} onClick={() => setFilters({...filters, amenities: {...filters.amenities, has_gym: !filters.amenities.has_gym}})} />
@@ -253,7 +253,7 @@ export default function Discovery() {
                       </div>
                     </PropertyCommandCard>
 
-                    <PropertyCommandCard title="Proximal Intelligence" icon={MapPin}>
+                    <PropertyCommandCard title="Location Features" icon={MapPin}>
                       <div className="grid grid-cols-1 gap-3">
                         <Toggle label="Near Metro" icon={TrainFront} active={filters.location_features.is_near_metro} onClick={() => setFilters({...filters, location_features: {...filters.location_features, is_near_metro: !filters.location_features.is_near_metro}})} />
                         <Toggle label="Corner Plot" icon={Split} active={filters.location_features.is_corner_property} onClick={() => setFilters({...filters, location_features: {...filters.location_features, is_corner_property: !filters.location_features.is_corner_property}})} />
@@ -262,7 +262,7 @@ export default function Discovery() {
                       </div>
                     </PropertyCommandCard>
 
-                    <PropertyCommandCard title="Asset Configuration" icon={LayoutPanelLeft}>
+                    <PropertyCommandCard title="Property Details" icon={LayoutPanelLeft}>
                       <div className="grid grid-cols-1 gap-3">
                         <Toggle label="Luxury Finish" icon={Crown} active={filters.property_features.is_luxury} onClick={() => setFilters({...filters, property_features: {...filters.property_features, is_luxury: !filters.property_features.is_luxury}})} />
                         <Toggle label="Brand New Build" icon={Construction} active={filters.property_features.is_new_construction} onClick={() => setFilters({...filters, property_features: {...filters.property_features, is_new_construction: !filters.property_features.is_new_construction}})} />

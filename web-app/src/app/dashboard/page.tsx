@@ -33,15 +33,17 @@ function DashboardContent() {
     const project = searchParams.get('project');
     const area = searchParams.get('area');
     const bhk = searchParams.get('bhk');
+    const intent = searchParams.get('intent') || searchParams.get('listing_type');
 
-    if (city || sector || project || area || bhk) {
+    if (city || sector || project || area || bhk || intent) {
       setInput(prev => ({
         ...prev,
         city: city || prev.city,
         sector: sector || prev.sector,
         property_name: project || prev.property_name,
         area: area ? parseInt(area) : prev.area,
-        bedrooms: bhk ? parseInt(bhk) : prev.bedrooms
+        bedrooms: bhk ? parseInt(bhk) : prev.bedrooms,
+        listing_type: (intent as any) || prev.listing_type
       }));
     }
   }, [searchParams]);
@@ -51,8 +53,8 @@ function DashboardContent() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const [input, setInput] = useState<PropertyInput>({
-    city: 'Gurgaon',
-    sector: 'Sector 54',
+    city: 'Noida',
+    sector: 'Sector 150',
     property_name: '',
     bedrooms: 3,
     area: 1800,
@@ -146,8 +148,8 @@ function DashboardContent() {
         </div>
         <div className="space-y-4">
           <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black font-headline tracking-tightest leading-[0.85] text-white">
-             Price <br className="hidden sm:block"/>
-             <span className="text-[#adaaab]">Estimator.</span>
+             Market <br className="hidden sm:block"/>
+             <span className="text-[#adaaab]">Analyzer.</span>
           </h1>
           <p className="text-lg sm:text-xl md:text-2xl text-[#adaaab] font-light max-w-2xl leading-relaxed tracking-tight font-body italic">
             Get accurate property valuations for any society in the NCR region.
@@ -352,6 +354,7 @@ function DashboardContent() {
           item={selectedItem} 
           isOpen={isDrawerOpen} 
           onClose={() => setIsDrawerOpen(false)} 
+          intent={input.listing_type as any}
         />
       )}
     </div>

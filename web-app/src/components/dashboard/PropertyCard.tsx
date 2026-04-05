@@ -26,22 +26,25 @@ const MetricHUD = ({ label, value, icon }: any) => (
 
 export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
   // Mapping logic: Handle both Listing-level assets and Sector-level recommendations
-  const name = item.property_name || item.society || (item.locality ? `${item.locality} Alpha` : 'Strategic Asset Unit');
+  const name = item.property_name || item.society || item.locality || 'Precision Asset Unit';
   const location = item.locality || item.sector || 'NCR Hub';
   
   // Advanced Resolution: Resolve basic metrics first to allow cross-calculation
   const psqft = item.price_per_sqft || item.median_price_sqft || 0;
   const yield_pct = item.yield_pct || item.investment_yield || item.expected_yield_pct || 0;
   const area = item.area || 1500;
-  const bhk = item.bedrooms || item.bhk || '–';
+  const bhk = item.bedrooms || item.bhk || item.prop_bhk || '—';
 
   // Total price resolution (Asset price or calculated from sqft)
+  // For Rent: If direct data is missing, we derive the Macro Median using (Price * Yield) / 12
   const price = intent === 'buy' 
     ? (item.price || (psqft > 0 ? psqft * area : 0))
-    : (item.predicted_monthly_rent || item.monthly_rent || (psqft > 0 ? psqft * area : 0));
+    : (item.predicted_monthly_rent || 
+       item.monthly_rent || 
+       (psqft > 0 ? (psqft * area * (yield_pct || 3) / 100) / 12 : 0));
  
   // Deep Dive Link Params
-  const deepDiveUrl = `/dashboard?city=${encodeURIComponent(item.city || 'Gurgaon')}&sector=${encodeURIComponent(item.locality || item.sector || '')}&area=${area}&bhk=${bhk}`;
+  const deepDiveUrl = `/dashboard?city=${encodeURIComponent(item.city || 'Noida')}&sector=${encodeURIComponent(item.locality || item.sector || '')}&area=${area}&bhk=${bhk}`;
  
   // Advanced Intelligence Metrics
   const score = Number(item.unified_score || item.composite_score || item.deal_score || 0);
@@ -58,6 +61,7 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.01, boxShadow: '0 0 30px rgba(189,157,255,0.08)' }}
       viewport={{ once: true }}
       onClick={() => onClick?.(item)}
       className="premium-card p-6 sm:p-8 group flex flex-col gap-8 h-full cursor-pointer hover:bg-white/[0.04] active:scale-[0.98] transition-all relative overflow-hidden"
@@ -86,7 +90,7 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
         <div className="bg-white/[0.02] p-5 rounded-2xl flex flex-col gap-2 border border-white/5 group-hover:border-white/10 transition-colors">
           <div className="flex items-center gap-2 opacity-30">
              <Zap className="w-3 h-3" />
-             <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{intent === 'buy' ? 'Liquidity Value' : 'Monthly Rent'}</p>
+             <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{intent === 'buy' ? 'Market Value' : 'Monthly Rent'}</p>
           </div>
           <p className="text-xl font-black font-headline text-white">{formatNCRPrice(price)}</p>
         </div>
@@ -119,14 +123,11 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
           )}
         </div>
         
-        <Link 
-          href={deepDiveUrl}
-          onClick={(e) => e.stopPropagation()}
-          className="h-10 px-4 rounded-xl border border-white/10 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#adaaab] group-hover:border-primary group-hover:bg-primary/10 group-hover:text-primary transition-all cursor-pointer"
-        >
-           <span>Evaluate</span>
-           <ChevronRight className="w-3 h-3" />
-        </Link>
+        {/* REFINED TACTICAL CTA: Unlocks on Hover */}
+        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
+           <span>View Report</span>
+           <ChevronRight className="w-3.5 h-3.5" />
+        </div>
       </div>
     </motion.div>
   );

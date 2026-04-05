@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, TrendingUp, ShieldCheck, Zap, Info, ExternalLink } from 'lucide-react';
+import { X, MapPin, TrendingUp, ShieldCheck, Zap, Info, ExternalLink, ChevronRight } from 'lucide-react';
 import { PropertyAsset, Recommendation } from '@/types';
-import { formatNCRPrice } from '@/utils/format';
+import { formatNCRPrice, formatArea } from '@/utils/format';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 
 const Map = dynamic(() => import('react-map-gl/maplibre').then(m => m.default), {
   ssr: false,
@@ -78,31 +79,41 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                 onClose();
               }
             }}
-            className="fixed top-0 right-0 h-full w-full sm:w-[500px] glass-panel-luxe z-[110] shadow-2xl p-0 overflow-y-auto touch-pan-y"
+            className="fixed top-0 right-0 h-full w-full lg:w-[410px] md:w-[380px] glass-panel-luxe z-[110] shadow-2xl p-0 overflow-y-auto touch-pan-y border-l border-white/10"
           >
             {/* Header Area */}
-            <div className="sticky top-0 z-10 glass-panel-luxe border-0 border-b border-white/10 px-6 py-4 flex justify-between items-center bg-surface/80">
+            <div className="sticky top-0 z-10 glass-panel-luxe border-0 border-b border-white/10 px-5 py-4 flex justify-between items-center bg-surface/80">
               <div className="flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
                     <Zap className="w-5 h-5" />
                  </div>
                  <h3 className="text-lg font-black tracking-tighter uppercase font-headline">Intelligence Report</h3>
               </div>
-              <button 
-                onClick={onClose}
-                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 active:scale-90 transition-all text-white/40 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Tactical Market Analyzer Link (Subtle) *) */}
+                <Link 
+                  href={`/dashboard?city=${encodeURIComponent(item.city || '')}&sector=${encodeURIComponent((item as any).sector || item.locality || '')}&area=${(item as any).area || (item as any).total_sqft || ''}&bhk=${(item as any).bhk || ''}&intent=${intent}`}
+                  className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/20 hover:text-primary hover:border-primary/30 transition-all active:scale-95"
+                  title="Initialize Market Analyzer"
+                >
+                  <TrendingUp className="w-4 h-4" />
+                </Link>
+                <button 
+                  onClick={onClose}
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 active:scale-90 transition-all text-white/40 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Content Area */}
-            <div className="px-4 sm:px-8 py-6 space-y-10 pb-24">
+            <div className="px-5 py-8 space-y-10 pb-10">
               
-              {/* Asset Header */}
+              {/* Asset Header *) */}
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <h2 className="text-4xl font-black font-headline text-white tracking-tight leading-tight uppercase">
+                  <h2 className="text-2xl font-black font-headline text-white tracking-tight leading-tight uppercase">
                     {society}
                   </h2>
                   <div className="flex items-center gap-2 text-sm font-bold text-primary tracking-widest uppercase opacity-70">
@@ -113,17 +124,13 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                 
                 <div className="flex gap-3">
                    <Badge label={`${score}/10`} sub="ALPHA SCORE" primary />
-                   <Badge label={itemH3.startsWith('ID') ? 'GEO BACKFILL' : 'H3 INDEXED'} sub="SPATIAL DATA" />
+                   <Badge label="VERIFIED" sub="GEOSPATIAL DATA" />
                 </div>
               </div>
 
               {/* Tactical Radar Map */}
               <div className="space-y-4">
-                <div className="flex justify-between items-end">
-                   <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Spatial Intelligence Radar</h4>
-                   <span className="text-[10px] font-black text-primary uppercase tracking-widest">{itemH3}</span>
-                </div>
-                <div className="relative h-[200px] sm:aspect-video rounded-3xl overflow-hidden border border-white/10 bg-black">
+                <div className="relative w-full aspect-video rounded-3xl overflow-hidden border border-white/10 bg-black">
                    <TacticalMap h3Index={itemH3} lat={itemLat} lon={itemLon} />
                    
                    {/* Coordinates HUD overlay */}
@@ -139,7 +146,7 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
               {/* Financial Matrix */}
               <div className="space-y-6">
                 <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Financial Architecture</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <MetricSquare 
                     label={intent === 'rent' ? "Monthly Rent" : "Valuation"} 
                     value={formatNCRPrice(price)} 
@@ -186,14 +193,14 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                  <div className="flex items-center gap-3">
                     <ShieldCheck className="w-5 h-5 text-primary" />
                     <h5 className="text-[11px] font-black tracking-widest uppercase">
-                      {intent === 'rent' ? "Lifestyle Intelligence Protocol" : "Risk Intelligence Protocol"}
+                      {intent === 'rent' ? "Lifestyle Score" : "Market Risk Analysis"}
                     </h5>
                  </div>
                  
                  <div className="space-y-4">
-                   <RiskBar label={intent === 'rent' ? "Security & Safety" : "Liquidity Confidence"} percentage={primaryMetric} />
+                   <RiskBar label={intent === 'rent' ? "Security & Safety" : "Market Liquidity"} percentage={primaryMetric} />
                    <RiskBar label={intent === 'rent' ? "Affordability Index" : "Price Stability"} percentage={secondaryMetric} />
-                   <RiskBar label={intent === 'rent' ? "Amenity Density" : "Growth Momentum"} percentage={tertiaryMetric} />
+                   <RiskBar label={intent === 'rent' ? "Amenity Density" : "Growth Potential"} percentage={tertiaryMetric} />
                  </div>
               </div>
 
@@ -202,7 +209,7 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                 <div className="space-y-8">
                   <div className="flex items-center gap-3">
                     <TrendingUp className="w-5 h-5 text-primary" />
-                    <h5 className="text-[11px] font-black tracking-widest uppercase">Technical Asset Protocol</h5>
+                    <h5 className="text-[11px] font-black tracking-widest uppercase">Property Details</h5>
                   </div>
                   
                   <div className="grid grid-cols-1 gap-8">
@@ -222,7 +229,7 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                        }}
                      />
                      <FeatureGrid 
-                       title="Spatial Metadata" 
+                       title="Location Intelligence" 
                        features={(item as any).features.location} 
                        labels={{
                          is_near_metro: "Metro Connectivity",
@@ -232,7 +239,7 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                        }}
                      />
                      <FeatureGrid 
-                       title="Asset Specifications" 
+                       title="Property Specs" 
                        features={(item as any).features.property} 
                        labels={{
                          is_luxury: "Luxury Finish",
@@ -247,11 +254,6 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                 </div>
               )}
 
-              {/* External Protocol Link */}
-              <button className="w-full py-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center gap-3 hover:bg-white/10 transition-all group">
-                <span className="text-[11px] font-black tracking-[0.2em] uppercase text-white/60 group-hover:text-white">Request Full Due Diligence</span>
-                <ExternalLink className="w-4 h-4 text-primary" />
-              </button>
 
             </div>
           </motion.div>
@@ -262,17 +264,17 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
 };
 
 const Badge = ({ label, sub, primary = false }: any) => (
-  <div className={`px-4 py-2 rounded-2xl border ${primary ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-white/10'}`}>
-    <p className="text-[8px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">{sub}</p>
-    <p className={`text-xs font-black tracking-widest ${primary ? 'text-primary' : 'text-white'}`}>{label}</p>
+  <div className={`px-3 py-1.5 rounded-2xl border ${primary ? 'bg-primary/10 border-primary/30' : 'bg-white/5 border-white/10'}`}>
+    <p className="text-[7.5px] font-black opacity-40 uppercase tracking-widest leading-none mb-1">{sub}</p>
+    <p className={`text-[10px] font-black tracking-widest ${primary ? 'text-primary' : 'text-white'}`}>{label}</p>
   </div>
 );
 
 const MetricSquare = ({ label, value, sub, trend }: any) => (
-  <div className="bg-white/[0.03] p-6 rounded-3xl border border-white/5 space-y-1">
-    <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">{label}</p>
-    <p className="text-2xl font-black font-headline text-white tracking-tight">{value}</p>
-    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">{sub}</p>
+  <div className="bg-white/[0.03] p-5 rounded-2xl border border-white/5 space-y-1">
+    <p className="text-[8.5px] font-black text-white/30 uppercase tracking-[0.2em]">{label}</p>
+    <p className="text-xl font-black font-headline text-white tracking-tight">{value}</p>
+    <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest">{sub}</p>
   </div>
 );
 
@@ -369,7 +371,7 @@ const FeatureGrid = ({ title, features, labels }: { title: string, features: Rec
           return (
             <div 
               key={key}
-              className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${isActive ? 'bg-primary/5 border-primary/20 text-white' : 'bg-white/[0.01] border-white/5 text-white/20'}`}
+              className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border transition-all ${isActive ? 'bg-primary/5 border-primary/20 text-white' : 'bg-white/[0.01] border-white/5 text-white/20'}`}
             >
               <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
               {isActive ? (

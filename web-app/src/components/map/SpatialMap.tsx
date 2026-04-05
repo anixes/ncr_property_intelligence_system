@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Map, { Marker, NavigationControl, Popup } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -25,6 +25,29 @@ export default function SpatialMap() {
   const [loading, setLoading] = useState(true);
   const [selectedPin, setSelectedPin] = useState<any | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const mapRef = useRef<any>(null);
+
+  const handleMarkerClick = (property: any) => {
+    setSelectedPin(property);
+    setIsDrawerOpen(true);
+
+    // Dynamic Camera Offset: Shift map to the left to clear the right sidebar
+    if (mapRef.current) {
+      const lat = property.latitude || property.lat;
+      const lon = property.longitude || property.lon;
+      
+      if (lat && lon) {
+        mapRef.current.easeTo({
+          center: [lon, lat],
+          // Offset the center so marker is on the left 1/3rd (desktop) or center (mobile)
+          offset: window.innerWidth > 1024 ? [150, 0] : [0, 0], 
+          duration: 1000,
+          zoom: Math.max(viewState.zoom, 12),
+          padding: { right: window.innerWidth > 1024 ? 400 : 0 }
+        });
+      }
+    }
+  };
 
   useEffect(() => {
     setHasMounted(true);
@@ -96,10 +119,14 @@ export default function SpatialMap() {
       {/* MAP LAYER */}
       <Map
         {...viewState}
+        ref={mapRef}
         onMove={(evt: any) => setViewState(evt.viewState)}
         mapLib={maplibregl}
         mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
         attributionControl={false}
+        onClick={() => {
+          if (isDrawerOpen) setIsDrawerOpen(false);
+        }}
       >
         <NavigationControl position="bottom-right" showCompass={false} />
 
@@ -117,7 +144,7 @@ export default function SpatialMap() {
               anchor="bottom"
               onClick={e => {
                 e.originalEvent.stopPropagation();
-                setSelectedPin(p);
+                handleMarkerClick(p);
               }}
             >
               <div className="relative group cursor-pointer transition-transform hover:scale-125 z-10 hover:z-50">
@@ -137,62 +164,6 @@ export default function SpatialMap() {
             </Marker>
           );
         })}
-
-        {/* POPUP */}
-        {selectedPin && (
-          <Popup
-            longitude={selectedPin.longitude}
-            latitude={selectedPin.latitude}
-            anchor="bottom"
-            offset={20}
-            onClose={() => setSelectedPin(null)}
-            closeButton={false}
-            closeOnClick={false}
-            className="spatial-popup"
-          >
-            <div className="bg-[#131314] border border-white/10 rounded-xl p-4 shadow-2xl min-w-[240px] text-white font-sans">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h4 className="font-headline font-black text-xs uppercase tracking-widest text-white/40 mb-1">{selectedPin.society || selectedPin.project || 'Institutional Asset'}</h4>
-                  <p className="text-xl font-black text-white">{formatNCRPrice(selectedPin.price || selectedPin.total_price)}</p>
-                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-tighter">{selectedPin.sector || selectedPin.city}</p>
-                </div>
-                <button onClick={() => setSelectedPin(null)} className="text-white/40 hover:text-white transition-colors">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-white/10">
-                <div>
-                  <span className="block text-[9px] text-white/40 uppercase tracking-widest font-black">Score</span>
-                  <span className="block text-sm font-bold text-primary">{(selectedPin.institutional_score || selectedPin.unified_score || 0).toFixed(0)}</span>
-                </div>
-                <div>
-                  <span className="block text-[9px] text-white/40 uppercase tracking-widest font-black">Area/BHK</span>
-                  <span className="block text-sm font-bold text-[#10b981]">{selectedPin.bhk || '--'} BHK / {formatArea(selectedPin.area || selectedPin.total_sqft)}</span>
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-2 mt-4">
-                <button 
-                  onClick={() => setIsDrawerOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-primary text-[#0e0e0f] text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-primary/90 transition-all shadow-lg active:scale-95"
-                >
-                  Intelligence Report
-                  <BarChart3 className="w-3 h-3" />
-                </button>
-                
-                <Link 
-                  href={`/dashboard?city=${encodeURIComponent(selectedPin.city || '')}&sector=${encodeURIComponent(selectedPin.sector || selectedPin.locality || '')}&area=${selectedPin.area || selectedPin.total_sqft || ''}&bhk=${selectedPin.bhk || ''}`}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-white/10 transition-all active:scale-95"
-                >
-                  Estimate Value
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-          </Popup>
-        )}
       </Map>
 
       {/* INTELLIGENCE SIDEBAR (PROPERTY DRAWER) */}
@@ -203,7 +174,7 @@ export default function SpatialMap() {
         intent={mode}
       />
 
-      {/* Tactical HUD Overlay */}
+      {/* Tactical HUD Overlay *) */}
       <div className="absolute bottom-4 left-4 pointer-events-none z-10 flex flex-col gap-3">
         {/* Dynamic Insight Card - Only shows if we have high-alpha properties */}
         {topInsight && (topInsight.institutional_score || topInsight.unified_score || 0) > 85 && (
@@ -266,18 +237,6 @@ export default function SpatialMap() {
           Rent
         </button>
       </div>
-      
-      {/* Global CSS for MapLibre tweaks if needed */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .spatial-popup .maplibregl-popup-content, .spatial-popup .mapboxgl-popup-content {
-            background: transparent !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-        }
-        .spatial-popup .maplibregl-popup-tip, .spatial-popup .mapboxgl-popup-tip {
-            border-top-color: #131314 !important;
-        }
-      `}} />
     </div>
   );
 }

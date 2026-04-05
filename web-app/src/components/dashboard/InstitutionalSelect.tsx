@@ -50,7 +50,7 @@ export const InstitutionalSelect = ({
               {label}
             </span>
           )}
-          <span className={`text-sm sm:text-base font-black font-headline tracking-tight ${value ? 'text-white' : 'text-white/20'}`}>
+          <span className={`text-sm sm:text-base font-black font-headline tracking-tight antialiased [text-rendering:optimizeLegibility] ${value ? 'text-white' : 'text-white/20'}`}>
             {value || placeholder}
           </span>
         </div>

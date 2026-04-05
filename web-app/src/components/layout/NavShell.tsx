@@ -17,7 +17,7 @@ export default function NavShell() {
   }, []);
 
   const navLinks = [
-    { name: 'Estimator', href: '/dashboard', icon: BarChart3 },
+    { name: 'Market Analyzer', href: '/dashboard', icon: BarChart3 },
     { name: 'Search', href: '/discovery', icon: Compass },
   ];
 
@@ -35,9 +35,9 @@ export default function NavShell() {
               <div className="w-3 h-3 rounded-full bg-primary shadow-[0_0_15px_#bd9dff]" />
             </div>
           </div>
-          <div className="flex flex-col -space-y-0.5">
+          <div className="flex flex-col space-y-0">
             <span className="font-headline font-black tracking-tightest text-base sm:text-xl uppercase text-white leading-none">NCR Intel</span>
-            <span className="text-[9px] font-black tracking-[0.4em] uppercase text-primary/60">Platform</span>
+            <span className="text-[7px] sm:text-[8px] font-bold tracking-[0.4em] uppercase text-primary/60 mt-0.5">Platform</span>
           </div>
         </Link>
 
