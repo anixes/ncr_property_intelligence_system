@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, TrendingUp, ShieldCheck, Zap, Info, ExternalLink } from 'lucide-react';
 import { PropertyAsset, Recommendation } from '@/types';
-import { formatCurrency } from '@/lib/api';
+import { formatNCRPrice } from '@/utils/format';
 import dynamic from 'next/dynamic';
 
 const Map = dynamic(() => import('react-map-gl/maplibre').then(m => m.default), {
@@ -142,7 +142,7 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                 <div className="grid grid-cols-2 gap-4">
                   <MetricSquare 
                     label={intent === 'rent' ? "Monthly Rent" : "Valuation"} 
-                    value={formatCurrency(price)} 
+                    value={formatNCRPrice(price)} 
                     sub={'area' in item ? `at ${item.area} SQFT` : 'Market Median'} 
                   />
                   {intent === 'rent' ? (

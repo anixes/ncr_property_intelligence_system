@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { predictProperty, getLocalities } from '@/lib/api';
 import { PropertyInput, PredictionResponse, PropertyAsset, Recommendation } from '@/types';
 import { ValuationHUD } from '@/components/dashboard/ValuationHUD';
@@ -15,7 +16,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { InstitutionalSelect } from '@/components/dashboard/InstitutionalSelect';
 import { InputPorter, Toggle, PropertyCommandCard } from '@/components/dashboard/PortalUI';
 
-export default function Dashboard() {
+function DashboardContent() {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PredictionResponse | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -24,7 +26,25 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    // Deep Linking Pre-fill Logic
+    const city = searchParams.get('city');
+    const sector = searchParams.get('sector');
+    const project = searchParams.get('project');
+    const area = searchParams.get('area');
+    const bhk = searchParams.get('bhk');
+
+    if (city || sector || project || area || bhk) {
+      setInput(prev => ({
+        ...prev,
+        city: city || prev.city,
+        sector: sector || prev.sector,
+        property_name: project || prev.property_name,
+        area: area ? parseInt(area) : prev.area,
+        bedrooms: bhk ? parseInt(bhk) : prev.bedrooms
+      }));
+    }
+  }, [searchParams]);
   
   // Detail Drawer State
   const [selectedItem, setSelectedItem] = useState<PropertyAsset | Recommendation | null>(null);
@@ -338,4 +358,15 @@ export default function Dashboard() {
   );
 }
 
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <div className="w-full h-screen flex items-center justify-center bg-[#0a0a0a]">
+        <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
+  );
+}
 

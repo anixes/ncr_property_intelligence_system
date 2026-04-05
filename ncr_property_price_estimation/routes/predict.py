@@ -44,11 +44,15 @@ async def _predict_internal(inputs: List[PropertyInput]):
     
     rows = []
     for inp in inputs:
-        row = inp.dict(by_alias=True)
-        # Flatten grouped fields
+        # Use model_dump for Pydantic v2 compatibility
+        row = inp.model_dump(by_alias=True)
+        
+        # Robust flattening of sub-models
+        # These keys correspond to aliases 'location_score' and 'features'
         for group in ["amenities", "location_score", "features"]:
             if group in row and isinstance(row[group], dict):
-                row.update(row.pop(group))
+                group_data = row.pop(group)
+                row.update(group_data)
         
         row["city"] = inp.city
         row["society"] = inp.property_name or "Unknown"

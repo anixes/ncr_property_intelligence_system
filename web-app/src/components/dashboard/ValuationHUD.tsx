@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { PredictionResponse, PropertyAsset, Recommendation } from '@/types';
-import { TrendingUp, AlertTriangle, IndianRupee, ChartBar, Compass, Sparkles } from 'lucide-react';
-import { formatCurrency } from '@/lib/api';
+import { IndianRupee, ChartBar, Compass, Sparkles, TrendingUp, AlertTriangle } from 'lucide-react';
+import { formatNCRPrice } from '@/utils/format';
 import { PropertyCard } from './PropertyCard';
 import { motion } from 'framer-motion';
 
@@ -43,7 +43,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
              <>
                <MetricCard 
                   label="Standard Valuation" 
-                  value={formatCurrency(data.estimated_market_value)} 
+                  value={formatNCRPrice(data.estimated_market_value)} 
                   subValue="Institutional Benchmark"
                   icon={IndianRupee} 
                   color="text-white" 
@@ -53,7 +53,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                />
                <MetricCard 
                   label="Rental Potential" 
-                  value={formatCurrency(data.predicted_monthly_rent)} 
+                  value={formatNCRPrice(data.predicted_monthly_rent)} 
                   subValue="Target Asset Alpha"
                   icon={TrendingUp} 
                   color="text-primary" 
@@ -64,7 +64,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
              <>
                <MetricCard 
                   label="Monthly Rent" 
-                  value={formatCurrency(data.predicted_monthly_rent)} 
+                  value={formatNCRPrice(data.predicted_monthly_rent)} 
                   subValue="Resident Monthly Overhead"
                   icon={TrendingUp} 
                   color="text-primary" 
@@ -74,7 +74,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                />
                <MetricCard 
                   label="Capital Benchmark" 
-                  value={formatCurrency(data.estimated_market_value)} 
+                  value={formatNCRPrice(data.estimated_market_value)} 
                   subValue="Buy-Back Value"
                   icon={IndianRupee} 
                   color="text-white/60" 
@@ -102,7 +102,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
            ) : (
              <MetricCard 
                 label="Security Deposit" 
-                value={formatCurrency(data.predicted_monthly_rent * 2)} 
+                value={formatNCRPrice(data.predicted_monthly_rent * 2)} 
                 subValue="NCR Standard (2 Months)"
                 icon={IndianRupee} 
                 color="text-primary" 

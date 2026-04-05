@@ -99,12 +99,11 @@ class H3Engine:
 
         return h3_agg.dropna(subset=["latitude"]).to_dict(orient="records")
 
-    @staticmethod
     def compute_featured(
         pool_df: pd.DataFrame,
         listing_type: str,
         locality_index: dict[str, Any] | None = None,
-        limit: int = 50,
+        limit: int = 500,
     ) -> list[dict[str, Any]]:
         """
         Surface top featured properties for the Discovery Engine.

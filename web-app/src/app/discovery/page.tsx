@@ -283,7 +283,9 @@ export default function Discovery() {
             <div className="flex items-center gap-6">
                <div className="flex items-center gap-3">
                   <Target className="w-5 h-5 text-primary" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#adaaab] blur-[0.2px]">{results.length} Artifacts Scanned</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#adaaab] blur-[0.2px]">
+                    {loading ? 'Fleet Scan in Progress...' : `${results.length} Artifacts Scanned`}
+                  </span>
                </div>
             </div>
          </div>

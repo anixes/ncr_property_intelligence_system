@@ -3,13 +3,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Intent } from '@/types';
-import { formatCurrency } from '@/lib/api';
-import { MapPin, TrendingUp, ShieldCheck, Zap, Layers, Sparkles } from 'lucide-react';
+import { MapPin, TrendingUp, ShieldCheck, Zap, Layers, Sparkles, ChevronRight } from 'lucide-react';
+import { formatNCRPrice, formatArea } from '@/utils/format';
+import Link from 'next/link';
 
 interface CardProps {
   item: any;
   intent: Intent;
   onClick?: (item: any) => void;
+  showDeepDive?: boolean;
 }
 
 const MetricHUD = ({ label, value, icon }: any) => (
@@ -37,6 +39,9 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
   const price = intent === 'buy' 
     ? (item.price || (psqft > 0 ? psqft * area : 0))
     : (item.predicted_monthly_rent || item.monthly_rent || (psqft > 0 ? psqft * area : 0));
+ 
+  // Deep Dive Link Params
+  const deepDiveUrl = `/dashboard?city=${encodeURIComponent(item.city || 'Gurgaon')}&sector=${encodeURIComponent(item.locality || item.sector || '')}&area=${area}&bhk=${bhk}`;
  
   // Advanced Intelligence Metrics
   const score = Number(item.unified_score || item.composite_score || item.deal_score || 0);
@@ -83,14 +88,14 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
              <Zap className="w-3 h-3" />
              <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{intent === 'buy' ? 'Liquidity Value' : 'Monthly Rent'}</p>
           </div>
-          <p className="text-xl font-black font-headline text-white">{formatCurrency(price)}</p>
+          <p className="text-xl font-black font-headline text-white">{formatNCRPrice(price)}</p>
         </div>
         <div className="bg-white/[0.02] p-5 rounded-2xl flex flex-col gap-2 border border-white/5 group-hover:border-white/10 transition-colors">
           <div className="flex items-center gap-2 opacity-30">
              <Layers className="w-3 h-3" />
              <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Asset Area</p>
           </div>
-          <p className="text-xl font-black font-headline text-white">{area} <span className="text-[10px] opacity-40">SQFT</span></p>
+          <p className="text-xl font-black font-headline text-white">{formatArea(area)}</p>
         </div>
       </div>
 
@@ -113,9 +118,15 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
             </>
           )}
         </div>
-        <div className="h-10 w-10 rounded-full border border-white/10 flex items-center justify-center text-[#adaaab] group-hover:border-primary group-hover:bg-primary/10 group-hover:text-primary transition-all cursor-pointer">
-           <TrendingUp className="w-4 h-4" />
-        </div>
+        
+        <Link 
+          href={deepDiveUrl}
+          onClick={(e) => e.stopPropagation()}
+          className="h-10 px-4 rounded-xl border border-white/10 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#adaaab] group-hover:border-primary group-hover:bg-primary/10 group-hover:text-primary transition-all cursor-pointer"
+        >
+           <span>Evaluate</span>
+           <ChevronRight className="w-3 h-3" />
+        </Link>
       </div>
     </motion.div>
   );
