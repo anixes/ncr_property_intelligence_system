@@ -1,18 +1,23 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AmenitiesSelection(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     has_pool: bool = False
     has_gym: bool = False
     has_lift: bool = False
     has_power_backup: bool = False
-    is_gated_community: bool = False
-    has_clubhouse: bool = False
+    is_gated_community: bool = Field(False, alias="is_gated_community")
+    has_clubhouse: bool = Field(False, alias="has_clubhouse")
+    has_maintenance: bool = Field(False, alias="has_maintenance")
+    has_wifi: bool = Field(False, alias="has_wifi")
+    is_high_ceiling: bool = Field(False, alias="is_high_ceiling")
 
 
 class LocationSelection(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     is_near_metro: bool = False
     is_corner_property: bool = False
     is_park_facing: bool = False
@@ -20,6 +25,7 @@ class LocationSelection(BaseModel):
 
 
 class PropertyFeatures(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     is_luxury: bool = False
     is_servant_room: bool = False
     is_study_room: bool = False
@@ -30,6 +36,7 @@ class PropertyFeatures(BaseModel):
 
 class PropertyInput(BaseModel):
     """Input schema for a single property prediction."""
+    model_config = ConfigDict(populate_by_name=True)
 
     area: float = Field(..., gt=0, description="Built-up area in sqft")
     bedrooms: int = Field(..., ge=1, description="Number of bedrooms")
@@ -61,6 +68,10 @@ class PropertyInput(BaseModel):
     is_standalone: bool = False
     is_owner_listing: bool = False
 
+    # Advanced Intelligence Metrics
+    orientation: Literal["N", "S", "E", "W", "NE", "NW", "SE", "SW"] | None = Field(None, description="Property facing orientation")
+    property_age: int | None = Field(None, ge=0, description="Property age in years")
+
 
 class PredictionResponse(BaseModel):
     """Output schema for a single prediction."""
@@ -79,6 +90,7 @@ class PredictionResponse(BaseModel):
         default_factory=list, description="Top 5 real-world historical matches"
     )
     dist_to_metro_km: float | None = Field(None, description="Actual distance to nearest metro")
+    asset: dict[str, Any] | None = Field(None, description="Full reconstructed asset for UI deep dive")
 
 
 class HealthResponse(BaseModel):
@@ -88,6 +100,7 @@ class HealthResponse(BaseModel):
 
 
 class DiscoverRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     city: str
     listing_type: Literal["buy", "rent"]
     bhk: list[int]

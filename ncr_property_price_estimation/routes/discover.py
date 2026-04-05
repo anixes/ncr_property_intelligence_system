@@ -17,7 +17,7 @@ def discover_properties(req: DiscoverRequest):
         locality_index=state.locality_index,
         req=req
     )
-    return {"listings": results}
+    return results
 
 @router.get("/hotspots")
 async def get_market_hotspots(listing_type: str = "buy", city: str = None):

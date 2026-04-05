@@ -10,7 +10,15 @@ The dashboard currently has several sections that are either disabled in the nav
 - [ ] **Localities Index**: Implement a searchable, filterable grid of all NCR localities with their corresponding value scores and growth deltas.
 - [ ] **ROI Analytics**: Create a dedicated view for comparative ROI across cities and property types using Recharts.
 - [ ] **Diagnostics HUD**: Implement a system health view showing API status, model versions (from `/intelligence/model-info`), and processing latency.
-- [ ] **Valuation Engine (Functional)**: Transition the "Valuation Engine" tab from a placeholder scanning animation to a functional UI that links to the existing `/analyzer` or provides a quick-valuation input.
+- [ ] **Valuation Engine (Functional)**: Transition the "Valuation Engine" tab into a comprehensive **Market Analyzer**.
+    - **User Input Parameters**:
+        - Mandatory: Property Type, BHK, Area (sqft), Locality, Floor No.
+        - Advanced: Orientation (N/S/E/W/NE/NW/SE/SW), EXTRA Rooms (Servant/Study/Store/Pooja), Amenities (Clubhouse/Gym/Pool/etc.), Property Age (0-10+ yrs), Vastu Compliance, Corner Property.
+    - **Intelligence Output (Results)**:
+        - **6-Grid Analytics HUD**: Valuation, Monthly Rent, Investment Score, Rental Yield, Market Risk, Market Position.
+        - **Verified Comparables**: Micro-analysis grid showing real-time listing matches (Price, Area, BHK, ₹/SQFT, Yield, Deal Score).
+        - **Investment Alternatives**: Macro-analysis grid for neighboring localities with Sector Grades.
+        - **3D Intelligence Map**: Toggleable spatial view.
 - [ ] **Market Trends**: Implement data-driven charts for volume momentum, investor sentiment, and absorption velocity based on the `dashboard-summary`.
 
 ### 2. Global Navigation & Polish

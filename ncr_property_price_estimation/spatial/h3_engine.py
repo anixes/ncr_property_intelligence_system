@@ -66,6 +66,7 @@ class H3Engine:
                 if "lat" not in locality_index[c][s]:
                     locality_index[c][s]["lat"] = row.get("latitude")
                     locality_index[c][s]["lon"] = row.get("longitude")
+                    locality_index[c][s]["h3"] = row.get("h3_res8")
         return locality_index
 
     @staticmethod
@@ -185,6 +186,9 @@ class H3Engine:
                     "unified_score": unified_score,
                     "listing_type": listing_type,
                     "bhk": int(row.get("bedrooms", 3)),
+                    "latitude": float(row.get("latitude")) if pd.notna(row.get("latitude")) else None,
+                    "longitude": float(row.get("longitude")) if pd.notna(row.get("longitude")) else None,
+                    "h3_index": str(row.get("h3_res8")) if pd.notna(row.get("h3_res8")) else None,
                 }
             )
 

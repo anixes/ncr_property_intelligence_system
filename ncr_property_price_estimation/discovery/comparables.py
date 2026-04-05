@@ -144,14 +144,40 @@ class ComparablesEngine:
                     "price": price,
                     "area": area,
                     "bhk": int(row["bedrooms"]) if pd.notna(row["bedrooms"]) else 0,
-                    "price_per_sqft": round(price_sqft, 0),
-                    "yield_pct": round(y_pct, 2),
-                    "unified_score": listing_score,
+                    "price_per_sqft": float(round(price_sqft, 0)),
+                    "yield_pct": float(round(y_pct, 2)),
+                    "unified_score": float(listing_score),
                     "listing_type": listing_type.lower(),
+                    "longitude": float(row["longitude"]) if pd.notna(row.get("longitude")) else None,
                     "latitude": float(row["latitude"]) if pd.notna(row.get("latitude")) else None,
-                    "longitude": float(row["longitude"])
-                    if pd.notna(row.get("longitude"))
-                    else None,
+                    "h3_index": str(row.get("h3_index", "")),
+                    "features": {
+                        "amenities": {
+                            "has_pool": bool(row.get("has_pool", 0)),
+                            "has_gym": bool(row.get("has_gym", 0)),
+                            "has_lift": bool(row.get("has_lift", 0)),
+                            "has_power_backup": bool(row.get("has_power_backup", 0)),
+                            "is_gated_community": bool(row.get("is_gated_community", 0)),
+                            "has_clubhouse": bool(row.get("has_clubhouse", 0)),
+                            "has_maintenance": bool(row.get("has_maintenance", 0)),
+                            "has_wifi": bool(row.get("has_wifi", 0)),
+                            "is_high_ceiling": bool(row.get("is_high_ceiling", 0)),
+                        },
+                        "location": {
+                            "is_near_metro": bool(row.get("gps_is_near_metro", 0)),
+                            "is_corner_property": bool(row.get("is_corner_property", 0)),
+                            "is_park_facing": bool(row.get("is_park_facing", 0)),
+                            "is_vastu_compliant": bool(row.get("is_vastu_compliant", 0)),
+                        },
+                        "property": {
+                            "is_luxury": bool(row.get("is_luxury", 0)),
+                            "is_servant_room": bool(row.get("is_servant_room", 0)),
+                            "is_study_room": bool(row.get("is_study_room", 0)),
+                            "is_store_room": bool(row.get("is_store_room", 0)),
+                            "is_pooja_room": bool(row.get("is_pooja_room", 0)),
+                            "is_new_construction": bool(row.get("is_new_construction", 0)),
+                        }
+                    }
                 }
             )
 

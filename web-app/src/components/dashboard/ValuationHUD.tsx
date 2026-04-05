@@ -1,69 +1,225 @@
 'use client';
 
 import React from 'react';
-import { ValuationResponse } from '@/types';
-import { TrendingUp, AlertTriangle, IndianRupee, ChartBar } from 'lucide-react';
+import { PredictionResponse, PropertyAsset, Recommendation } from '@/types';
+import { TrendingUp, AlertTriangle, IndianRupee, ChartBar, Compass, Sparkles } from 'lucide-react';
+import { formatCurrency } from '@/lib/api';
+import { PropertyCard } from './PropertyCard';
+import { motion } from 'framer-motion';
 
 interface Props {
-  data: ValuationResponse;
+  data: PredictionResponse;
+  intent: 'buy' | 'rent';
+  onCardClick?: (item: PropertyAsset | Recommendation) => void;
 }
 
-export const ValuationHUD = ({ data }: Props) => {
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(val);
-  };
-
-  const alphaScore = data.intelligence.alpha_score;
-  const isValuePick = data.intelligence.risk_label === "VALUE PICK";
+export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
+  const alphaScore = data?.intelligence_suite?.unified_score || 0;
+  const isValuePick = data?.intelligence_suite?.risk_analysis?.label === "VALUE PICK";
+  const marketPosition = data?.intelligence_suite?.overvaluation_pct || 0;
+  const positionLabel = marketPosition < 0 ? "UNDERVALUED" : "OVERVALUED";
+  const positionColor = marketPosition < 0 ? "text-green-400" : "text-amber-400";
+  
+  const comparables = data?.similar_listings || [];
+  const alternatives = data?.recommendations || [];
 
   return (
-    <div className="space-y-8 lg:space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
+    <div className="space-y-20 lg:space-y-32 animate-in fade-in slide-in-from-bottom-5 duration-1000">
       
-      {/* HERO VALUATION OVERLAY */}
-      <div className="bg-[#131314] rounded-[32px] sm:rounded-[48px] p-8 sm:p-12 lg:p-16 relative overflow-hidden group shadow-2xl border border-white/5">
-        
-        {/* Institutional Glow Overlay */}
-        <div className="absolute top-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-primary/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/20 transition-colors duration-1000" />
-        
-        <div className="relative z-10 space-y-12">
-          
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10 sm:gap-12">
-             <div className="space-y-4">
-                <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-[#adaaab] font-inter">Estimated Institutional Value</p>
-                <h2 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tightest leading-none font-headline text-white">
-                  {formatCurrency(data.valuation.predicted_price)}
-                </h2>
-             </div>
-             
-             {/* Alpha HUD Cluster */}
-             <div className="flex items-center gap-4 bg-black/40 p-4 sm:p-6 rounded-2xl sm:rounded-3xl backdrop-blur-3xl border border-white/5 shadow-inner self-start lg:self-auto">
-                <div className="text-right">
-                   <p className="text-[10px] font-black uppercase tracking-widest text-[#adaaab]">Alpha Score</p>
-                   <p className="text-xl sm:text-2xl font-black font-headline text-primary">{alphaScore.toFixed(1)} <span className="text-xs text-white/50">/ 10</span></p>
-                </div>
-                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center bg-primary/10 text-primary">
-                   <ChartBar className="w-6 h-6 sm:w-8 sm:h-8" />
-                </div>
-             </div>
-          </div>
-          
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 pt-10 sm:pt-12 border-t border-white/5 items-stretch">
-             <Metric label="Gross Yield" value={`${data.intelligence.financials.gross_yield.toFixed(1)}%`} icon={TrendingUp} color="text-green-400" bgColor="bg-green-400/10" />
-             <Metric label="Risk Matrix" value={data.intelligence.risk_label} icon={AlertTriangle} color={isValuePick ? "text-green-400" : "text-amber-400"} bgColor={isValuePick ? "bg-green-400/10" : "bg-amber-400/10"} />
-             <Metric label="Monthly Alpha" value={formatCurrency(data.intelligence.financials.estimated_monthly_rent)} icon={IndianRupee} color="text-primary" bgColor="bg-primary/10" />
-             <Metric label="Confidence" value="94.2%" icon={ChartBar} color="text-blue-400" bgColor="bg-blue-400/10" />
-          </div>
+      {/* 6-GRID INTELLIGENCE HUD */}
+      <section className="space-y-10">
+        <header className="space-y-2">
+           <div className="flex items-center gap-3 text-primary text-[10px] font-black uppercase tracking-[0.4em]">
+              <ChartBar className="w-4 h-4" />
+              <span>Intelligence Analytics HUD</span>
+           </div>
+           <h3 className="text-3xl sm:text-4xl font-black font-headline tracking-tighter text-white">
+              Market <span className="text-white/40">Performance.</span>
+           </h3>
+        </header>
 
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">
+           {intent === 'buy' ? (
+             <>
+               <MetricCard 
+                  label="Standard Valuation" 
+                  value={formatCurrency(data.estimated_market_value)} 
+                  subValue="Institutional Benchmark"
+                  icon={IndianRupee} 
+                  color="text-white" 
+                  glow="group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)] cursor-pointer"
+                  onClick={() => data.asset && onCardClick?.(data.asset)}
+                  actionLabel="View Analysis"
+               />
+               <MetricCard 
+                  label="Rental Potential" 
+                  value={formatCurrency(data.predicted_monthly_rent)} 
+                  subValue="Target Asset Alpha"
+                  icon={TrendingUp} 
+                  color="text-primary" 
+                  glow="group-hover:shadow-[0_0_30px_rgba(189,157,255,0.15)]"
+               />
+             </>
+           ) : (
+             <>
+               <MetricCard 
+                  label="Monthly Rent" 
+                  value={formatCurrency(data.predicted_monthly_rent)} 
+                  subValue="Resident Monthly Overhead"
+                  icon={TrendingUp} 
+                  color="text-primary" 
+                  glow="group-hover:shadow-[0_0_30px_rgba(189,157,255,0.15)] cursor-pointer"
+                  onClick={() => data.asset && onCardClick?.(data.asset)}
+                  actionLabel="View Analysis"
+               />
+               <MetricCard 
+                  label="Capital Benchmark" 
+                  value={formatCurrency(data.estimated_market_value)} 
+                  subValue="Buy-Back Value"
+                  icon={IndianRupee} 
+                  color="text-white/60" 
+                  glow="group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]"
+               />
+             </>
+           )}
+           <MetricCard 
+              label={intent === 'buy' ? "Investment Score" : "Lifestyle Index"} 
+              value={`${(alphaScore).toFixed(1)} / 10`} 
+              subValue={intent === 'buy' ? "Unified Asset Delta" : "Utility Performance"}
+              icon={intent === 'buy' ? ChartBar : Sparkles} 
+              color="text-primary" 
+              glow="group-hover:shadow-[0_0_30px_rgba(189,157,255,0.15)]"
+           />
+           {intent === 'buy' ? (
+             <MetricCard 
+                label="Gross Rental Yield" 
+                value={`${(data?.intelligence_suite?.yield_pct || 0).toFixed(2)}%`} 
+                subValue="Annualized Performance"
+                icon={TrendingUp} 
+                color="text-green-400" 
+                glow="group-hover:shadow-[0_0_30px_rgba(74,222,128,0.1)]"
+             />
+           ) : (
+             <MetricCard 
+                label="Security Deposit" 
+                value={formatCurrency(data.predicted_monthly_rent * 2)} 
+                subValue="NCR Standard (2 Months)"
+                icon={IndianRupee} 
+                color="text-primary" 
+                glow="group-hover:shadow-[0_0_30px_rgba(189,157,255,0.15)]"
+             />
+           )}
+           <MetricCard 
+              label="Risk Stratification" 
+              value={data?.intelligence_suite?.risk_analysis?.label || "NEUTRAL"} 
+              subValue={`${data?.intelligence_suite?.risk_analysis?.confidence || 'High'} Confidence`}
+              icon={AlertTriangle} 
+              color={isValuePick ? "text-green-400" : "text-amber-400"} 
+              glow={isValuePick ? "group-hover:shadow-[0_0_30_rgba(74,222,128,0.1)]" : "group-hover:shadow-[0_0_30_rgba(251,191,36,0.1)]"}
+           />
+           <MetricCard 
+              label="Market position" 
+              value={`${Math.abs(marketPosition).toFixed(1)}%`} 
+              subValue={positionLabel}
+              icon={Compass} 
+              color={positionColor} 
+              glow="group-hover:shadow-[0_0_30px_rgba(255,255,255,0.05)]"
+           />
         </div>
-      </div>
+      </section>
+
+      {/* VERIFIED COMPARABLES */}
+      {comparables.length > 0 && (
+        <section className="space-y-12">
+           <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+              <div className="space-y-3">
+                 <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Historical Benchmarks</div>
+                 <h3 className="text-3xl font-black font-headline text-white uppercase">Verified <span className="text-white/40">Comparables.</span></h3>
+              </div>
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Real-World Marketplace Matches</p>
+           </header>
+
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {comparables.slice(0, 4).map((item, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                >
+                  <PropertyCard 
+                    item={item} 
+                    intent={intent} 
+                    onClick={onCardClick}
+                  />
+                </motion.div>
+              ))}
+           </div>
+        </section>
+      )}
+
+      {/* INVESTMENT ALTERNATIVES */}
+      {alternatives.length > 0 && (
+        <section className="space-y-12">
+           <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+              <div className="space-y-3">
+                 <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Macro Spatial Analysis</div>
+                 <h3 className="text-3xl font-black font-headline text-white uppercase">Investment <span className="text-white/40">Alternatives.</span></h3>
+              </div>
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Neighboring Micro-Market Opportunities</p>
+           </header>
+
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {alternatives.slice(0, 4).map((item, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                >
+                  <PropertyCard 
+                    item={item} 
+                    intent={intent} 
+                    onClick={onCardClick}
+                  />
+                </motion.div>
+              ))}
+           </div>
+        </section>
+      )}
+
     </div>
   );
 };
+
+const MetricCard = ({ label, value, subValue, icon: Icon, color, glow, onClick, actionLabel }: any) => (
+  <div 
+    onClick={onClick}
+    className={`group relative bg-[#131314] rounded-[32px] p-8 border border-white/5 transition-all duration-500 hover:border-primary/20 ${glow} ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+  >
+     <div className="flex justify-between items-start mb-8">
+        <div className="space-y-1">
+           <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#adaaab] font-inter">{label}</p>
+           <p className="text-[10px] font-medium text-white/30">{subValue}</p>
+        </div>
+        <div className="p-3 rounded-2xl bg-white/[0.03] group-hover:bg-primary/10 transition-colors">
+           <Icon className={`w-5 h-5 ${color}`} />
+        </div>
+     </div>
+     <div className="flex items-end justify-between gap-4">
+       <div className={`text-2xl sm:text-3xl font-black font-headline tracking-tighter ${color}`}>
+          {value}
+       </div>
+       {actionLabel && (
+         <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black uppercase tracking-widest text-primary group-hover:bg-primary group-hover:text-black transition-all">
+           {actionLabel}
+         </div>
+       )}
+     </div>
+  </div>
+);
 
 const Metric = ({ label, value, icon: Icon, color, bgColor }: any) => (
    <div className={`p-6 rounded-3xl border border-white/5 bg-white/[0.02] flex flex-col justify-between space-y-4 hover:bg-white/[0.04] transition-all`}>

@@ -1,253 +1,274 @@
-'use client';
+'use client'
 
 import React from 'react'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Search, ArrowRight, MapPin, Activity, Globe, Shield } from 'lucide-react'
+import Link from 'next/link'
+import { Search, ArrowRight, BarChart3, Compass, Globe, Shield } from 'lucide-react'
+import dynamic from 'next/dynamic'
+
+// Render the embedded interactive map inside the Spatial Intelligence card
+const MapComponent = dynamic(() => import('@/components/map/SpatialMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-[#0e0e0f] flex items-center justify-center flex-col gap-2">
+      <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <span className="text-[8px] font-black tracking-widest text-primary uppercase">Hydrating Map...</span>
+    </div>
+  )
+})
 
 export default function Home() {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { staggerChildren: 0.15, delayChildren: 0.2 }
-    }
-  }
+  const [activeCity, setActiveCity] = React.useState('GURUGRAM SEC. 65');
+  const [alphaScore, setAlphaScore] = React.useState('94.2');
+  const [feedItems, setFeedItems] = React.useState<any[]>([]);
+  const [featuredAssets, setFeaturedAssets] = React.useState<any[]>([]);
 
-  const itemVariants: any = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
-  }
+  const FALLBACK_ASSETS = [
+    { name: "Magnolia Skyline", yield: "6.8%", growth: "+12.4%", risk: "Low", tag: "Premium", image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" },
+    { name: "Sector 150 Matrix", yield: "7.1%", growth: "+18.2%", risk: "Med", tag: "Growth", image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" },
+    { name: "Golf Course Ext.", yield: "5.5%", growth: "+9.1%", risk: "Very Low", tag: "Stable", image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" }
+  ];
+  const POOL_CITIES = ['GURUGRAM SEC. 65', 'NOIDA SEC. 150', 'DWARKA EXPY', 'GOLF COURSE RD', 'SOUTHERN PERIPHERAL', 'YAMUNA EXPY'];
+  const POOL_ALERTS = [
+    { icon: <BarChart3 className="w-4 h-4" />, category: "NOIDA", title: "Expressway Extension: Premium Yields", desc: "Infrastructure completion tokens detected. Projected 7.2% rental yield ceiling for Sector 150 assets..." },
+    { icon: <Shield className="w-4 h-4" />, category: "NCR REGION", title: "RERA 2.0 Compliance: Alpha Impact", desc: "Institutional directives prioritizing project velocity. Reducing liquidity risk in stalled corridor assets..." },
+    { icon: <BarChart3 className="w-4 h-4" />, category: "MARKETS", title: "Capital Flight: Luxury Segment Shift", desc: "Institutional investors reallocating from core Delhi to premium Gurugram gated assets..." },
+    { icon: <Globe className="w-4 h-4" />, category: "INFRA", title: "Metrolink Expansion: Yield Catalyst", desc: "New station approvals in Southern Peripheral Road expected to trigger 12% rent premium..." },
+    { icon: <Shield className="w-4 h-4" />, category: "POLICY", title: "Institutional Land Bank Audit", desc: "Government audit of stalled institutional plots signals upcoming supply squeeze in Noida..." }
+  ];
+
+  React.useEffect(() => {
+    setFeedItems(POOL_ALERTS.slice(0, 3));
+    
+    // Fetch Dynamic Featured Assets
+    const fetchAssets = async () => {
+      try {
+        const res = await fetch('/api/discovery?listing_type=buy');
+        const data = await res.json();
+        if (data.featured && data.featured.length > 0) {
+          const mapped = data.featured.slice(0, 3).map((item: any) => ({
+            name: item.property_name || item.name,
+            yield: item.yield_rate || "N/A",
+            growth: item.growth_index || "+--%",
+            risk: item.risk_profile || "Med",
+            tag: item.asset_tag || "New",
+            image: item.image_url || "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+          }));
+          setFeaturedAssets(mapped);
+        } else {
+          setFeaturedAssets(FALLBACK_ASSETS);
+        }
+      } catch (e) {
+        setFeaturedAssets(FALLBACK_ASSETS);
+      }
+    };
+    fetchAssets();
+    
+    // Cycle target zone and scores for "live" feel
+    let cityIdx = 0;
+    const interval = setInterval(() => {
+      cityIdx = (cityIdx + 1) % POOL_CITIES.length;
+      setActiveCity(POOL_CITIES[cityIdx]);
+      setAlphaScore((Math.random() * (98 - 92) + 92).toFixed(1));
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="bg-background text-on-background min-h-screen overflow-x-hidden">
-      
-      {/* 🚀 ADAPTIVE HERO (PC: IMMERSIVE | MOBILE: TACTICAL) */}
-      <section className="relative overflow-hidden min-h-[90vh] flex items-center">
+    <div className="min-h-[100dvh] bg-[#0e0e0f] relative w-full overflow-hidden antialiased selection:bg-primary/30 selection:text-white pb-24">
+      {/* Hero Background Image with Overlay */}
+      <div className="absolute inset-0 z-0 h-[100dvh]">
+        <img 
+          src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" 
+          className="w-full h-full object-cover opacity-20 filter grayscale"
+          alt="NCR Skyline Background"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0e0e0f] via-transparent to-[#0e0e0f]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0e0e0f] via-transparent to-transparent" />
+      </div>
+
+      {/* Background Ambience */}
+      <div className="absolute inset-x-0 -top-40 h-[800px] opacity-10 pointer-events-none flex justify-center overflow-hidden z-0">
+        <div className="w-[1200px] h-[1200px] bg-primary/20 rounded-full blur-[180px]" />
+      </div>
+
+      <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-8 xl:px-12 pt-32 space-y-20">
         
-        {/* PC ONLY: IMMERSIVE BACKGROUND */}
-        <div className="absolute inset-0 z-0 hidden lg:block pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0e0e0f]/80 to-[#0e0e0f] z-10" />
-          <motion.img 
-            initial={{ scale: 1.1, opacity: 0 }}
-            animate={{ scale: 1.05, opacity: 1 }}
-            transition={{ duration: 2.5, ease: "easeOut" }}
-            className="w-full h-full object-cover" 
-            src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop" 
-            alt="Institutional Architecture" 
-          />
+        {/* === HERO SECTION === */}
+        <div className="flex justify-between items-end">
+          <div className="max-w-2xl space-y-6">
+            <span className="text-[#bd9dff] font-black uppercase tracking-widest text-[10px] sm:text-xs">Institutional Intelligence Portal</span>
+            <h1 className="font-headline text-4xl sm:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight">NCR Property<br/>Intelligence.</h1>
+            <p className="text-white/60 text-lg leading-relaxed max-w-lg">The smartest way to navigate NCR real estate. AI-powered tools to help you find and price the perfect home.</p>
+          </div>
+          
+          <div className="hidden lg:flex gap-8 items-end">
+            <HudStat label="Active Nodes" value="18,204" color="text-[#10b981]" active />
+            <HudStat label="Network Alpha" value={alphaScore} color="text-[#bd9dff]" active />
+            <HudStat label="Target Zone" value={activeCity} active />
+          </div>
         </div>
 
-        {/* BACKGROUND AMBIENCE (Pulse) */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] animate-pulse z-0 pointer-events-none" />
-
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 relative z-20"
-        >
-          <div className="py-20 lg:py-32">
-            
-            <div className="flex flex-col lg:items-center lg:text-center space-y-10 lg:space-y-16">
-              
-              {/* Core Intel */}
-              <motion.div variants={itemVariants} className="space-y-6 lg:max-w-4xl lg:mx-auto">
-                <div className="flex items-center lg:justify-center gap-3">
-                  <span className="w-8 h-[1px] bg-primary/40 hidden sm:block" />
-                  <span className="text-primary text-[10px] sm:text-xs font-black tracking-[0.5em] uppercase block">Institutional Gateway</span>
-                  <span className="w-8 h-[1px] bg-primary/40 hidden sm:block" />
-                </div>
-                <h1 className="font-headline text-5xl sm:text-7xl lg:text-9xl font-black tracking-tightest leading-[0.85] text-white">
-                  NCR <span className="text-primary text-glow-primary">Intelligence.</span>
-                </h1>
-                <p className="text-[#adaaab] text-lg sm:text-xl lg:text-2xl max-w-3xl lg:mx-auto leading-relaxed font-body font-light">
-                  The definitive editorial perspective on the National Capital Region's real estate frontier. Powered by institutional-grade spatial analytics.
-                </p>
-              </motion.div>
-              
-              {/* Search HUD (Responsive Width) */}
-              <motion.div variants={itemVariants} className="w-full lg:max-w-3xl">
-                <div className="relative glass-panel-luxe rounded-[2.5rem] p-2 border border-white/10 shadow-3xl hover:border-primary/30 transition-all duration-500">
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <div className="flex items-center flex-1 px-5 h-14 sm:h-16">
-                      <Search className="text-primary w-6 h-6 flex-shrink-0" />
-                      <input 
-                        className="w-full bg-transparent border-none focus:ring-0 text-white placeholder:text-[#3d3d3f] px-5 font-body outline-none text-lg sm:text-xl" 
-                        placeholder="Search Sector, H3, or Society..." 
-                        type="text" 
-                      />
-                    </div>
-                    <Link href="/dashboard" className="bg-primary text-black px-12 py-4 sm:py-5 rounded-[2rem] font-black text-xs uppercase tracking-widest transition-all hover:brightness-110 active:scale-95 no-underline text-center flex items-center justify-center shadow-[0_0_20px_rgba(189,157,255,0.4)]">
-                      Analyze Strategy
-                    </Link>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* TACTICAL HUD (Mobile Cards / PC HUD) */}
-              <motion.div variants={itemVariants} className="w-full">
-                 <div className="grid grid-cols-2 lg:flex lg:items-center lg:justify-center gap-4 sm:gap-8 lg:gap-12 text-[10px] sm:text-xs font-black uppercase tracking-widest text-[#adaaab]">
-                    <HudStat label="Live Context" value="GURUGRAM SEC. 45" active />
-                    <HudStat label="Alpha Index" value="94.2" />
-                    <HudStat label="Vol. Premium" value="High" color="text-primary" />
-                    <HudStat label="Market Status" value="Bullish" color="text-green-400" />
-                 </div>
-              </motion.div>
-
+        {/* === PRIMARY NAVIGATION CARDS === */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Link href="/dashboard" className="group relative glass-panel-luxe rounded-[2rem] p-5 flex items-center gap-4 border border-white/10 hover:border-primary/40 transition-all duration-500 overflow-hidden no-underline shadow-3xl active:scale-[0.97] min-h-[96px]">
+            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+              <BarChart3 className="text-primary w-5 h-5" />
             </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* 🏙️ MAIN CONTENT HUB (Atmospheric Spacing Applied) */}
-      <div className="w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 py-20 sm:py-32 space-y-32 sm:space-y-48">
-        
-        {/* Top Value Picks */}
-        <section className="space-y-16">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
-            <div className="space-y-4">
-              <span className="text-primary text-[10px] font-black tracking-[0.5em] uppercase block">Market Extraction</span>
-              <h2 className="font-headline text-4xl sm:text-5xl font-black tracking-tightest leading-none">Institutional <br className="sm:hidden"/> Selection.</h2>
+            <div className="flex flex-col text-left">
+              <span className="text-white font-headline font-black text-lg group-hover:text-primary transition-colors leading-tight">Price<br/>Estimator</span>
             </div>
-            <button className="text-[#adaaab] hover:text-primary transition-all text-xs font-black uppercase tracking-widest flex items-center gap-4 group h-14 px-8 border border-white/5 rounded-full hover:bg-white/5">
-              Access Full Terminal
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-            </button>
-          </div>
+            <ArrowRight className="w-5 h-5 text-white/20 group-hover:text-primary group-hover:translate-x-2 transition-all ml-auto" />
+          </Link>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12 lg:gap-16 items-stretch">
-            <ValueCard 
-              image="https://images.unsplash.com/photo-1545324418-f1d3ac157304?q=80&w=1935&auto=format&fit=crop"
-              tag="High Alpha"
-              tagColor="bg-primary/20 text-primary"
-              name="Magnolia Skyline"
-              yieldRate="8.4%"
-              growth="+12%"
-              risk="Low"
-            />
-            <ValueCard 
-              image="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop"
-              tag="Infrastructure"
-              tagColor="bg-white/10 text-white"
-              name="MBM Tech-Nexus"
-              yieldRate="6.1%"
-              growth="+24%"
-              risk="Med"
-            />
-            <ValueCard 
-              image="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2070&auto=format&fit=crop"
-              tag="Premium Core"
-              tagColor="bg-primary/20 text-primary"
-              name="Global Plaza 45"
-              yieldRate="5.8%"
-              growth="+9.5%"
-              risk="Low"
-            />
-          </div>
-        </section>
+          <Link href="/discovery" className="group relative glass-panel-luxe rounded-[2rem] p-5 flex items-center gap-4 border border-white/10 hover:border-white/30 transition-all duration-500 overflow-hidden no-underline shadow-3xl active:scale-[0.97] min-h-[96px]">
+            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+              <Compass className="text-white w-5 h-5" />
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-white font-headline font-black text-lg leading-tight">Property<br/>Search</span>
+            </div>
+            <ArrowRight className="w-5 h-5 text-white/20 group-hover:text-white group-hover:translate-x-2 transition-all ml-auto" />
+          </Link>
+        </div>
 
-        {/* Spatial Intelligence & Feed */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_0.7fr] gap-8 sm:gap-12 lg:gap-16">
-          
-          {/* Spatial Card */}
-          <div className="premium-card overflow-hidden flex flex-col md:flex-row shadow-3xl items-stretch min-h-[500px]">
-            <div className="w-full md:w-1/2 p-10 sm:p-14 flex flex-col justify-center space-y-8">
-              <div className="space-y-4">
-                <span className="text-primary text-[10px] font-black tracking-[0.5em] uppercase">Tactical Visuals</span>
-                <h2 className="font-headline text-4xl font-black leading-[0.95] tracking-tightest">Spatial <br /> Intelligence</h2>
+        {/* === ASSET MATRIX (VALUE CARDS) === */}
+        <div className="space-y-8">
+           <div className="flex justify-between items-end">
+             <h2 className="font-headline text-3xl sm:text-4xl font-black">Featured Assets</h2>
+           </div>
+           
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[320px]">
+             {featuredAssets.length > 0 ? featuredAssets.map((asset, i) => (
+                <ValueCard 
+                  key={i}
+                  image={asset.image}
+                  tag={asset.tag} tagColor={asset.tag === 'Premium' ? "text-[#bd9dff] bg-[#bd9dff]/10 border border-[#bd9dff]/30" : "text-[#10b981] bg-[#10b981]/10 border border-[#10b981]/30"}
+                  name={asset.name} yieldRate={asset.yield} growth={asset.growth} risk={asset.risk}
+                />
+             )) : (
+              <div className="col-span-3 h-48 flex items-center justify-center border border-white/5 bg-white/5 rounded-[2rem]">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Discovering High-Alpha Assets...</span>
+                </div>
               </div>
-              <p className="text-[#adaaab] text-sm sm:text-base font-body leading-relaxed font-light">
-                Cross-reference property performance with regional economic heatmaps and corridor development signals. 
-              </p>
-              <Link href="/discovery" className="w-full sm:w-max bg-white/5 text-white px-10 py-5 rounded-full text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-black transition-all no-underline border border-white/10 text-center flex items-center justify-center">
-                Launch Map Analysis
-              </Link>
+             )}
+           </div>
+        </div>
+
+        {/* === SPATIAL INTELLIGENCE & FEED === */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Spatial Intelligence block */}
+          <div className="premium-card shadow-3xl flex flex-col md:flex-row overflow-hidden border border-white/5 bg-[#131314]/40 h-[480px]">
+            <div className="p-7 sm:p-12 w-full md:w-1/2 flex flex-col justify-center">
+               <span className="text-[10px] text-primary uppercase font-black tracking-widest mb-2">Tactical Visuals</span>
+               <h2 className="font-headline text-3xl sm:text-4xl font-black mb-6">Spatial<br/>Intelligence</h2>
+               <p className="text-white/60 mb-8 max-w-sm text-sm sm:text-base leading-relaxed">Cross-reference high-alpha assets with regional development corridors. Live NCR map integration.</p>
+               <button className="border border-white/10 bg-[#1a1a1c] text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-full w-fit hover:bg-white/5 transition-colors">
+                 Launch Map Analysis
+               </button>
             </div>
-            <div className="w-full md:w-1/2 h-[300px] md:h-auto relative bg-[#0e0e0f] border-l border-white/5">
-                <div className="absolute inset-0 bg-gradient-to-r from-[#131314] via-transparent to-transparent z-10 hidden md:block" />
-                <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#131314] to-transparent z-10 md:hidden" />
-                <div className="absolute inset-0 flex items-center justify-center z-20">
-                  <div className="w-24 h-24 bg-primary/10 rounded-full animate-ping flex items-center justify-center border border-primary/20 opacity-30" />
-                  <div className="absolute w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center border border-primary/50 shadow-[0_0_30px_rgba(189,157,255,0.5)]">
-                    <MapPin className="text-primary w-6 h-6" />
-                  </div>
-                </div>
-                <img className="w-full h-full object-cover grayscale opacity-10 contrast-150 brightness-50" src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2074&auto=format&fit=crop" alt="Spatial Plot" />
+            
+            <div className="w-full md:w-1/2 h-[240px] md:h-full relative bg-[#0e0e0f] border-t md:border-t-0 md:border-l border-white/5 overflow-hidden">
+              <div className="absolute inset-0 z-0">
+                  <MapComponent />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[#131314] via-transparent to-transparent z-10 hidden md:block pointer-events-none" />
+              <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#131314] to-transparent z-10 md:hidden pointer-events-none" />
             </div>
           </div>
 
           {/* Institutional Feed */}
-          <div className="premium-card p-10 sm:p-14 shadow-3xl space-y-12 flex flex-col">
+          <div className="premium-card p-7 sm:p-12 shadow-3xl space-y-8 flex flex-col border border-white/5 bg-[#131314]/40 h-[480px]">
             <div className="flex items-center justify-between">
-              <h2 className="font-headline text-2xl font-black uppercase tracking-tight">Intelligence Feed</h2>
-              <div className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse shadow-[0_0_15px_#bd9dff]" />
+              <h2 className="font-headline text-xl sm:text-2xl font-black">Institutional Feed</h2>
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_12px_#bd9dff]" />
             </div>
-            <div className="space-y-12 flex-1">
-              <FeedItem icon={<Globe className="w-4 h-4" />} time="2h ago" category="Markets" title="Fed rates steady: Implications for NCR Assets." desc="Institutional lenders maintain conservative LTV ratios despite liquidity surge..." />
-              <div className="h-[1px] bg-white/5" />
-              <FeedItem icon={<Activity className="w-4 h-4" />} time="5h ago" category="Hotspots" title="Dwarka Expressway: Q2 Appreciation Delta." desc="Infrastructure signals point to sustained 12% premium in high-density corridors..." />
-              <div className="h-[1px] bg-white/5" />
-              <FeedItem icon={<Shield className="w-4 h-4" />} time="Yesterday" category="Policy" title="RERA 2.0: Impact on stalled projects." desc="New directives prioritize completion velocity over initial capital deployment..." />
+            <div className="space-y-6 sm:space-y-8 flex-1 overflow-hidden">
+              {feedItems.map((item, idx) => (
+                <React.Fragment key={idx}>
+                  <FeedItem {...item} time={idx === 0 ? "LIVE" : idx === 1 ? "1H AGO" : "3H AGO"} />
+                  {idx < feedItems.length - 1 && <div className="h-[1px] bg-white/10" />}
+                </React.Fragment>
+              ))}
             </div>
           </div>
-        </div>
 
+        </div>
       </div>
     </div>
   )
 }
 
-const HudStat = ({ label, value, active, color = "text-white" }: any) => (
-  <div className="flex flex-col gap-1">
-    <span className="opacity-40 text-[9px] tracking-[0.2em]">{label}</span>
-    <div className="flex items-center gap-2">
-      {active && <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />}
-      <span className={`${color}`}>{value}</span>
+function HudStat({ label, value, color = "text-white", active = false }: any) {
+  return (
+    <div className={`flex flex-col gap-1.5 ${active ? "opacity-100" : "opacity-60"} min-w-[120px]`}>
+      <span className="text-[10px] text-white/40 font-black uppercase tracking-[0.2em]">{label}</span>
+      <span className={`text-base sm:text-lg font-black tracking-widest truncate ${color} drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]`}>{value}</span>
     </div>
-  </div>
-)
+  )
+}
 
-const ValueCard = ({ image, tag, tagColor, name, yieldRate, growth, risk }: any) => (
-  <motion.div 
-    whileHover={{ y: -10 }}
-    className="group relative premium-card overflow-hidden h-full flex flex-col"
-  >
-    <div className="h-64 sm:h-72 relative overflow-hidden">
-      <img className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110" src={image} alt={name} />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#131314] via-transparent to-transparent opacity-80"></div>
-      <div className={`absolute top-8 left-8 px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${tagColor} bg-opacity-90 backdrop-blur-md`}>
-        {tag}
+function ValueCard({ image, tag, tagColor, name, yieldRate, growth, risk }: any) {
+  return (
+    <motion.div
+      whileHover={{ y: -8 }}
+      className="group relative bg-[#131314] rounded-[2rem] overflow-hidden border border-white/5 shadow-2xl flex flex-col h-[320px] sm:h-[400px]"
+    >
+      <div className="relative h-[180px] sm:h-[220px] overflow-hidden">
+        <div className="absolute top-5 left-5 z-20">
+          <span className={`${tagColor} text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full backdrop-blur-md`}>
+            {tag}
+          </span>
+        </div>
+        <img src={image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 brightness-75 group-hover:brightness-100" alt={name} />
       </div>
-    </div>
-    <div className="p-10 space-y-8 flex flex-col flex-1 justify-between">
-      <h3 className="font-headline text-2xl sm:text-3xl font-black tracking-tightest leading-tight text-white">{name}</h3>
-      <div className="grid grid-cols-3 gap-6 pt-10 border-t border-white/10">
-        <DataPoint label="Yield" value={yieldRate} color="text-primary text-xl" />
-        <DataPoint label="Growth" value={growth} color="text-white text-xl" />
-        <DataPoint label="Risk" value={risk} color="text-[#bd9dff] text-xl" />
+      <div className="p-6 sm:p-8 space-y-4 flex-1 flex flex-col justify-between bg-[#131314]">
+        <div className="space-y-2">
+          <h3 className="font-headline text-xl sm:text-2xl font-black text-white group-hover:text-primary transition-colors tracking-tight">{name}</h3>
+          <div className="flex items-center gap-2 text-[#3d3d3f]">
+            <Compass className="w-3 h-3" />
+            <span className="text-[10px] font-black uppercase tracking-widest">NCR Premium Prime</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/5">
+          <StatBox label="Yield" value={yieldRate} />
+          <StatBox label="Growth" value={growth} color="text-primary" />
+          <StatBox label="Risk" value={risk} />
+        </div>
       </div>
-    </div>
-  </motion.div>
-)
+    </motion.div>
+  )
+}
 
-const DataPoint = ({ label, value, color }: any) => (
-  <div>
-    <span className="text-[#3d3d3f] text-[9px] uppercase font-black tracking-widest block mb-2">{label}</span>
-    <span className={`${color} font-black font-headline`}>{value}</span>
-  </div>
-)
+function StatBox({ label, value, color = "text-white" }: any) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[9px] text-white/30 font-black uppercase tracking-widest">{label}</span>
+      <span className={`text-sm sm:text-base font-black tracking-widest ${color}`}>{value}</span>
+    </div>
+  )
+}
 
-const FeedItem = ({ icon, time, category, title, desc }: any) => (
-  <div className="group cursor-pointer space-y-4">
-    <div className="flex items-center gap-3">
-      <div className="text-primary/50">{icon}</div>
-      <span className="text-[10px] text-primary/70 font-black uppercase tracking-[0.2em] block">{time} • {category}</span>
+function FeedItem({ icon, category, title, desc, time }: any) {
+  return (
+    <div className="flex gap-4 group">
+       <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 group-hover:border-primary/50 group-hover:text-primary transition-colors">
+         {icon}
+       </div>
+       <div className="flex-1 space-y-1">
+         <div className="flex justify-between items-center">
+            <span className="text-[9px] text-primary font-black uppercase tracking-widest">{category}</span>
+            <span className="text-[9px] text-white/30 font-black uppercase tracking-widest">{time}</span>
+         </div>
+         <h4 className="font-bold text-white text-[13px] sm:text-sm group-hover:text-primary transition-colors">{title}</h4>
+         <p className="text-white/50 text-[11px] sm:text-xs leading-relaxed line-clamp-2 md:line-clamp-1 lg:line-clamp-2">{desc}</p>
+       </div>
     </div>
-    <div className="space-y-2">
-      <h4 className="text-base sm:text-lg font-black font-headline text-white group-hover:text-primary transition-colors leading-tight">{title}</h4>
-      <p className="text-xs sm:text-sm text-[#adaaab] font-body line-clamp-2 leading-relaxed font-light">{desc}</p>
-    </div>
-  </div>
-)
+  )
+}

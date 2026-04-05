@@ -18,7 +18,7 @@ def _sanitize_float(val: any) -> float:
     try:
         f_val = float(val)
         return 0.0 if np.isnan(f_val) or np.isinf(f_val) else f_val
-    except:
+    except (ValueError, TypeError, Exception):
         return 0.0
 
 @router.post("", response_model=PredictionResponse)
@@ -100,16 +100,25 @@ async def _predict_internal(inputs: List[PropertyInput]):
         price = price_sqft * inp.area
         rent = rent_sqft[i] * inp.area
         
+        # Intelligence Benchmarking
         db_city = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(inp.city, inp.city)
-        loc_med = state.locality_index.get(db_city, {}).get(inp.sector, {}).get("median_price_sqft", 0)
+        loc_data = state.locality_index.get(db_city, {}).get(inp.sector, {})
+        
+        # Select relevant benchmark based on intent
+        if inp.listing_type == 'rent':
+            loc_med = loc_data.get("median_rent_sqft", 0)
+        else:
+            loc_med = loc_data.get("median_price_sqft", 0)
+            
         ref_median = (loc_med * inp.area) if loc_med > 0 else 0
 
-        # ROI Intelligence
+        # ROI & Strategic Intelligence
         analysis = _intelligence.evaluate_property(
             total_price=price, 
             monthly_rent=rent, 
             is_near_metro=is_metro, 
-            geo_median=ref_median
+            geo_median=ref_median,
+            intent=inp.listing_type
         )
 
         results.append(PredictionResponse(
@@ -138,7 +147,27 @@ async def _predict_internal(inputs: List[PropertyInput]):
                 locality_index=state.locality_index,
                 target_prop_type=inp.prop_type
             ),
-            dist_to_metro_km=round(dist_to_metro, 2) if dist_to_metro else None
+            dist_to_metro_km=round(dist_to_metro, 2) if dist_to_metro else None,
+            asset={
+                "society": str(inp.property_name or "Standard Asset"),
+                "locality": str(inp.sector),
+                "city": str(inp.city),
+                "price": float(round(price, 2)),
+                "area": float(inp.area),
+                "bhk": int(inp.bedrooms),
+                "price_per_sqft": float(round(price_sqft, 2)),
+                "yield_pct": float(round(analysis.get("yield_pct", 0), 2)),
+                "unified_score": float(round(analysis.get("unified_score", 0), 2)),
+                "listing_type": inp.listing_type,
+                "latitude": float(lat) if lat else None,
+                "longitude": float(lon) if lon else None,
+                "h3_index": str(sector_info.get("h3_index", "")),
+                "features": {
+                    "amenities": inp.amenities.dict(),
+                    "location": inp.location.dict(),
+                    "property": inp.property_features.dict()
+                }
+            }
         ))
     
     return results

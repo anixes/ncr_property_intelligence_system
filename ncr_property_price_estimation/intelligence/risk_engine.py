@@ -9,6 +9,7 @@ class RiskEngine:
         predicted_price: float,
         reference_median: float,
         geo_confidence: float = 1.0,
+        intent: str = "buy",
     ) -> dict[str, Any]:
         """
         Detect over/under-pricing vs. the locality reference median.
@@ -23,13 +24,23 @@ class RiskEngine:
         base_score = 50 + (z_score * 50)
         final_score = float(np.clip(base_score, 0, 100))
 
-        if final_score < 35:
-            label = "Value Pick"
-        elif final_score < 65:
-            label = "Fair Value"
-        elif final_score < 85:
-            label = "Premium Area"
+        if intent == "rent":
+            if final_score < 35:
+                label = "High Affordability"
+            elif final_score < 65:
+                label = "Market Standard"
+            elif final_score < 85:
+                label = "Premium Utility"
+            else:
+                label = "Inflated / Low Value"
         else:
-            label = "High Risk / Overvalued"
+            if final_score < 35:
+                label = "Value Pick"
+            elif final_score < 65:
+                label = "Fair Value"
+            elif final_score < 85:
+                label = "Premium Area"
+            else:
+                label = "High Risk / Overvalued"
 
         return {"score": round(final_score, 1), "label": label}

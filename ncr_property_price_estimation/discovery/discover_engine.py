@@ -103,12 +103,18 @@ class DiscoverEngine:
                 float(row.get("price_per_sqft", 0)) if pd.notna(row.get("price_per_sqft")) else 0.0
             )
 
-            loc_data = locality_index.get(db_city, {}).get(loc, {})
+            # Resolve normalization for the specific city of this asset
+            asset_city = str(row.get("city", "Gurgaon"))
+            db_city_norm = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(asset_city, asset_city)
+
+            loc_data = locality_index.get(db_city_norm, {}).get(loc, {})
             geo_median_price_sqft = loc_data.get("median_price_sqft", 0)
             geo_median_rent_sqft = loc_data.get("median_rent_sqft", 0)
 
+            intent = listing_type.lower()
+            
             # Logic to approximate missing values
-            if listing_type.lower() == "buy":
+            if intent == "buy":
                 total_price = price
                 monthly_rent = (
                     (geo_median_rent_sqft * area)
@@ -124,14 +130,17 @@ class DiscoverEngine:
                 )
 
             y_pct = ROIEngine.calculate_yield(total_price, monthly_rent)
+            
+            risk_target = total_price if intent == "buy" else monthly_rent
+            geo_benchmark = geo_median_price_sqft * area if intent == "buy" else geo_median_rent_sqft * area
             risk = RiskEngine.calculate_risk_score(
-                total_price, geo_median_price_sqft * area if geo_median_price_sqft else 0
+                risk_target, geo_benchmark if geo_benchmark else 0, intent=intent
             )
 
             h3_med_raw = row.get("h3_median_price", 0)
             h3_median = float(h3_med_raw) if pd.notna(h3_med_raw) else 0.0
             h3_median_per_sqft = h3_median / area if (h3_median > 0 and area > 0) else 0.0
-            benchmark = h3_median_per_sqft if h3_median_per_sqft > 0 else geo_median_price_sqft
+            benchmark = h3_median_per_sqft if h3_median_per_sqft > 0 else (geo_median_price_sqft if intent == 'buy' else geo_median_rent_sqft)
             overval = (price_sqft - benchmark) / (benchmark + 1e-9) * 100 if benchmark > 0 else 0
 
             # Normalize risk from 0–100 to 0–10 for scoring engine
@@ -143,6 +152,7 @@ class DiscoverEngine:
                 overvaluation_pct=overval,
                 is_near_metro=is_near,
                 risk_index=normalized_risk,
+                intent=intent
             )
 
             dist_val = (
@@ -159,19 +169,49 @@ class DiscoverEngine:
                     "price": price,
                     "area": area,
                     "bhk": int(row["bedrooms"]) if pd.notna(row["bedrooms"]) else 0,
-                    "price_per_sqft": round(price_sqft, 0),
-                    "yield_pct": round(y_pct, 2),
-                    "unified_score": unified_score,
+                    "price_per_sqft": float(round(price_sqft, 0)),
+                    "yield_pct": float(round(y_pct, 2)),
+                    "unified_score": float(unified_score),
+                    "risk_score": float(risk["score"]),
+                    "overvaluation_pct": float(round(overval, 2)),
                     "listing_type": listing_type.lower(),
                     "latitude": float(row["latitude"]) if pd.notna(row.get("latitude")) else None,
                     "longitude": float(row["longitude"])
                     if pd.notna(row.get("longitude"))
                     else None,
-                    "dist_to_metro_km": round(dist_val, 2) if dist_val is not None else None,
+                    "dist_to_metro_km": float(round(dist_val, 2)) if dist_val is not None else None,
+                    "h3_index": str(row["h3_res8"]) if "h3_res8" in row and pd.notna(row["h3_res8"]) else None,
                     "furnishing_status": str(row["furnishing_status"])
                     if pd.notna(row.get("furnishing_status"))
                     and str(row.get("furnishing_status", "")).strip() not in ("", "nan", "None")
                     else "Unknown",
+                    "features": {
+                        "amenities": {
+                            "has_pool": bool(row.get("has_pool", 0)),
+                            "has_gym": bool(row.get("has_gym", 0)),
+                            "has_lift": bool(row.get("has_lift", 0)),
+                            "has_power_backup": bool(row.get("has_power_backup", 0)),
+                            "is_gated_community": bool(row.get("is_gated_community", 0)),
+                            "has_clubhouse": bool(row.get("has_clubhouse", 0)),
+                            "has_maintenance": bool(row.get("has_maintenance", 0)),
+                            "has_wifi": bool(row.get("has_wifi", 0)),
+                            "is_high_ceiling": bool(row.get("is_high_ceiling", 0)),
+                        },
+                        "location": {
+                            "is_near_metro": bool(row.get("gps_is_near_metro", 0)),
+                            "is_corner_property": bool(row.get("is_corner_property", 0)),
+                            "is_park_facing": bool(row.get("is_park_facing", 0)),
+                            "is_vastu_compliant": bool(row.get("is_vastu_compliant", 0)),
+                        },
+                        "property": {
+                            "is_luxury": bool(row.get("is_luxury", 0)),
+                            "is_servant_room": bool(row.get("is_servant_room", 0)),
+                            "is_study_room": bool(row.get("is_study_room", 0)),
+                            "is_store_room": bool(row.get("is_store_room", 0)),
+                            "is_pooja_room": bool(row.get("is_pooja_room", 0)),
+                            "is_new_construction": bool(row.get("is_new_construction", 0)),
+                        }
+                    }
                 }
             )
 

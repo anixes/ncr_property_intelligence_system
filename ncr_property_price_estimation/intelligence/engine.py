@@ -29,16 +29,21 @@ class IntelligenceEngine:
         is_near_metro: bool,
         geo_median: float = 0.0,
         demand_index: float = 5.0,
+        intent: str = "buy",
     ) -> dict[str, Any]:
         """
         Comprehensive investment evaluation via sub-engines.
+        Pivots logic based on 'buy' (ROI focus) or 'rent' (Utility focus).
         """
         y_pct = self.roi.calculate_yield(total_price, monthly_rent)
-        risk_info = self.risk.calculate_risk_score(total_price, geo_median)
+        
+        # Risk target depends on intent
+        risk_target = total_price if intent == "buy" else monthly_rent
+        risk_info = self.risk.calculate_risk_score(risk_target, geo_median, intent=intent)
 
         overval_pct = 0.0
         if geo_median > 0:
-            overval_pct = (total_price - geo_median) / geo_median * 100
+            overval_pct = (risk_target - geo_median) / geo_median * 100
 
         # Normalize risk from 0–100 scale to 0–10 for scoring engine
         normalized_risk = risk_info["score"] / 10.0
@@ -49,6 +54,7 @@ class IntelligenceEngine:
             is_near_metro=is_near_metro,
             risk_index=normalized_risk,
             demand_index=demand_index,
+            intent=intent
         )
 
         return {

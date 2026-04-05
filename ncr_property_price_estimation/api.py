@@ -26,7 +26,17 @@ app = FastAPI(
 )
 
 # CORS — Clinical Synchronization
-_cors_origins = os.environ.get("CORS_ORIGINS", "*").split(",")
+_cors_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8501",
+    "http://127.0.0.1:8501",
+]
+_env_origins = os.environ.get("CORS_ORIGINS")
+if _env_origins:
+    # Ensure env origins are cleaned of any whitespace or trailing slashes
+    _cors_origins.extend([o.strip().rstrip("/") for o in _env_origins.split(",")])
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
