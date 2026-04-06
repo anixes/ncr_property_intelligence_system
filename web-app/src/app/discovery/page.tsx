@@ -67,10 +67,11 @@ export default function Discovery() {
     setIsDrawerOpen(true);
   }, []);
 
-  if (!mounted) return null;
+  // Hydration sync removed for mobile-ready instant render
+  // if (!mounted) return null;
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24 space-y-16" suppressHydrationWarning>
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24 space-y-16" suppressHydrationWarning>
       
       {/* INSTITUTIONAL HEADER & COMMAND CENTER */}
       <div className="space-y-12 max-w-5xl">
@@ -160,14 +161,14 @@ export default function Discovery() {
               <InputPorter 
                 label="Sort Priority"
                 value={
-                  filters.sort_by === 'score' ? 'Deal Score (Best Value)' :
+                  filters.sort_by === 'score' ? 'Alpha Index (Best Value)' :
                   filters.sort_by === 'yield' ? 'Investment Yield (%)' :
                   filters.sort_by === 'price_low' ? 'Price: Low-High' :
                   filters.sort_by === 'price_high' ? 'Price: High-Low' : 'Sort Results'
                 }
                 onChange={(v) => {
                   const mapping: Record<string, any> = {
-                    'Deal Score (Best Value)': 'score',
+                    'Alpha Index (Best Value)': 'score',
                     'Investment Yield (%)': 'yield',
                     'Price: Low-High': 'price_low',
                     'Price: High-Low': 'price_high'
@@ -177,8 +178,8 @@ export default function Discovery() {
                 icon={Target}
                 type="select"
                 options={filters.listing_type === 'buy' 
-                  ? ['Deal Score (Best Value)', 'Investment Yield (%)', 'Price: Low-High', 'Price: High-Low']
-                  : ['Deal Score (Best Value)', 'Price: Low-High', 'Price: High-Low']}
+                  ? ['Alpha Index (Best Value)', 'Investment Yield (%)', 'Price: Low-High', 'Price: High-Low']
+                  : ['Alpha Index (Best Value)', 'Price: Low-High', 'Price: High-Low']}
               />
            </div>
 

@@ -125,7 +125,7 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                 </div>
                 
                 <div className="flex gap-3">
-                   <Badge label={`${score}/10`} sub="ALPHA SCORE" primary />
+                   <Badge label={`${Number(score).toFixed(1)} / 10`} sub="ALPHA DELTA" primary />
                    <Badge label="VERIFIED" sub="GEOSPATIAL DATA" />
                 </div>
               </div>
@@ -195,7 +195,7 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                  <div className="flex items-center gap-3">
                     <ShieldCheck className="w-5 h-5 text-primary" />
                     <h5 className="text-[11px] font-black tracking-widest uppercase">
-                      {intent === 'rent' ? "Lifestyle Score" : "Market Risk Analysis"}
+                      {intent === 'rent' ? "Lifestyle Index" : "Market Risk Analysis"}
                     </h5>
                  </div>
                  

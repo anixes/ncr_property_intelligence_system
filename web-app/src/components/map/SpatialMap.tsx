@@ -199,40 +199,40 @@ export default function SpatialMap() {
           </AnimatePresence>
         )}
 
-        <div className="bg-[#131314]/95 backdrop-blur-md border border-white/20 rounded-xl p-3 shadow-2xl pointer-events-auto">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(189,157,255,0.6)]" />
-            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white/80">Market Saturation</span>
+        <div className="bg-[#131314]/80 backdrop-blur-xl border border-white/10 rounded-xl p-2.5 sm:p-3 shadow-2xl pointer-events-auto transition-all duration-500">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(189,157,255,0.6)]" />
+            <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-white/80">Market Saturation</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-white leading-none tracking-tight">
+            <span className="text-2xl sm:text-3xl font-black text-white leading-none tracking-tight">
               {properties.length}
             </span>
-            <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">
-              NCR Active Assets
+            <span className="text-[8px] sm:text-[10px] font-black text-white/50 uppercase tracking-widest leading-none">
+              NCR Assets
             </span>
           </div>
         </div>
         <button 
           onClick={() => setViewState({ longitude: 77.10, latitude: 28.58, zoom: 9.5, pitch: 40, bearing: 0 })}
-          className="pointer-events-auto px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all flex items-center gap-2 w-fit shadow-xl"
+          className="pointer-events-auto px-4 py-2.5 bg-white/5 backdrop-blur-xl hover:bg-white/10 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-white transition-all flex items-center gap-2 w-fit shadow-2xl active:scale-95"
         >
-          <Compass className="w-3.5 h-3.5" />
-          Recenter Region
+          <Compass className="w-3 h-3 text-primary" />
+          Recenter
         </button>
       </div>
 
       {/* Embedded Map Controls */}
-      <div className="absolute top-4 right-4 flex bg-[#1a1a1c]/90 backdrop-blur-md p-1 rounded-full border border-white/10 z-10 shadow-2xl">
+      <div className="absolute top-4 sm:top-6 right-4 flex bg-[#1a1a1c]/80 backdrop-blur-xl p-1 rounded-full border border-white/10 z-10 shadow-3xl transition-all duration-500">
         <button 
           onClick={() => setMode('buy')}
-          className={`px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-1 min-w-[70px] ${mode === 'buy' ? 'bg-[#bd9dff] text-[#0e0e0f] shadow-[0_0_10px_rgba(189,157,255,0.3)]' : 'text-white/60 hover:text-white'}`}
+          className={`px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-[9px] sm:text-[10px] font-black tracking-widest uppercase transition-all duration-500 flex items-center justify-center gap-1 min-w-[80px] sm:min-w-[90px] ${mode === 'buy' ? 'bg-[#bd9dff] text-[#0e0e0f] shadow-[0_0_20px_rgba(189,157,255,0.2)]' : 'text-white/40 hover:text-white'}`}
         >
           Buy
         </button>
         <button 
           onClick={() => setMode('rent')}
-          className={`px-3 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-1 min-w-[70px] ${mode === 'rent' ? 'bg-[#10b981] text-[#0e0e0f] shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'text-white/60 hover:text-white'}`}
+          className={`px-4 py-2 sm:px-6 sm:py-2.5 rounded-full text-[9px] sm:text-[10px] font-black tracking-widest uppercase transition-all duration-500 flex items-center justify-center gap-1 min-w-[80px] sm:min-w-[90px] ${mode === 'rent' ? 'bg-[#10b981] text-[#0e0e0f] shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'text-white/40 hover:text-white'}`}
         >
           Rent
         </button>

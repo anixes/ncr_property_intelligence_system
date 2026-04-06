@@ -1,15 +1,23 @@
 """
-Unified Modular API Shell — Decoupled NCR Property Intelligence Suite. 
+Unified Modular API Shell — Decoupled NCR Property Intelligence Suite.
 Manages high-performance spatial audits, ML-driven benchmarks, and ROI discovery.
 """
 
-import os
 from contextlib import asynccontextmanager
+import os
+
+import uvicorn
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from ncr_property_price_estimation import state
-from ncr_property_price_estimation.routes import predict, discover, intelligence, debug
+from ncr_property_price_estimation.config import API_HOST, API_PORT
+from ncr_property_price_estimation.routes import (
+    debug,
+    discover,
+    intelligence,
+    predict,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,6 +37,8 @@ app = FastAPI(
 _cors_origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://192.168.29.249:3000",
+    "http://192.168.29.249:3000/",
     "http://localhost:8501",
     "http://127.0.0.1:8501",
 ]
@@ -90,6 +100,4 @@ def get_legacy_model_info():
     return intelligence.get_model_info()
 
 if __name__ == "__main__":
-    import uvicorn
-    from ncr_property_price_estimation.config import API_HOST, API_PORT
     uvicorn.run("ncr_property_price_estimation.api:app", host=API_HOST, port=API_PORT)

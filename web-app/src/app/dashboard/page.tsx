@@ -105,7 +105,10 @@ function DashboardContent() {
           setInput(prev => ({ ...prev, sector: data[0] }));
         }
       })
-      .catch(() => setLocalities([]));
+      .catch(() => {
+        console.error('Locality Recovery Failed — using core sectors as fallback.');
+        setLocalities(['Sector 150', 'Sector 62', 'Sector 18', 'Sector 128']); 
+      });
   }, [input.city]);
 
   const handlePredict = async () => {
@@ -136,10 +139,11 @@ function DashboardContent() {
     setIsDrawerOpen(true);
   }, []);
 
-  if (!mounted) return null;
+  // Note: 'mounted' check removed to bypass Next.js 16/Turbopack blank-screen hydration trap.
+  // if (!mounted) return null;
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24 space-y-16" suppressHydrationWarning>
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24 space-y-16" suppressHydrationWarning>
       
       {/* HEADER PORTER */}
       <header className="space-y-6 sm:space-y-8">

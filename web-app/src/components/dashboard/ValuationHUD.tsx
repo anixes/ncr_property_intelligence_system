@@ -43,7 +43,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                </div>
             </header>
 
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
                {intent === 'buy' ? (
                   <>
                      <MetricCard
@@ -88,7 +88,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                   </>
                )}
                <MetricCard
-                  label={intent === 'buy' ? "Investment Score" : "Lifestyle Index"}
+                  label={intent === 'buy' ? "Investment Alpha" : "Lifestyle Index"}
                   value={`${(alphaScore).toFixed(1)} / 10`}
                   subValue={intent === 'buy' ? "Unified Asset Delta" : "Utility Performance"}
                   icon={intent === 'buy' ? ChartBar : Sparkles}
@@ -145,14 +145,15 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                      </div>
                   </header>
 
-                  <div className="grid grid-cols-1 gap-8">
-                     {comparables.slice(0, 3).map((item, idx) => (
+                  <div className="flex overflow-x-auto pb-8 -mx-4 px-4 gap-6 scrollbar-hide snap-x snap-mandatory">
+                     {comparables.slice(0, 5).map((item, idx) => (
                         <motion.div
                            key={idx}
-                           initial={{ opacity: 0, x: -20 }}
-                           whileInView={{ opacity: 1, x: 0 }}
+                           initial={{ opacity: 0, scale: 0.95 }}
+                           whileInView={{ opacity: 1, scale: 1 }}
                            viewport={{ once: true }}
                            transition={{ delay: idx * 0.1 }}
+                           className="min-w-[85%] sm:min-w-[45%] lg:min-w-[320px] snap-center"
                         >
                            <PropertyCard
                               item={item}
@@ -180,14 +181,15 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                      </div>
                   </header>
 
-                  <div className="grid grid-cols-1 gap-8">
-                     {alternatives.slice(0, 3).map((item, idx) => (
+                  <div className="flex overflow-x-auto pb-8 -mx-4 px-4 gap-6 scrollbar-hide snap-x snap-mandatory">
+                     {alternatives.slice(0, 5).map((item, idx) => (
                         <motion.div
                            key={idx}
-                           initial={{ opacity: 0, x: 20 }}
-                           whileInView={{ opacity: 1, x: 0 }}
+                           initial={{ opacity: 0, scale: 0.95 }}
+                           whileInView={{ opacity: 1, scale: 1 }}
                            viewport={{ once: true }}
                            transition={{ delay: idx * 0.1 }}
+                           className="min-w-[85%] sm:min-w-[45%] lg:min-w-[320px] snap-center"
                         >
                            <PropertyCard
                               item={item}
@@ -273,9 +275,9 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
 const MetricCard = ({ label, value, subValue, icon: Icon, color, glow, onClick, actionLabel }: any) => (
    <div
       onClick={onClick}
-      className={`group relative bg-[#131314] rounded-[32px] p-8 border border-white/5 transition-all duration-500 hover:border-primary/20 ${glow} ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+      className={`group relative bg-[#131314] rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 border border-white/5 transition-all duration-500 hover:border-primary/20 ${glow} ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}`}
    >
-      <div className="flex justify-between items-start mb-8">
+      <div className="flex justify-between items-start mb-6 sm:mb-8">
          <div className="space-y-1">
             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#adaaab] font-inter">{label}</p>
             <p className="text-[10px] font-medium text-white/30">{subValue}</p>
@@ -284,12 +286,12 @@ const MetricCard = ({ label, value, subValue, icon: Icon, color, glow, onClick, 
             <Icon className={`w-5 h-5 ${color}`} />
          </div>
       </div>
-      <div className="flex items-end justify-between gap-4">
-         <div className={`text-2xl sm:text-3xl font-black font-headline tracking-tighter ${color}`}>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+         <div className={`text-xl sm:text-2xl lg:text-3xl font-black font-headline tracking-tighter ${color} leading-none`}>
             {value}
          </div>
          {actionLabel && (
-            <div className="px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-[0.2em] text-primary group-hover:bg-primary group-hover:text-black transition-all">
+            <div className="w-full sm:w-auto text-center px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-primary group-hover:bg-primary group-hover:text-black transition-all">
                {actionLabel}
             </div>
          )}

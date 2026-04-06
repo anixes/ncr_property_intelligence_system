@@ -64,7 +64,7 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
       whileHover={{ scale: 1.01, boxShadow: '0 0 30px rgba(189,157,255,0.08)' }}
       viewport={{ once: true }}
       onClick={() => onClick?.(item)}
-      className="premium-card p-6 sm:p-8 group flex flex-col gap-8 h-full cursor-pointer hover:bg-white/[0.04] active:scale-[0.98] transition-all relative overflow-hidden"
+      className="premium-card p-5 sm:p-8 group flex flex-col gap-6 sm:gap-8 h-full cursor-pointer hover:bg-white/[0.04] active:scale-[0.98] transition-all relative overflow-hidden"
     >
       {/* BACKGROUND DECOR */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[60px] rounded-full -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
@@ -72,7 +72,7 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
       {/* Header: Institutional Density */}
       <div className="flex justify-between items-start gap-4 relative z-10">
         <div className="space-y-2 flex-1">
-          <h5 className="font-headline font-black text-xl sm:text-2xl text-white group-hover:text-primary transition-colors leading-tight line-clamp-2">
+          <h5 className="font-headline font-black text-lg sm:text-2xl text-white group-hover:text-primary transition-colors leading-tight line-clamp-2">
             {name}
           </h5>
           <div className="flex items-center gap-2 text-[10px] font-black text-[#adaaab] uppercase tracking-[0.2em]">
@@ -80,8 +80,8 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
             <span className="truncate">{location}, {item.city || 'NCR'}</span>
           </div>
         </div>
-        <div className={`flex-shrink-0 px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all duration-500 shadow-lg ${getScoreColor(score)}`}>
-           {score > 0 ? `${score.toFixed(1)}/10 SCORE` : 'UNRATED'}
+        <div className={`flex-shrink-0 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-500 shadow-lg ${getScoreColor(score)}`}>
+           {score > 0 ? `${score.toFixed(1)} / 10` : 'UNRATED'}
         </div>
       </div>
 
