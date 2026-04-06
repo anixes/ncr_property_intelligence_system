@@ -35,13 +35,14 @@ export const PropertyCard = ({ item, intent, onClick, index }: CardProps) => {
   const area = item.area || 1500;
   const bhk = item.bedrooms || item.bhk || item.prop_bhk || '—';
 
-  // Total price resolution (Asset price or calculated from sqft)
-  // For Rent: If direct data is missing, we derive the Macro Median using (Price * Yield) / 12
+  // For Rent: If direct data is missing, we intelligently derive it.
+  // If psqft < 500, it's definitely Rent/SqFt, not Capital Value/SqFt.
+  const calculatedRent = psqft < 500 ? (psqft * area) : ((psqft * area * (yield_pct || 3) / 100) / 12);
   const price = intent === 'buy' 
     ? (item.price || (psqft > 0 ? psqft * area : 0))
     : (item.predicted_monthly_rent || 
        item.monthly_rent || 
-       (psqft > 0 ? (psqft * area * (yield_pct || 3) / 100) / 12 : 0));
+       (psqft > 0 ? calculatedRent : 0));
  
   // Deep Dive Link Params
   const deepDiveUrl = `/dashboard?city=${encodeURIComponent(item.city || 'Noida')}&sector=${encodeURIComponent(item.locality || item.sector || '')}&area=${area}&bhk=${bhk}`;
@@ -141,12 +142,16 @@ export const PropertyCard = ({ item, intent, onClick, index }: CardProps) => {
       <div className="flex flex-col gap-6 pt-6 border-t border-white/5 mt-auto relative z-10">
         {/* Metric Grid: High-Value Reading */}
         <div className="grid grid-cols-2 xs:flex xs:items-center gap-y-6 gap-x-8">
-           <MetricHUD label="₹/SQFT" value={psqft.toLocaleString()} icon={<TrendingUp className="w-3 h-3" />} />
-           <MetricHUD 
-             label={intent === 'buy' ? 'EST. YIELD' : 'YIELD INDEX'} 
-             value={intent === 'buy' ? `${yield_pct.toFixed(2)}%` : `${yield_pct.toFixed(1)}%`} 
-             icon={<ShieldCheck className="w-3 h-3" />}
-           />
+           {intent === 'buy' ? (
+              <MetricHUD label="₹/SQFT" value={psqft.toLocaleString()} icon={<TrendingUp className="w-3 h-3" />} />
+           ) : (
+              <MetricHUD label="SECURITY DEP." value={formatNCRPrice(price * 2)} icon={<ShieldCheck className="w-3 h-3" />} />
+           )}
+           {intent === 'buy' ? (
+              <MetricHUD label="EST. YIELD" value={`${yield_pct.toFixed(2)}%`} icon={<ShieldCheck className="w-3 h-3" />} />
+           ) : (
+              <MetricHUD label="LAYOUT" value={`${bhk} BHK`} icon={<Layers className="w-3 h-3" />} />
+           )}
         </div>
         
         {/* REFINED TACTICAL CTA: Persistent High-Alpha Button */}

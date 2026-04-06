@@ -43,7 +43,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                </div>
             </header>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">
                {intent === 'buy' ? (
                   <>
                      <MetricCard
@@ -277,23 +277,23 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
 const MetricCard = ({ label, value, subValue, icon: Icon, color, glow, onClick, actionLabel }: any) => (
    <div
       onClick={onClick}
-      className={`group relative bg-[#131314] rounded-2xl sm:rounded-[32px] p-4 sm:p-8 border border-white/5 transition-all duration-500 hover:border-primary/20 ${glow} ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+      className={`group relative bg-[#131314] rounded-2xl sm:rounded-[32px] p-4 sm:p-8 border border-white/5 transition-all duration-500 hover:border-primary/20 flex flex-col justify-between ${glow} ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}`}
    >
-      <div className="flex justify-between items-start mb-6 sm:mb-8">
-         <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-[#adaaab] font-inter">{label}</p>
-            <p className="text-[10px] font-medium text-white/30">{subValue}</p>
+      <div className="flex justify-between items-start mb-6 sm:mb-8 gap-2">
+         <div className="space-y-1 overflow-hidden">
+            <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.1em] sm:tracking-[0.3em] text-[#adaaab] font-inter truncate">{label}</p>
+            <p className="text-[9px] sm:text-[10px] font-medium text-white/30 truncate">{subValue}</p>
          </div>
-         <div className="p-3 rounded-2xl bg-white/[0.03] group-hover:bg-primary/10 transition-colors">
-            <Icon className={`w-5 h-5 ${color}`} />
+         <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white/[0.03] group-hover:bg-primary/10 transition-colors shrink-0">
+            <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${color}`} />
          </div>
       </div>
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-         <div className={`text-lg sm:text-2xl lg:text-3xl font-black font-headline tracking-tighter ${color} leading-none`}>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4 mt-auto">
+         <div className={`text-base sm:text-2xl lg:text-3xl font-black font-headline tracking-tighter ${color} leading-none truncate w-full`}>
             {value}
          </div>
          {actionLabel && (
-            <div className="w-full sm:w-auto text-center px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-primary group-hover:bg-primary group-hover:text-black transition-all">
+            <div className="w-full sm:w-auto text-center px-2 py-1.5 sm:px-4 sm:py-2 rounded-full bg-primary/10 border border-primary/20 text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-primary group-hover:bg-primary group-hover:text-black transition-all truncate shrink-0">
                {actionLabel}
             </div>
          )}
