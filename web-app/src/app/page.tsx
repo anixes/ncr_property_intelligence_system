@@ -60,7 +60,7 @@ export default function Home() {
           <div className="max-w-2xl space-y-6">
             <span className="text-[#bd9dff] font-black uppercase tracking-widest text-[10px] sm:text-xs">Institutional Intelligence Portal</span>
             <h1 className="font-headline text-3xl sm:text-5xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight">NCR Property<br/>Intelligence.</h1>
-            <p className="text-white/60 text-lg leading-relaxed max-w-lg">The smartest way to navigate NCR real estate. AI-powered tools to help you find and price the perfect home.</p>
+            <p className="text-white/60 text-lg leading-relaxed max-w-lg">AI-powered intelligence for NCR real estate. Get highly accurate price estimates and discover your ideal home with data-backed insights.</p>
           </div>
           
           <div className="hidden lg:flex gap-8 items-end">
@@ -96,19 +96,14 @@ export default function Home() {
         </div>
 
         {/* === SPATIAL INTELLIGENCE === */}
-        <div className="premium-card shadow-3xl flex flex-col md:flex-row overflow-hidden border border-white/5 bg-[#131314]/40 h-[600px]">
-          <div className="p-7 sm:p-12 w-full md:w-1/3 flex flex-col justify-center">
+        <div className="premium-card shadow-3xl flex flex-col md:flex-row overflow-hidden border border-white/5 bg-[#131314]/40 h-auto md:h-[600px]">
+          <div className="p-7 sm:p-12 w-full md:w-1/3 flex flex-col justify-center shrink-0">
              <span className="text-[10px] text-primary uppercase font-black tracking-widest mb-2">Find Where Value Grows</span>
              <h2 className="font-headline text-3xl sm:text-5xl font-black mb-6 leading-tight">Spatial<br/>Intelligence</h2>
-             <p className="text-white/60 mb-8 max-w-sm text-sm sm:text-base leading-relaxed">See exactly where the best deals are in NCR. Use our map to spot rising price zones and hot property clusters before everyone else.</p>
-             <Link href="/discovery">
-               <button className="border border-white/10 bg-[#1a1a1c] text-[10px] font-black uppercase tracking-widest px-8 py-4 rounded-full w-fit hover:bg-white/5 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-black/20">
-                 Launch Map Analysis
-               </button>
-             </Link>
+             <p className="text-white/60 mb-8 max-w-sm text-sm sm:text-base leading-relaxed">See the market from a new perspective. Our interactive map helps you track neighborhood price trends and identify high-growth areas instantly.</p>
           </div>
           
-          <div className="w-full md:w-2/3 h-full relative bg-[#0e0e0f] border-t md:border-t-0 md:border-l border-white/5 overflow-hidden">
+          <div className="w-full md:w-2/3 h-[400px] md:h-full relative bg-[#0e0e0f] border-t md:border-t-0 md:border-l border-white/5 overflow-hidden">
             <div className="absolute inset-0 z-0">
                 <MapComponent />
             </div>

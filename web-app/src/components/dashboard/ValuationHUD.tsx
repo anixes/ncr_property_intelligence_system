@@ -240,7 +240,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                      </ul>
                   </div>
 
-                  <div className="bg-[#0a0a0a]/60 backdrop-blur-xl rounded-3xl p-8 border border-white/5 space-y-8">
+                  <div className="bg-[#0a0a0a]/60 backdrop-blur-xl rounded-3xl p-8 border border-white/5 space-y-8 h-fit">
                      <div className="space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-[.3em] text-primary">Security Spectrum</p>
                         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden flex">

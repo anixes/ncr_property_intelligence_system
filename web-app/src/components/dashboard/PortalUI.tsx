@@ -48,11 +48,6 @@ export const InputPorter = ({
             {Icon && <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary/30 group-focus-within:text-primary transition-colors" />}
             <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] text-[#adaaab] font-body blur-[0.2px]">{label}</span>
          </div>
-         {type === 'range' && (
-            <span className="text-[9px] font-black text-primary/60 font-mono">
-              {Array.isArray(value) ? `${value[0]} - ${value[1]}` : value}
-            </span>
-         )}
       </div>
       
       {type === 'select' ? (

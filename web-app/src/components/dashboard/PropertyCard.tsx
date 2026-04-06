@@ -125,14 +125,14 @@ export const PropertyCard = ({ item, intent, onClick, index }: CardProps) => {
         <div className="bg-white/[0.02] p-5 rounded-2xl flex flex-col gap-2 border border-white/5 group-hover:border-white/10 transition-colors">
           <div className="flex items-center gap-2 opacity-30">
              <Zap className="w-3 h-3" />
-             <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{intent === 'buy' ? 'Market Value' : 'Monthly Rent'}</p>
+             <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{intent === 'buy' ? 'Value' : 'Monthly Rent'}</p>
           </div>
           <p className="text-lg sm:text-xl font-black font-headline text-white">{formatNCRPrice(price)}</p>
         </div>
         <div className="bg-white/[0.02] p-5 rounded-2xl flex flex-col gap-2 border border-white/5 group-hover:border-white/10 transition-colors">
           <div className="flex items-center gap-2 opacity-30">
              <Layers className="w-3 h-3" />
-             <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Asset Area</p>
+             <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Area</p>
           </div>
           <p className="text-lg sm:text-xl font-black font-headline text-white">{formatArea(area)}</p>
         </div>

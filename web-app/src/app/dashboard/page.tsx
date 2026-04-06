@@ -140,7 +140,7 @@ function DashboardContent() {
   }, []);
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24 space-y-16" suppressHydrationWarning>
+    <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-28 pb-12 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24 space-y-16" suppressHydrationWarning>
       
       {/* HEADER PORTER */}
       <header className="space-y-6 sm:space-y-8">
@@ -153,7 +153,7 @@ function DashboardContent() {
              <span className="text-[#adaaab]">Analyzer.</span>
           </h1>
           <p className="text-base sm:text-lg md:text-2xl text-[#adaaab] font-light max-w-2xl leading-relaxed tracking-tight font-body italic">
-            Get accurate property valuations for any society in the NCR region.
+            Instantly estimate the true market value of any sector or locality in the NCR region using our machine learning model.
           </p>
         </div>
       </header>
@@ -162,7 +162,7 @@ function DashboardContent() {
       <div className="relative group max-w-5xl mx-auto">
         <div className="absolute -inset-1 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-[2.5rem] blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-1000" />
         
-        <div className="relative bg-[#0a0a0a]/80 backdrop-blur-3xl border border-white/5 rounded-2xl sm:rounded-[2rem] lg:rounded-[2.5rem] p-5 sm:p-10 lg:p-12 space-y-6 sm:space-y-8 overflow-hidden">
+        <div className="relative bg-[#0a0a0a]/80 backdrop-blur-3xl border border-white/5 rounded-2xl sm:rounded-[2rem] lg:rounded-[2.5rem] p-4 sm:p-10 lg:p-12 space-y-6 sm:space-y-8 overflow-hidden">
         
          {/* 1. INTENT & ADVANCED TOGGLE ROW */}
          <div className="flex items-center justify-between gap-4">

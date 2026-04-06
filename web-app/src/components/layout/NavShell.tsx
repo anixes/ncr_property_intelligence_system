@@ -41,27 +41,29 @@ export default function NavShell() {
           </div>
         </Link>
 
-        {/* Nav Links — always visible, compact pills */}
-        <div className="flex items-center gap-2">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href;
-            const Icon = link.icon;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`flex items-center gap-2 px-3 sm:px-6 py-2.5 rounded-xl transition-all duration-300 min-h-[44px] sm:min-h-[48px] ${
-                  isActive
-                    ? 'bg-primary/15 border border-primary/30 text-primary shadow-[0_0_20px_rgba(189,157,255,0.1)]'
-                    : 'border border-white/10 text-white/40 hover:text-white hover:border-white/20 bg-white/[0.03] active:scale-95'
-                }`}
-              >
-                <Icon size={16} className="flex-shrink-0" />
-                <span className="hidden xs:block text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">{link.name}</span>
-              </Link>
-            );
-          })}
-        </div>
+        {/* Nav Links — hidden on home page since hero has giant links */}
+        {!isHome && (
+          <div className="flex items-center gap-2">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center gap-2 px-3 sm:px-6 py-2.5 rounded-xl transition-all duration-300 min-h-[44px] sm:min-h-[48px] ${
+                    isActive
+                      ? 'bg-primary/15 border border-primary/30 text-primary shadow-[0_0_20px_rgba(189,157,255,0.1)]'
+                      : 'border border-white/10 text-white/40 hover:text-white hover:border-white/20 bg-white/[0.03] active:scale-95'
+                  }`}
+                >
+                  <Icon size={16} className="flex-shrink-0" />
+                  <span className="hidden xs:block text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">{link.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </nav>
   );

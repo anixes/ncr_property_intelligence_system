@@ -86,7 +86,7 @@ export default function Discovery() {
               </h1>
               
               <p className="text-base sm:text-lg md:text-2xl text-[#adaaab] font-light max-w-2xl leading-relaxed tracking-tight font-body italic">
-                 Discover the best properties across the NCR region based on your budget and needs.
+                 Find properties that match your exact criteria, ranked by our smart algorithms to ensure you get the absolute best value.
               </p>
             </div>
           </header>
@@ -160,14 +160,11 @@ export default function Discovery() {
 
                <InputPorter 
                  label="BHK"
-                 value={filters.bhk || [2, 3]}
-                 onChange={(v) => setFilters({...filters, bhk: v.map(Number)})}
+                 value={(filters.bhk || [2, 3]).map(String)}
+                 onChange={(v) => setFilters({...filters, bhk: Array.isArray(v) ? v.map(Number) : [Number(v)]})}
                  icon={Split}
-                 type="range"
-                 min={1}
-                 max={5}
-                 step={1}
-                 placeholder="1-5 BHK"
+                 type="segmented"
+                 options={['1', '2', '3', '4', '5']}
                  className="col-span-2 lg:col-span-1"
                />
 

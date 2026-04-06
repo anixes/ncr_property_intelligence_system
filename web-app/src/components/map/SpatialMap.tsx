@@ -15,7 +15,7 @@ export default function SpatialMap() {
   const [viewState, setViewState] = useState({
     longitude: 77.10,
     latitude: 28.58,
-    zoom: 9.5,
+    zoom: typeof window !== 'undefined' && window.innerWidth < 768 ? 8.2 : 9.5,
     pitch: 40,
     bearing: 0
   });
