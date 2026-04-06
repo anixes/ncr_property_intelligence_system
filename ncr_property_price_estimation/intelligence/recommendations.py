@@ -47,7 +47,7 @@ class RecommendationEngine:
 
         # 3. Third Pass: Final desperation (Same city, any budget within reason, ignore distance)
         if len(candidates) < 1:
-             candidates = RecommendationEngine._find_candidates(
+            candidates = RecommendationEngine._find_candidates(
                 city_data, current_sector, user_budget_sqft, 0.80, 999.0, current_lat, current_lon
             )
 
@@ -63,7 +63,7 @@ class RecommendationEngine:
         budget_band: float,
         max_dist_km: float,
         current_lat: float,
-        current_lon: float
+        current_lon: float,
     ) -> list[dict[str, Any]]:
         results = []
         min_b = user_budget_sqft * (1 - budget_band)
@@ -109,18 +109,22 @@ class RecommendationEngine:
             # Penalize distance slightly in score
             dist_penalty = max(0, (dist_km / 10.0)) if dist_km < 500 else 0
 
-            composite_score = (yield_score * 0.4) + (value_score * 0.4) + (conf_score * 0.2) - dist_penalty
+            composite_score = (
+                (yield_score * 0.4) + (value_score * 0.4) + (conf_score * 0.2) - dist_penalty
+            )
 
-            results.append({
-                "locality": loc,
-                "median_price_sqft": round(price, 0),
-                "expected_yield_pct": round(y, 2),
-                "distance_km": round(dist_km, 1) if dist_km < 900 else None,
-                "listing_count": count,
-                "composite_score": round(composite_score, 2),
-                "latitude": rec_lat,
-                "longitude": rec_lon,
-                "h3_index": data.get("h3"),
-            })
+            results.append(
+                {
+                    "locality": loc,
+                    "median_price_sqft": round(price, 0),
+                    "expected_yield_pct": round(y, 2),
+                    "distance_km": round(dist_km, 1) if dist_km < 900 else None,
+                    "listing_count": count,
+                    "composite_score": round(composite_score, 2),
+                    "latitude": rec_lat,
+                    "longitude": rec_lon,
+                    "h3_index": data.get("h3"),
+                }
+            )
 
         return results

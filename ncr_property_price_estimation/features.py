@@ -111,14 +111,15 @@ class SectorNormalizer(BaseEstimator, TransformerMixin):
         institutional_mapping = {
             "Sector 150": "Sector 137",
             "Sector 152": "Sector 137",
-            "Sector 107": "Sector 108"
+            "Sector 107": "Sector 108",
         }
         if sector in institutional_mapping:
             return institutional_mapping[sector]
 
         # 2. Regional Multi-City Clustering Fallback
         import re
-        match = re.search(r'Sector\s+(\d+)', sector)
+
+        match = re.search(r"Sector\s+(\d+)", sector)
         if match:
             s_num = int(match.group(1))
             city_lower = str(city).lower()
@@ -127,7 +128,7 @@ class SectorNormalizer(BaseEstimator, TransformerMixin):
                 return "Sector 53" if s_num >= 60 else "Sector 12"
             elif "faridabad" in city_lower:
                 return "Sector 29" if s_num >= 40 else "Sector 16"
-            else: # Noida Default
+            else:  # Noida Default
                 return "Sector 108" if s_num >= 110 else "Sector 23"
 
         return sector
@@ -143,7 +144,7 @@ class SectorNormalizer(BaseEstimator, TransformerMixin):
             # We use row.get('city') to adapt mapping to the specific regional context
             X[self.column] = X.apply(
                 lambda row: self._map_sector(str(row[self.column]), str(row.get("city", "Noida"))),
-                axis=1
+                axis=1,
             )
         return X
 

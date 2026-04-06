@@ -8,6 +8,7 @@ from ncr_property_price_estimation.schemas import ModelInfoResponse
 
 router = APIRouter(prefix="/intelligence", tags=["Institutional Metadata"])
 
+
 @router.get("/localities")
 def get_locality_list(city: str):
     """Institutional locality indexing for NCR cities."""
@@ -18,7 +19,7 @@ def get_locality_list(city: str):
         "Faridabad": "Faridabad",
         "Ghaziabad": "Ghaziabad",
         "Noida": "Noida",
-        "Delhi": "Delhi"
+        "Delhi": "Delhi",
     }
 
     target_key = _NORM_MAP.get(city, city)
@@ -32,13 +33,14 @@ def get_locality_list(city: str):
     # Return normalized, sorted list for the UI
     return {"city": city, "localities": sorted(list(city_data.keys()))}
 
+
 @router.get("/model-info", response_model=ModelInfoResponse)
 def get_model_info():
     """Metadata regarding the absolute versioning of the ML models."""
     return ModelInfoResponse(
         sales_version=state.model_meta.get("sales", {}).get("version"),
         rentals_version=state.model_meta.get("rentals", {}).get("version"),
-        experiment_name=MLFLOW_EXPERIMENT_NAME
+        experiment_name=MLFLOW_EXPERIMENT_NAME,
     )
 
 
@@ -52,7 +54,7 @@ def get_hotspots(listing_type: Literal["buy", "rent"] = "buy", city: str = Query
         "Faridabad": "Faridabad",
         "Ghaziabad": "Ghaziabad",
         "Noida": "Noida",
-        "Delhi": "Delhi"
+        "Delhi": "Delhi",
     }
 
     target_city = _NORM_MAP.get(city, city) if city else None
@@ -64,10 +66,8 @@ def get_hotspots(listing_type: Literal["buy", "rent"] = "buy", city: str = Query
         hotspots = [h for h in hotspots if h.get("city") == target_city]
         featured = [f for f in featured if f.get("city") == target_city]
 
-    return {
-        "hotspots": hotspots,
-        "featured": featured
-    }
+    return {"hotspots": hotspots, "featured": featured}
+
 
 @router.get("/dashboard-summary")
 def get_dashboard_summary(city: str = None):
@@ -79,7 +79,7 @@ def get_dashboard_summary(city: str = None):
         "Faridabad": "Faridabad",
         "Ghaziabad": "Ghaziabad",
         "Noida": "Noida",
-        "Delhi": "Delhi"
+        "Delhi": "Delhi",
     }
 
     target_city = _NORM_MAP.get(city, city) if city else None
@@ -95,29 +95,35 @@ def get_dashboard_summary(city: str = None):
             "growth_index": "0.0",
             "hotspots_count": 0,
             "confidence": "0.0%",
-            "top_localities": []
+            "top_localities": [],
         }
 
     # Deterministic analytics for institutional consistency
-    median_val = pool["total_price"].median() / 1e7 # in Cr
+    median_val = pool["total_price"].median() / 1e7  # in Cr
     avg_yield = pool["yield_pct"].mean() if "yield_pct" in pool.columns else 3.5
-    hotspots = len(state.hotspots_cache.get("buy", [])) if not target_city else 42 # Mock city-specific count
+    hotspots = (
+        len(state.hotspots_cache.get("buy", [])) if not target_city else 42
+    )  # Mock city-specific count
 
     # Extract top localities
-    top_df = pool.groupby("sector").agg({
-        "total_price": "median",
-        "city": "first"
-    }).sort_values("total_price", ascending=False).head(5)
+    top_df = (
+        pool.groupby("sector")
+        .agg({"total_price": "median", "city": "first"})
+        .sort_values("total_price", ascending=False)
+        .head(5)
+    )
 
     top_localities = []
     for sector, row in top_df.iterrows():
-        top_localities.append({
-            "name": sector,
-            "city": row["city"],
-            "score": 85 + (len(top_localities) * -3),
-            "delta": f"+{10.2 + (len(top_localities) * 1.5):.1f}%",
-            "growth": "surge" if len(top_localities) < 2 else "steady"
-        })
+        top_localities.append(
+            {
+                "name": sector,
+                "city": row["city"],
+                "score": 85 + (len(top_localities) * -3),
+                "delta": f"+{10.2 + (len(top_localities) * 1.5):.1f}%",
+                "growth": "surge" if len(top_localities) < 2 else "steady",
+            }
+        )
 
     # Ensure institutional floor for resume signal (Prime NCR = ₹2.48Cr+)
     display_median = max(median_val, 2.48)
@@ -126,9 +132,10 @@ def get_dashboard_summary(city: str = None):
         "median_asset_value": f"₹{display_median:.2f}Cr",
         "growth_index": f"{80 + avg_yield:.1f}",
         "hotspots_count": hotspots,
-        "confidence": "98.4", # Removed % here, frontend handles it or we do it consistently
-        "top_localities": top_localities
+        "confidence": "98.4",  # Removed % here, frontend handles it or we do it consistently
+        "top_localities": top_localities,
     }
+
 
 @router.get("/health")
 def health_check():
@@ -136,5 +143,5 @@ def health_check():
     return {
         "status": "healthy" if not state.discovery_pool.empty else "degraded",
         "discovery_size": len(state.discovery_pool),
-        "models_loaded": list(state.models.keys())
+        "models_loaded": list(state.models.keys()),
     }

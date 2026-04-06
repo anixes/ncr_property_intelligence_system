@@ -7,6 +7,7 @@ from ncr_property_price_estimation.schemas import DiscoverRequest
 router = APIRouter(prefix="/discover", tags=["Property Discovery"])
 _intelligence = IntelligenceEngine()
 
+
 @router.post("")
 def discover_properties(req: DiscoverRequest):
     """Factual discovery of real-world property listings based on institutional filters."""
@@ -14,11 +15,10 @@ def discover_properties(req: DiscoverRequest):
         raise HTTPException(status_code=503, detail="Discovery assets not hydrated.")
 
     results = _intelligence.discover_properties(
-        pool_df=state.discovery_pool,
-        locality_index=state.locality_index,
-        req=req
+        pool_df=state.discovery_pool, locality_index=state.locality_index, req=req
     )
     return results
+
 
 @router.get("/hotspots")
 async def get_market_hotspots(listing_type: str = "buy", city: str = None):
@@ -31,9 +31,4 @@ async def get_market_hotspots(listing_type: str = "buy", city: str = None):
         f = [x for x in f if x.get("city") == db_city]
         h = [x for x in h if x.get("city") == db_city]
 
-    return {
-        "status": "success",
-        "listing_type": listing_type,
-        "hotspots": h,
-        "featured": f
-    }
+    return {"status": "success", "listing_type": listing_type, "hotspots": h, "featured": f}

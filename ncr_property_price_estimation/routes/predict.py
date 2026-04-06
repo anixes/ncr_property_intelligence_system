@@ -121,6 +121,7 @@ async def _predict_internal(inputs: list[PropertyInput]):
 
         if lat and lon and state.metro_stations:
             from math import acos, cos, radians, sin
+
             def h(lat1, lon1, lat2, lon2):
                 lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
                 try:
@@ -152,6 +153,7 @@ async def _predict_internal(inputs: list[PropertyInput]):
 
             # Multi-City Regional Clustering Support
             import re
+
             match = re.search(r"Sector\s+(\d+)", sector)
             if match:
                 s_num = int(match.group(1))

@@ -105,7 +105,9 @@ class DiscoverEngine:
 
             # Resolve normalization for the specific city of this asset
             asset_city = str(row.get("city", "Gurgaon"))
-            db_city_norm = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(asset_city, asset_city)
+            db_city_norm = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(
+                asset_city, asset_city
+            )
 
             loc_data = locality_index.get(db_city_norm, {}).get(loc, {})
             geo_median_price_sqft = loc_data.get("median_price_sqft", 0)
@@ -132,7 +134,9 @@ class DiscoverEngine:
             y_pct = ROIEngine.calculate_yield(total_price, monthly_rent)
 
             risk_target = total_price if intent == "buy" else monthly_rent
-            geo_benchmark = geo_median_price_sqft * area if intent == "buy" else geo_median_rent_sqft * area
+            geo_benchmark = (
+                geo_median_price_sqft * area if intent == "buy" else geo_median_rent_sqft * area
+            )
             risk = RiskEngine.calculate_risk_score(
                 risk_target, geo_benchmark if geo_benchmark else 0, intent=intent
             )
@@ -140,7 +144,11 @@ class DiscoverEngine:
             h3_med_raw = row.get("h3_median_price", 0)
             h3_median = float(h3_med_raw) if pd.notna(h3_med_raw) else 0.0
             h3_median_per_sqft = h3_median / area if (h3_median > 0 and area > 0) else 0.0
-            benchmark = h3_median_per_sqft if h3_median_per_sqft > 0 else (geo_median_price_sqft if intent == 'buy' else geo_median_rent_sqft)
+            benchmark = (
+                h3_median_per_sqft
+                if h3_median_per_sqft > 0
+                else (geo_median_price_sqft if intent == "buy" else geo_median_rent_sqft)
+            )
             overval = (price_sqft - benchmark) / (benchmark + 1e-9) * 100 if benchmark > 0 else 0
 
             # Normalize risk from 0–100 to 0–10 for scoring engine
@@ -152,7 +160,7 @@ class DiscoverEngine:
                 overvaluation_pct=overval,
                 is_near_metro=is_near,
                 risk_index=normalized_risk,
-                intent=intent
+                intent=intent,
             )
 
             dist_val = (
@@ -180,7 +188,9 @@ class DiscoverEngine:
                     if pd.notna(row.get("longitude"))
                     else None,
                     "dist_to_metro_km": float(round(dist_val, 2)) if dist_val is not None else None,
-                    "h3_index": str(row["h3_res8"]) if "h3_res8" in row and pd.notna(row["h3_res8"]) else None,
+                    "h3_index": str(row["h3_res8"])
+                    if "h3_res8" in row and pd.notna(row["h3_res8"])
+                    else None,
                     "furnishing_status": str(row["furnishing_status"])
                     if pd.notna(row.get("furnishing_status"))
                     and str(row.get("furnishing_status", "")).strip() not in ("", "nan", "None")
@@ -210,8 +220,8 @@ class DiscoverEngine:
                             "is_store_room": bool(row.get("is_store_room", 0)),
                             "is_pooja_room": bool(row.get("is_pooja_room", 0)),
                             "is_new_construction": bool(row.get("is_new_construction", 0)),
-                        }
-                    }
+                        },
+                    },
                 }
             )
 

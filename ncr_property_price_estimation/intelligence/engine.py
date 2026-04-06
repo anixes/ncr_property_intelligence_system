@@ -54,7 +54,7 @@ class IntelligenceEngine:
             is_near_metro=is_near_metro,
             risk_index=normalized_risk,
             demand_index=demand_index,
-            intent=intent
+            intent=intent,
         )
 
         return {

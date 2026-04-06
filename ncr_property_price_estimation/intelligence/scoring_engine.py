@@ -31,20 +31,20 @@ class ScoringEngine:
         if intent == "rent":
             # Renter Focus: Utility + Affordability (Metro, Demand, Price)
             unified_score = (
-                metro_score * 0.35      # Commute ease is primary
-                + demand_score * 0.25   # Lifestyle density and interest
-                + price_score * 0.20    # Affordability vs local market
-                + risk_score * 0.15     # Safety/Reliability
-                + yield_score * 0.05    # Owner's yield is mostly irrelevant to renter
+                metro_score * 0.35  # Commute ease is primary
+                + demand_score * 0.25  # Lifestyle density and interest
+                + price_score * 0.20  # Affordability vs local market
+                + risk_score * 0.15  # Safety/Reliability
+                + yield_score * 0.05  # Owner's yield is mostly irrelevant to renter
             )
         else:
             # Buyer Focus: ROI + Market Position (Yield, Price, Growth)
             unified_score = (
-                yield_score * 0.35      # Annualized return
-                + price_score * 0.25    # Capital entry point (Buy low)
-                + metro_score * 0.15    # Infrastructure growth pull
-                + demand_score * 0.15   # Organic market heat
-                + risk_score * 0.10     # Liquidity/Valuation safety
+                yield_score * 0.35  # Annualized return
+                + price_score * 0.25  # Capital entry point (Buy low)
+                + metro_score * 0.15  # Infrastructure growth pull
+                + demand_score * 0.15  # Organic market heat
+                + risk_score * 0.10  # Liquidity/Valuation safety
             )
 
         return round(max(0, min(10, unified_score)), 2)

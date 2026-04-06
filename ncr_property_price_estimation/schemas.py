@@ -36,6 +36,7 @@ class PropertyFeatures(BaseModel):
 
 class PropertyInput(BaseModel):
     """Input schema for a single property prediction."""
+
     model_config = ConfigDict(populate_by_name=True)
 
     area: float = Field(..., gt=0, description="Built-up area in sqft")
@@ -69,7 +70,9 @@ class PropertyInput(BaseModel):
     is_owner_listing: bool = False
 
     # Advanced Intelligence Metrics
-    orientation: Literal["N", "S", "E", "W", "NE", "NW", "SE", "SW"] | None = Field(None, description="Property facing orientation")
+    orientation: Literal["N", "S", "E", "W", "NE", "NW", "SE", "SW"] | None = Field(
+        None, description="Property facing orientation"
+    )
     property_age: int | None = Field(None, ge=0, description="Property age in years")
 
 
@@ -90,7 +93,9 @@ class PredictionResponse(BaseModel):
         default_factory=list, description="Top 5 real-world historical matches"
     )
     dist_to_metro_km: float | None = Field(None, description="Actual distance to nearest metro")
-    asset: dict[str, Any] | None = Field(None, description="Full reconstructed asset for UI deep dive")
+    asset: dict[str, Any] | None = Field(
+        None, description="Full reconstructed asset for UI deep dive"
+    )
 
 
 class HealthResponse(BaseModel):

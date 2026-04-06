@@ -27,6 +27,7 @@ async def lifespan(app: FastAPI):
     yield
     state.clear_state()
 
+
 app = FastAPI(
     title="NCR Property Intelligence (Modular)",
     description="Decoupled AI-driven valuation and discovery engine for NCR Real Estate.",
@@ -73,9 +74,11 @@ app.include_router(debug.router)
 
 # ── TOP-LEVEL ENDPOINTS ──────────────────────────────────────────
 
+
 @app.get("/")
 def root():
     return {"message": "NCR Property Intelligence (Modular Engine Active)"}
+
 
 @app.get("/health")
 def health(response: Response):
@@ -85,8 +88,9 @@ def health(response: Response):
     return {
         "status": "healthy" if not state.discovery_pool.empty else "degraded",
         "models_loaded": list(state.models.keys()),
-        "discovery_size": len(state.discovery_pool)
+        "discovery_size": len(state.discovery_pool),
     }
+
 
 # ── LEGACY PATH MAPPING ──────────────────────────────────────────
 # Ensure /locality/list maps to the new intelligence router logic.
@@ -95,10 +99,12 @@ def get_legacy_locality_list(city: str):
     """Bridge for legacy frontend locality recovery."""
     return intelligence.get_locality_list(city)
 
+
 @app.get("/model-info", tags=["Institutional Metadata"])
 def get_legacy_model_info():
     """Bridge for legacy frontend model-info recovery."""
     return intelligence.get_model_info()
+
 
 if __name__ == "__main__":
     uvicorn.run("ncr_property_price_estimation.api:app", host=API_HOST, port=API_PORT)

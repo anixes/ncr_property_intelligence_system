@@ -148,7 +148,9 @@ class ComparablesEngine:
                     "yield_pct": float(round(y_pct, 2)),
                     "unified_score": float(listing_score),
                     "listing_type": listing_type.lower(),
-                    "longitude": float(row["longitude"]) if pd.notna(row.get("longitude")) else None,
+                    "longitude": float(row["longitude"])
+                    if pd.notna(row.get("longitude"))
+                    else None,
                     "latitude": float(row["latitude"]) if pd.notna(row.get("latitude")) else None,
                     "h3_index": str(row.get("h3_index", "")),
                     "features": {
@@ -176,8 +178,8 @@ class ComparablesEngine:
                             "is_store_room": bool(row.get("is_store_room", 0)),
                             "is_pooja_room": bool(row.get("is_pooja_room", 0)),
                             "is_new_construction": bool(row.get("is_new_construction", 0)),
-                        }
-                    }
+                        },
+                    },
                 }
             )
 

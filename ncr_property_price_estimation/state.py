@@ -16,9 +16,17 @@ hotspots_cache: dict[str, list] = {"buy": [], "rent": []}
 featured_cache: dict[str, list] = {"buy": [], "rent": []}
 metro_stations: list[dict[str, Any]] = []
 
+
 async def load_institutional_state():
     """Tactical hydration of the global analytical state."""
-    global models, model_meta, locality_index, discovery_pool, hotspots_cache, featured_cache, metro_stations
+    global \
+        models, \
+        model_meta, \
+        locality_index, \
+        discovery_pool, \
+        hotspots_cache, \
+        featured_cache, \
+        metro_stations
 
     from ncr_property_price_estimation.modeling.model_loader import load_model
 
@@ -62,7 +70,9 @@ async def load_institutional_state():
                     l_index["Greater_Noida"][loc] = localities.pop(loc)
 
             locality_index = l_index
-            logger.info(f"Analytical index hydrated: {len(locality_index)} cities, {len(locality_index.get('Greater_Noida', {}))} Greater Noida localities consolidated.")
+            logger.info(
+                f"Analytical index hydrated: {len(locality_index)} cities, {len(locality_index.get('Greater_Noida', {}))} Greater Noida localities consolidated."
+            )
 
     # 3. Load Discovery Assets & Spatial Pre-computation
     s_path = PROJ_ROOT / "data" / "model" / "model_sales.parquet"
@@ -70,10 +80,20 @@ async def load_institutional_state():
 
     if s_path.exists() and r_path.exists():
         needed_cols = [
-            "city", "sector", "society", "listing_type", "bedrooms",
-            "bathrooms", "area", "price_per_sqft", "h3_res8",
-            "h3_median_price", "h3_listings_count", "prop_type",
-            "furnishing_status", "legal_status"
+            "city",
+            "sector",
+            "society",
+            "listing_type",
+            "bedrooms",
+            "bathrooms",
+            "area",
+            "price_per_sqft",
+            "h3_res8",
+            "h3_median_price",
+            "h3_listings_count",
+            "prop_type",
+            "furnishing_status",
+            "legal_status",
         ]
         s_pool = pd.read_parquet(s_path, columns=needed_cols)
         r_pool = pd.read_parquet(r_path, columns=needed_cols)
@@ -104,6 +124,7 @@ async def load_institutional_state():
             _run_vectorized_metro_sync()
         logger.info(f"[state] Metro Engine active: {len(metro_stations)} stations")
 
+
 def _run_vectorized_metro_sync():
     """Vectorized Haversine sync for 43,000+ assets."""
     global discovery_pool, metro_stations
@@ -119,15 +140,23 @@ def _run_vectorized_metro_sync():
     lat1, lon1 = np.radians(prop_lats[mask, None]), np.radians(prop_lons[mask, None])
     lat2, lon2 = np.radians(metro_lats), np.radians(metro_lons)
 
-    d = 6371 * 2 * np.arcsin(np.sqrt(
-        np.sin((lat2-lat1)/2)**2 + np.cos(lat1)*np.cos(lat2)*np.sin((lon2-lon1)/2)**2
-    ))
+    d = (
+        6371
+        * 2
+        * np.arcsin(
+            np.sqrt(
+                np.sin((lat2 - lat1) / 2) ** 2
+                + np.cos(lat1) * np.cos(lat2) * np.sin((lon2 - lon1) / 2) ** 2
+            )
+        )
+    )
 
     min_dist = np.min(d, axis=1)
     discovery_pool["gps_dist_to_metro"] = np.nan
     discovery_pool["gps_is_near_metro"] = False
     discovery_pool.loc[mask, "gps_dist_to_metro"] = min_dist
     discovery_pool.loc[mask, "gps_is_near_metro"] = min_dist <= 1.5
+
 
 def clear_state():
     """Clinical teardown of the institutional state."""
