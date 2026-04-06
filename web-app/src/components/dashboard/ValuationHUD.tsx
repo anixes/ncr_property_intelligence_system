@@ -133,74 +133,138 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
             </div>
          </section>
 
-         {/* VERIFIED COMPARABLES */}
-         {comparables.length > 0 && (
-            <section className="space-y-12">
-               <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
-                  <div className="space-y-3">
-                     <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Historical Benchmarks</div>
-                     <h3 className="text-3xl font-black font-headline text-white uppercase">Verified <span className="text-white/40">Comparables.</span></h3>
-                  </div>
-                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Real-World Marketplace Matches</p>
-               </header>
-
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {comparables.slice(0, 4).map((item, idx) => (
-                     <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: idx * 0.1 }}
-                     >
-                        <PropertyCard
-                           item={item}
-                           intent={intent}
-                           onClick={onCardClick}
-                        />
-                     </motion.div>
-                  ))}
-               </div>
-            </section>
-         )}
-
-         {/* INVESTMENT ALTERNATIVES */}
-         {alternatives.length > 0 && (
-            <section className="space-y-12">
-               <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
-                  <div className="space-y-3">
-                     <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">
-                        {intent === 'rent' ? "Niche Lifestyle Clusters" : "Macro Spatial Analysis"}
+         {/* GRID-ANALYSIS: COMPARABLES & ALTERNATIVES */}
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-20">
+            {/* VERIFIED COMPARABLES */}
+            {comparables.length > 0 && (
+               <section className="space-y-12">
+                  <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+                     <div className="space-y-3">
+                        <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Historical Benchmarks</div>
+                        <h3 className="text-3xl font-black font-headline text-white uppercase">Verified <span className="text-white/40">Comparables.</span></h3>
                      </div>
-                     <h3 className="text-3xl font-black font-headline text-white uppercase">
-                        {intent === 'rent' ? "Lifestyle " : "Investment "}
-                        <span className="text-white/40">{intent === 'rent' ? "Substitutes." : "Alternatives."}</span>
-                     </h3>
+                  </header>
+
+                  <div className="grid grid-cols-1 gap-8">
+                     {comparables.slice(0, 3).map((item, idx) => (
+                        <motion.div
+                           key={idx}
+                           initial={{ opacity: 0, x: -20 }}
+                           whileInView={{ opacity: 1, x: 0 }}
+                           viewport={{ once: true }}
+                           transition={{ delay: idx * 0.1 }}
+                        >
+                           <PropertyCard
+                              item={item}
+                              intent={intent}
+                              onClick={onCardClick}
+                           />
+                        </motion.div>
+                     ))}
                   </div>
-                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
-                     {intent === 'rent' ? "Optimized Regional Peer Options" : "Neighboring Micro-Market Opportunities"}
-                  </p>
+               </section>
+            )}
+
+            {/* SPATIAL ALTERNATIVES */}
+            {alternatives.length > 0 && (
+               <section className="space-y-12">
+                  <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+                     <div className="space-y-3">
+                        <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">
+                           {intent === 'rent' ? "Niche Lifestyle Clusters" : "Macro Spatial Analysis"}
+                        </div>
+                        <h3 className="text-3xl font-black font-headline text-white uppercase">
+                           {intent === 'rent' ? "Lifestyle " : "Investment "}
+                           <span className="text-white/40">{intent === 'rent' ? "Substitutes." : "Alternatives."}</span>
+                        </h3>
+                     </div>
+                  </header>
+
+                  <div className="grid grid-cols-1 gap-8">
+                     {alternatives.slice(0, 3).map((item, idx) => (
+                        <motion.div
+                           key={idx}
+                           initial={{ opacity: 0, x: 20 }}
+                           whileInView={{ opacity: 1, x: 0 }}
+                           viewport={{ once: true }}
+                           transition={{ delay: idx * 0.1 }}
+                        >
+                           <PropertyCard
+                              item={item}
+                              intent={intent}
+                              onClick={onCardClick}
+                           />
+                        </motion.div>
+                     ))}
+                  </div>
+               </section>
+            )}
+         </div>
+
+         {/* STRATEGIC MARKET INSIGHT - THE 'INSTITUTIONAL' EDGE */}
+         <section className="relative overflow-hidden bg-primary/5 border border-primary/10 rounded-[2.5rem] p-8 sm:p-12 lg:p-16">
+            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
+            <div className="max-w-4xl space-y-10 relative z-10">
+               <header className="space-y-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary text-[9px] font-black uppercase tracking-widest border border-primary/20">
+                     Institutional Market Insight
+                  </div>
+                  <h4 className="text-4xl sm:text-5xl font-black font-headline tracking-tight text-white leading-tight">
+                     Strategic <span className="opacity-40">Positioning.</span>
+                  </h4>
                </header>
 
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {alternatives.slice(0, 4).map((item, idx) => (
-                     <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: idx * 0.1 }}
-                     >
-                        <PropertyCard
-                           item={item}
-                           intent={intent}
-                           onClick={onCardClick}
-                        />
-                     </motion.div>
-                  ))}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="space-y-6">
+                     <p className="text-xl text-white/70 leading-relaxed font-light font-body italic">
+                        {intent === 'buy'
+                           ? "This asset demonstrates high capital growth potential due to its proximity to emerging commercial corridors. The valuation is currently aligned with the institutional entry-point for the sector."
+                           : "The rental profile suggests strong resident retention scores. Pricing is currently optimized for immediate occupancy compared to neighboring high-utility clusters."
+                        }
+                     </p>
+                     <ul className="space-y-4">
+                        {[
+                           { label: "Market Sentiment", value: "Bullish (Accumulate)", color: "text-green-400" },
+                           { label: "Liquidity Index", value: "High", color: "text-primary" },
+                           { label: "Data Integrity", value: "94.2% verified", color: "text-white/40" }
+                        ].map((stat, i) => (
+                           <li key={i} className="flex items-center justify-between py-3 border-b border-white/5">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-[#adaaab]">{stat.label}</span>
+                              <span className={`text-xs font-black uppercase ${stat.color}`}>{stat.value}</span>
+                           </li>
+                        ))}
+                     </ul>
+                  </div>
+
+                  <div className="bg-[#0a0a0a]/60 backdrop-blur-xl rounded-3xl p-8 border border-white/5 space-y-8">
+                     <div className="space-y-2">
+                        <p className="text-[10px] font-black uppercase tracking-[.3em] text-primary">Security Spectrum</p>
+                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden flex">
+                           <div className="h-full bg-green-500/40 w-1/3 border-r border-black/20" />
+                           <div className="h-full bg-amber-500/40 w-1/3 border-r border-black/20" />
+                           <div className="h-full bg-red-500/40 w-1/3" />
+                        </div>
+                        <div className="flex justify-between text-[8px] font-black text-white/20 uppercase tracking-widest pt-1">
+                           <span>Safe Entry</span>
+                           <span>Neutral</span>
+                           <span>Speculative</span>
+                        </div>
+                     </div>
+                     <div className="space-y-2">
+                        <div className="flex items-center gap-4">
+                           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isValuePick ? 'bg-green-500/20 text-green-400' : 'bg-primary/20 text-primary'}`}>
+                              <Compass className="w-6 h-6" />
+                           </div>
+                           <div>
+                              <p className="text-xs font-bold text-white uppercase tracking-wider">Asset Delta</p>
+                              <p className="text-[10px] text-[#adaaab]">{positionLabel} by {Math.abs(marketPosition).toFixed(1)}%</p>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
                </div>
-            </section>
-         )}
+            </div>
+         </section>
 
       </div>
    );

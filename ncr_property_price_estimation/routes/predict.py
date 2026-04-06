@@ -1,23 +1,17 @@
-# Standard Library Imports
-from typing import List, Optional
-
-# Internal Imports
-from ncr_property_price_estimation.config import logger
-
-# Third-Party Imports
-import pandas as pd
 import numpy as np
+import pandas as pd
 from fastapi import APIRouter, HTTPException
 
 from ncr_property_price_estimation import state
-from ncr_property_price_estimation.schemas import PropertyInput, PredictionResponse
-from ncr_property_price_estimation.intelligence.engine import IntelligenceEngine
+from ncr_property_price_estimation.config import logger
 from ncr_property_price_estimation.data.geo_enrichment import GeoEnrichmentService
 from ncr_property_price_estimation.features import (
     AMENITY_FEATURES,
     CATEGORICAL_FEATURES,
     NUMERIC_FEATURES,
 )
+from ncr_property_price_estimation.intelligence.engine import IntelligenceEngine
+from ncr_property_price_estimation.schemas import PredictionResponse, PropertyInput
 
 router = APIRouter(prefix="/predict", tags=["Valuation & Prediction"])
 
@@ -40,7 +34,7 @@ async def predict_single(req: PropertyInput):
     return results[0]
 
 
-@router.post("/batch", response_model=List[PredictionResponse])
+@router.post("/batch", response_model=list[PredictionResponse])
 async def predict_batch(properties: list[PropertyInput]):
     """Batch valuation for multi-asset portfolios (Max 50)."""
     if not properties:
@@ -50,7 +44,7 @@ async def predict_batch(properties: list[PropertyInput]):
     return await _predict_internal(properties)
 
 
-async def _predict_internal(inputs: List[PropertyInput]):
+async def _predict_internal(inputs: list[PropertyInput]):
     """Internal analytical engine for ML inference and ROI intelligence."""
 
     # ML Pipeline Features
@@ -78,8 +72,6 @@ async def _predict_internal(inputs: List[PropertyInput]):
         row["h3_median_price"] = np.nan
         row["h3_listings_count"] = np.nan
 
-        # Automated Metro Proximity Validation
-        # Automated Metro Proximity Validation
         # Institutional Sector Normalization (Ensures data parity between frontend and backend)
         original_sector = inp.sector.strip()
         db_city = {"Gurugram": "Gurgaon", "Greater Noida": "Greater_Noida"}.get(inp.city, inp.city)
@@ -128,12 +120,11 @@ async def _predict_internal(inputs: List[PropertyInput]):
         dist_to_metro = None
 
         if lat and lon and state.metro_stations:
-            # Simple Haversine logic
-            from math import radians, cos, sin, acos
-
+            from math import acos, cos, radians, sin
             def h(lat1, lon1, lat2, lon2):
                 lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
                 try:
+                    # Earth Radius 6371km
                     return 6371 * acos(
                         sin(lat1) * sin(lat2) + cos(lat1) * cos(lat2) * cos(lon2 - lon1)
                     )
@@ -146,11 +137,11 @@ async def _predict_internal(inputs: List[PropertyInput]):
                 if dist_to_metro <= 1.5:
                     is_metro = True
 
-        def normalize_sector(sector: str, city: str) -> str:
+        def normalize_sector_for_model(sector: str, city: str) -> str:
             if not sector or pd.isna(sector):
                 return "Unknown"
 
-            # Manual Institutional Peers (Noida High-Fidelity)
+            # Manual Institutional Peers (Multi-City High-Fidelity)
             manual_map = {
                 "Sector 150": "Sector 137",
                 "Sector 152": "Sector 137",
@@ -159,9 +150,8 @@ async def _predict_internal(inputs: List[PropertyInput]):
             if sector in manual_map:
                 return manual_map[sector]
 
-            # Multi-City Regional Clustering (Existing Model Support)
+            # Multi-City Regional Clustering Support
             import re
-
             match = re.search(r"Sector\s+(\d+)", sector)
             if match:
                 s_num = int(match.group(1))
@@ -176,7 +166,7 @@ async def _predict_internal(inputs: List[PropertyInput]):
 
         # Deploy Multi-City Institutional Mapping
         row["city"] = db_city
-        row["sector"] = normalize_sector(target_sector, db_city)
+        row["sector"] = normalize_sector_for_model(target_sector, db_city)
         row["society"] = (inp.property_name or "Unknown").strip().title()
 
         # Absolute Input Hardening

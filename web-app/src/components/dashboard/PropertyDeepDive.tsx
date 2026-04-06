@@ -150,20 +150,20 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                 <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Financial Architecture</h4>
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <MetricSquare 
-                    label={intent === 'rent' ? "Monthly Rent" : "Valuation"} 
+                    label={intent === 'rent' ? "Monthly Rent" : "Valuation Benchmark"} 
                     value={formatNCRPrice(price)} 
-                    sub={'area' in item ? `at ${item.area} SQFT` : 'Market Median'} 
+                    sub={'area' in item ? `at ${item.area} SQFT` : 'NCR Benchmark'} 
                   />
                   {intent === 'rent' ? (
                     <MetricSquare 
-                      label="Market Value Index" 
-                      value="Aligned" 
-                      sub="Premium Verified" 
+                      label="Market Rent Index" 
+                      value="Institutional" 
+                      sub="Verified" 
                       trend="up"
                     />
                   ) : (
                     <MetricSquare 
-                      label="Yield Projection" 
+                      label="Capital Yield" 
                       value={`${yieldPct}%`} 
                       sub="Gross Annualized" 
                       trend="up"
