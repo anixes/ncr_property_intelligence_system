@@ -24,7 +24,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
    const alternatives = data?.recommendations || [];
 
    return (
-      <div className="space-y-20 lg:space-y-32 animate-in fade-in slide-in-from-bottom-5 duration-1000">
+      <div className="space-y-12 lg:space-y-32 animate-in fade-in slide-in-from-bottom-5 duration-1000">
 
          {/* 6-GRID INTELLIGENCE HUD */}
          <section className="space-y-10">
@@ -34,7 +34,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                   <span>Intelligence Analytics HUD</span>
                </div>
                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                  <h3 className="text-3xl sm:text-4xl font-black font-headline tracking-tighter text-white">
+                  <h3 className="text-2xl sm:text-4xl font-black font-headline tracking-tighter text-white">
                      Market <span className="text-white/40">Performance.</span>
                   </h3>
                   <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] animate-pulse">
@@ -141,7 +141,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                   <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
                      <div className="space-y-3">
                         <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">Historical Benchmarks</div>
-                        <h3 className="text-3xl font-black font-headline text-white uppercase">Verified <span className="text-white/40">Comparables.</span></h3>
+                        <h3 className="text-xl sm:text-3xl font-black font-headline text-white uppercase">Verified <span className="text-white/40">Comparables.</span></h3>
                      </div>
                   </header>
 
@@ -174,7 +174,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                         <div className="text-[10px] font-black text-primary uppercase tracking-[0.4em]">
                            {intent === 'rent' ? "Niche Lifestyle Clusters" : "Macro Spatial Analysis"}
                         </div>
-                        <h3 className="text-3xl font-black font-headline text-white uppercase">
+                        <h3 className="text-xl sm:text-3xl font-black font-headline text-white uppercase">
                            {intent === 'rent' ? "Lifestyle " : "Investment "}
                            <span className="text-white/40">{intent === 'rent' ? "Substitutes." : "Alternatives."}</span>
                         </h3>
@@ -204,21 +204,21 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
          </div>
 
          {/* STRATEGIC MARKET INSIGHT - THE 'INSTITUTIONAL' EDGE */}
-         <section className="relative overflow-hidden bg-primary/5 border border-primary/10 rounded-[2.5rem] p-8 sm:p-12 lg:p-16">
+         <section className="relative overflow-hidden bg-primary/5 border border-primary/10 rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-12 lg:p-16">
             <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/10 to-transparent pointer-events-none" />
             <div className="max-w-4xl space-y-10 relative z-10">
                <header className="space-y-4">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/20 text-primary text-[9px] font-black uppercase tracking-widest border border-primary/20">
                      Institutional Market Insight
                   </div>
-                  <h4 className="text-4xl sm:text-5xl font-black font-headline tracking-tight text-white leading-tight">
+                  <h4 className="text-2xl sm:text-5xl font-black font-headline tracking-tight text-white leading-tight">
                      Strategic <span className="opacity-40">Positioning.</span>
                   </h4>
                </header>
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="space-y-6">
-                     <p className="text-xl text-white/70 leading-relaxed font-light font-body italic">
+                     <p className="text-base sm:text-xl text-white/70 leading-relaxed font-light font-body italic">
                         {intent === 'buy'
                            ? "This asset demonstrates high capital growth potential due to its proximity to emerging commercial corridors. The valuation is currently aligned with the institutional entry-point for the sector."
                            : "The rental profile suggests strong resident retention scores. Pricing is currently optimized for immediate occupancy compared to neighboring high-utility clusters."
@@ -275,7 +275,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
 const MetricCard = ({ label, value, subValue, icon: Icon, color, glow, onClick, actionLabel }: any) => (
    <div
       onClick={onClick}
-      className={`group relative bg-[#131314] rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 border border-white/5 transition-all duration-500 hover:border-primary/20 ${glow} ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+      className={`group relative bg-[#131314] rounded-2xl sm:rounded-[32px] p-4 sm:p-8 border border-white/5 transition-all duration-500 hover:border-primary/20 ${glow} ${onClick ? 'cursor-pointer active:scale-[0.98]' : ''}`}
    >
       <div className="flex justify-between items-start mb-6 sm:mb-8">
          <div className="space-y-1">
@@ -287,7 +287,7 @@ const MetricCard = ({ label, value, subValue, icon: Icon, color, glow, onClick, 
          </div>
       </div>
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-         <div className={`text-xl sm:text-2xl lg:text-3xl font-black font-headline tracking-tighter ${color} leading-none`}>
+         <div className={`text-lg sm:text-2xl lg:text-3xl font-black font-headline tracking-tighter ${color} leading-none`}>
             {value}
          </div>
          {actionLabel && (

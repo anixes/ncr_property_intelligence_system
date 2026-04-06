@@ -84,22 +84,11 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
             {/* Header Area */}
             <div className="sticky top-0 z-10 glass-panel-luxe border-0 border-b border-white/10 px-5 py-4 flex justify-between items-center bg-surface/80">
               <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                    <Zap className="w-5 h-5" />
-                 </div>
                  <h3 className="text-lg font-black tracking-tighter uppercase font-headline">
                    {intent === 'rent' ? "Rental Intelligence" : "Asset Intelligence"}
                  </h3>
               </div>
               <div className="flex items-center gap-2">
-                {/* Tactical Market Analyzer Link (Subtle) *) */}
-                <Link 
-                  href={`/dashboard?city=${encodeURIComponent(item.city || '')}&sector=${encodeURIComponent((item as any).sector || item.locality || '')}&area=${(item as any).area || (item as any).total_sqft || ''}&bhk=${(item as any).bhk || ''}&intent=${intent}`}
-                  className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/20 hover:text-primary hover:border-primary/30 transition-all active:scale-95"
-                  title="Initialize Market Analyzer"
-                >
-                  <TrendingUp className="w-4 h-4" />
-                </Link>
                 <button 
                   onClick={onClose}
                   className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10 active:scale-90 transition-all text-white/40 hover:text-white"

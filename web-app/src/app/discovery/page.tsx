@@ -83,12 +83,12 @@ export default function Discovery() {
             </div>
             
             <div className="space-y-4">
-              <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black font-headline tracking-tightest leading-[0.85] text-white">
+              <h1 className="text-3xl sm:text-5xl lg:text-8xl font-black font-headline tracking-tightest leading-[0.85] text-white">
                  Property <br className="hidden sm:block"/>
                  <span className="text-[#adaaab]">Search.</span>
               </h1>
               
-              <p className="text-lg sm:text-xl md:text-2xl text-[#adaaab] font-light max-w-2xl leading-relaxed tracking-tight font-body italic">
+              <p className="text-base sm:text-lg md:text-2xl text-[#adaaab] font-light max-w-2xl leading-relaxed tracking-tight font-body italic">
                  Discover the best properties across the NCR region based on your budget and needs.
               </p>
             </div>
@@ -161,14 +161,14 @@ export default function Discovery() {
               <InputPorter 
                 label="Sort Priority"
                 value={
-                  filters.sort_by === 'score' ? 'Alpha Index (Best Value)' :
+                  filters.sort_by === 'score' ? 'Best Value' :
                   filters.sort_by === 'yield' ? 'Investment Yield (%)' :
                   filters.sort_by === 'price_low' ? 'Price: Low-High' :
                   filters.sort_by === 'price_high' ? 'Price: High-Low' : 'Sort Results'
                 }
                 onChange={(v) => {
                   const mapping: Record<string, any> = {
-                    'Alpha Index (Best Value)': 'score',
+                    'Best Value': 'score',
                     'Investment Yield (%)': 'yield',
                     'Price: Low-High': 'price_low',
                     'Price: High-Low': 'price_high'
@@ -178,13 +178,13 @@ export default function Discovery() {
                 icon={Target}
                 type="select"
                 options={filters.listing_type === 'buy' 
-                  ? ['Alpha Index (Best Value)', 'Investment Yield (%)', 'Price: Low-High', 'Price: High-Low']
-                  : ['Alpha Index (Best Value)', 'Price: Low-High', 'Price: High-Low']}
+                  ? ['Best Value', 'Investment Yield (%)', 'Price: Low-High', 'Price: High-Low']
+                  : ['Best Value', 'Price: Low-High', 'Price: High-Low']}
               />
            </div>
 
            {/* SPATIAL RADARS (DOCK) */}
-           <div className="p-8 sm:p-10 bg-white/[0.01] border border-white/5 rounded-3xl border-dashed">
+           <div className="p-4 sm:p-10 bg-white/[0.01] border border-white/5 rounded-2xl sm:rounded-3xl border-dashed">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16">
                 <InputPorter 
                   label={filters.listing_type === 'buy' ? "Price Range" : "Monthly Rent Range"}
@@ -216,23 +216,23 @@ export default function Discovery() {
               </div>
            </div>
 
-           <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
-              <button 
-                onClick={handleDiscover}
-                disabled={loading}
-                className="flex-1 w-full sm:w-auto bg-primary text-black font-black text-xs sm:text-sm uppercase tracking-[0.3em] rounded-2xl h-16 sm:h-20 flex items-center justify-center gap-4 hover:brightness-110 active:scale-95 transition-all shadow-2xl shadow-primary/20"
-              >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Radar className="w-5 h-5" />}
-                Search Properties
-              </button>
-              
+           <div className="flex flex-col items-center gap-6 pt-4">
               <button 
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                className="w-full sm:w-auto h-14 sm:h-20 px-6 sm:px-8 rounded-2xl bg-white/[0.03] border border-white/5 text-[#adaaab] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 sm:gap-4 hover:bg-white/[0.06] active:scale-95 transition-all"
+                className="w-full h-14 sm:h-20 px-6 sm:px-8 rounded-2xl bg-white/[0.03] border border-white/5 text-[#adaaab] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 sm:gap-4 hover:bg-white/[0.06] active:scale-95 transition-all outline-none"
               >
                 <Settings2 className="w-4 h-4" />
                 Advanced Filters
                 <ChevronDown className={`w-4 h-4 transition-transform duration-500 ${showAdvanced ? 'rotate-180' : ''}`} />
+              </button>
+
+              <button 
+                onClick={handleDiscover}
+                disabled={loading}
+                className="flex-1 w-full bg-primary text-black font-black text-xs sm:text-sm uppercase tracking-[0.3em] rounded-2xl h-16 sm:h-20 flex items-center justify-center gap-4 hover:brightness-110 active:scale-95 transition-all shadow-2xl shadow-primary/20"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Radar className="w-5 h-5" />}
+                Search Properties
               </button>
            </div>
 

@@ -151,11 +151,11 @@ function DashboardContent() {
            Property Value Guide
         </div>
         <div className="space-y-4">
-          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black font-headline tracking-tightest leading-[0.85] text-white">
+          <h1 className="text-3xl sm:text-5xl lg:text-8xl font-black font-headline tracking-tightest leading-[0.85] text-white">
              Market <br className="hidden sm:block"/>
              <span className="text-[#adaaab]">Analyzer.</span>
           </h1>
-          <p className="text-lg sm:text-xl md:text-2xl text-[#adaaab] font-light max-w-2xl leading-relaxed tracking-tight font-body italic">
+          <p className="text-base sm:text-lg md:text-2xl text-[#adaaab] font-light max-w-2xl leading-relaxed tracking-tight font-body italic">
             Get accurate property valuations for any society in the NCR region.
           </p>
         </div>

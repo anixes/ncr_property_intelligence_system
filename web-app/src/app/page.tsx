@@ -59,7 +59,7 @@ export default function Home() {
         <div className="flex justify-between items-end">
           <div className="max-w-2xl space-y-6">
             <span className="text-[#bd9dff] font-black uppercase tracking-widest text-[10px] sm:text-xs">Institutional Intelligence Portal</span>
-            <h1 className="font-headline text-4xl sm:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight">NCR Property<br/>Intelligence.</h1>
+            <h1 className="font-headline text-3xl sm:text-5xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight">NCR Property<br/>Intelligence.</h1>
             <p className="text-white/60 text-lg leading-relaxed max-w-lg">The smartest way to navigate NCR real estate. AI-powered tools to help you find and price the perfect home.</p>
           </div>
           

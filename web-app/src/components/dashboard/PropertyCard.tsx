@@ -64,7 +64,7 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
       whileHover={{ scale: 1.01, boxShadow: '0 0 30px rgba(189,157,255,0.08)' }}
       viewport={{ once: true }}
       onClick={() => onClick?.(item)}
-      className="premium-card p-5 sm:p-8 group flex flex-col gap-6 sm:gap-8 h-full cursor-pointer hover:bg-white/[0.04] active:scale-[0.98] transition-all relative overflow-hidden"
+      className="premium-card p-4 sm:p-8 group flex flex-col gap-6 sm:gap-8 h-full cursor-pointer hover:bg-white/[0.04] active:scale-[0.98] transition-all relative overflow-hidden"
     >
       {/* BACKGROUND DECOR */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[60px] rounded-full -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
@@ -72,7 +72,7 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
       {/* Header: Institutional Density */}
       <div className="flex justify-between items-start gap-4 relative z-10">
         <div className="space-y-2 flex-1">
-          <h5 className="font-headline font-black text-lg sm:text-2xl text-white group-hover:text-primary transition-colors leading-tight line-clamp-2">
+          <h5 className="font-headline font-black text-base sm:text-xl text-white group-hover:text-primary transition-colors leading-tight line-clamp-2">
             {name}
           </h5>
           <div className="flex items-center gap-2 text-[10px] font-black text-[#adaaab] uppercase tracking-[0.2em]">
@@ -92,14 +92,14 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
              <Zap className="w-3 h-3" />
              <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{intent === 'buy' ? 'Market Value' : 'Monthly Rent'}</p>
           </div>
-          <p className="text-xl font-black font-headline text-white">{formatNCRPrice(price)}</p>
+          <p className="text-lg sm:text-xl font-black font-headline text-white">{formatNCRPrice(price)}</p>
         </div>
         <div className="bg-white/[0.02] p-5 rounded-2xl flex flex-col gap-2 border border-white/5 group-hover:border-white/10 transition-colors">
           <div className="flex items-center gap-2 opacity-30">
              <Layers className="w-3 h-3" />
              <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Asset Area</p>
           </div>
-          <p className="text-xl font-black font-headline text-white">{formatArea(area)}</p>
+          <p className="text-lg sm:text-xl font-black font-headline text-white">{formatArea(area)}</p>
         </div>
       </div>
 
