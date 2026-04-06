@@ -26,6 +26,7 @@ def get_locality_list(city: str):
         alt_key = target_key.replace(" ", "_").replace("-", "_")
         city_data = state.locality_index.get(alt_key, {})
         
+    # Return normalized, sorted list for the UI
     return {"city": city, "localities": sorted(list(city_data.keys()))}
 
 @router.get("/model-info", response_model=ModelInfoResponse)
