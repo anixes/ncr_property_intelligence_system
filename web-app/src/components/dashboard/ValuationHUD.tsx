@@ -289,7 +289,7 @@ const MetricCard = ({ label, value, subValue, icon: Icon, color, glow, onClick, 
             {value}
          </div>
          {actionLabel && (
-            <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black uppercase tracking-widest text-primary group-hover:bg-primary group-hover:text-black transition-all">
+            <div className="px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-[0.2em] text-primary group-hover:bg-primary group-hover:text-black transition-all">
                {actionLabel}
             </div>
          )}

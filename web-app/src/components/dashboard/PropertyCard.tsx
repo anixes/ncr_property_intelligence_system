@@ -103,11 +103,11 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
         </div>
       </div>
 
-      {/* Secondary Intel HUD */}
-      <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-auto relative z-10">
-        <div className="flex items-center gap-6">
+      {/* Secondary Intel HUD: Dynamic Density */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-6 border-t border-white/5 mt-auto relative z-10">
+        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-hide no-scrollbar pb-1 sm:pb-0">
           <MetricHUD label="₹/SQFT" value={psqft.toLocaleString()} icon={<TrendingUp className="w-3 h-3" />} />
-          <div className="w-[1px] h-8 bg-white/10" />
+          <div className="w-[1px] h-8 bg-white/10 shrink-0" />
           <MetricHUD 
             label={intent === 'buy' ? 'EST. YIELD' : 'BHK COUNT'} 
             value={intent === 'buy' ? `${yield_pct.toFixed(2)}%` : `${bhk} BHK`} 
@@ -115,18 +115,19 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
           />
           {intent === 'rent' && (
             <>
-              <div className="w-[1px] h-8 bg-white/10 hidden sm:block" />
-              <div className="hidden sm:block">
-                <MetricHUD label="FURNISHING" value={furnishing.replace('-', ' ')} icon={<Sparkles className="w-3 h-3" />} />
-              </div>
+              <div className="w-[1px] h-8 bg-white/10 shrink-0" />
+              <MetricHUD label="FURNISHING" value={furnishing.replace('-', ' ')} icon={<Sparkles className="w-3 h-3" />} />
             </>
           )}
         </div>
         
-        {/* REFINED TACTICAL CTA: Unlocks on Hover */}
-        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
-           <span>View Report</span>
-           <ChevronRight className="w-3.5 h-3.5" />
+        {/* REFINED TACTICAL CTA: Desktop Hover / Mobile Persistent */}
+        <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-primary transition-all duration-500 whitespace-nowrap
+                        opacity-100 sm:opacity-0 sm:group-hover:opacity-100 
+                        translate-x-0 sm:translate-x-4 sm:group-hover:translate-x-0
+                        bg-primary/5 sm:bg-transparent px-3 py-1.5 sm:p-0 rounded-lg sm:rounded-none select-none">
+           <span>Institutional Report</span>
+           <ChevronRight className="w-4 h-4 animate-pulse" />
         </div>
       </div>
     </motion.div>
