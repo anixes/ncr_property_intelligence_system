@@ -134,7 +134,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
          </section>
 
          {/* GRID-ANALYSIS: COMPARABLES & ALTERNATIVES */}
-         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-20">
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 sm:gap-20 items-start">
             {/* VERIFIED COMPARABLES */}
             {comparables.length > 0 && (
                <section className="space-y-12">
@@ -159,6 +159,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                               item={item}
                               intent={intent}
                               onClick={onCardClick}
+                              index={idx + 1}
                            />
                         </motion.div>
                      ))}
@@ -195,6 +196,7 @@ export const ValuationHUD = ({ data, intent, onCardClick }: Props) => {
                               item={item}
                               intent={intent}
                               onClick={onCardClick}
+                              index={idx + 1}
                            />
                         </motion.div>
                      ))}

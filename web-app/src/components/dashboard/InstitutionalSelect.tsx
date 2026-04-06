@@ -24,7 +24,17 @@ export const InstitutionalSelect = ({
   placeholder = "Select Option"
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const filteredOptions = (options || []).filter(opt => 
+    String(opt).toLowerCase().includes((searchQuery || "").toLowerCase())
+  );
+
+  // Reset search when closing
+  useEffect(() => {
+    if (!isOpen) setSearchQuery("");
+  }, [isOpen]);
 
   // Close on click outside
   useEffect(() => {
@@ -98,13 +108,30 @@ export const InstitutionalSelect = ({
               {/* Handle for mobile sheet */}
               <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mt-3 mb-1 sm:hidden" />
               
-              <div className="max-h-[60vh] sm:max-h-[300px] overflow-y-auto overscroll-contain pb-8 sm:pb-0">
-                {options.length === 0 ? (
-                  <div className="p-8 text-center text-[10px] font-black uppercase tracking-widest text-white/20 italic">
-                    No options available
+              <div className="max-h-[60vh] sm:max-h-[400px] flex flex-col pb-8 sm:pb-0">
+                {/* Search Header (Only show for high-density lists) */}
+                {options.length > 10 && (
+                  <div className="px-4 py-3 border-b border-white/5 sticky top-0 bg-[#1a1a1c] z-10">
+                     <div className="relative">
+                        <input 
+                          type="text"
+                          autoFocus
+                          placeholder="Search options..."
+                          className="w-full bg-white/[0.03] border border-white/5 rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-primary/40 transition-all"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                     </div>
                   </div>
-                ) : (
-                  options.map((opt) => (
+                )}
+
+                <div className="flex-1 overflow-y-auto overscroll-contain">
+                  {filteredOptions.length === 0 ? (
+                    <div className="p-8 text-center text-[10px] font-black uppercase tracking-widest text-white/20 italic">
+                      No matching sectors
+                    </div>
+                  ) : (
+                    filteredOptions.map((opt) => (
                     <button
                       key={opt}
                       onClick={() => {
@@ -125,6 +152,7 @@ export const InstitutionalSelect = ({
                   ))
                 )}
               </div>
+            </div>
             </motion.div>
           </>
         )}

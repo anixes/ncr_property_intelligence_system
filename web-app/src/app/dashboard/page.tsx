@@ -187,13 +187,13 @@ function DashboardContent() {
               className="flex items-center gap-2.5 px-4 h-10 rounded-xl bg-white/[0.03] border border-white/5 text-[#adaaab] font-black text-[9px] uppercase tracking-widest hover:bg-white/[0.06] active:scale-95 transition-all outline-none"
             >
               <Settings2 className="w-3.5 h-3.5" />
-              <span>More Property Details</span>
+              <span>Advanced</span>
               <ChevronDown className={`w-3 h-3 transition-transform duration-500 ${showAdvanced ? 'rotate-180' : ''}`} />
             </button>
          </div>
 
-         {/* 2. PRIMARY TARGET GRID */}
-         <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-10">
+         {/* 2. UNIFIED COMMAND GRID */}
+         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 lg:gap-10">
             <InputPorter 
               label="City"
               value={input.city}
@@ -209,15 +209,22 @@ function DashboardContent() {
               value={input.sector}
               onChange={(v) => setInput({...input, sector: v})}
               icon={Target}
-              type="autocomplete"
-              suggestions={localities}
+              type="select"
+              options={localities}
               placeholder="e.g. Sector 150"
               className="col-span-1"
             />
-         </div>
 
-         {/* 3. CORE SPECIFICATIONS GRID */}
-         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-10">
+            <InputPorter 
+              label="Prop Type"
+              value={input.prop_type}
+              onChange={(v) => setInput({...input, prop_type: v})}
+              icon={Building}
+              type="select"
+              options={['Apartment', 'Builder Floor', 'Independent House']}
+              className="col-span-2 lg:col-span-1"
+            />
+
             <InputPorter 
               label="BHK"
               value={input.bedrooms}
@@ -228,6 +235,7 @@ function DashboardContent() {
               max={5}
               step={1}
               placeholder="1-5 BHK"
+              className="col-span-1 sm:col-span-2 lg:col-span-1"
             />
 
             <InputPorter 
@@ -239,7 +247,8 @@ function DashboardContent() {
               min={100}
               max={10000}
               step={100}
-              placeholder="100-10,000 SqFt"
+              placeholder="1800 SqFt"
+              className="col-span-1 sm:col-span-2 lg:col-span-2"
             />
          </div>
 
@@ -252,8 +261,8 @@ function DashboardContent() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden py-4 border-y border-white/5"
             >
-               <div className="flex overflow-x-auto snap-x snap-mandatory pb-6 -mx-4 px-4 sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 no-scrollbar">
-                  <PropertyCommandCard title="Amenities" icon={Waves} className="min-w-[85vw] sm:min-w-0 snap-center">
+               <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  <PropertyCommandCard title="Amenities" icon={Waves}>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2.5">
                       <Toggle label="Swimming Pool" icon={Waves} active={input.amenities.has_pool} onClick={() => setInput({...input, amenities: {...input.amenities, has_pool: !input.amenities.has_pool}})} />
                       <Toggle label="Health Club/Gym" icon={Dumbbell} active={input.amenities.has_gym} onClick={() => setInput({...input, amenities: {...input.amenities, has_gym: !input.amenities.has_gym}})} />
@@ -262,7 +271,7 @@ function DashboardContent() {
                     </div>
                   </PropertyCommandCard>
 
-                  <PropertyCommandCard title="Location Features" icon={MapPin} className="min-w-[85vw] sm:min-w-0 snap-center">
+                  <PropertyCommandCard title="Location Features" icon={MapPin}>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2.5">
                       <Toggle label="Near Metro" icon={TrainFront} active={input.location.is_near_metro} onClick={() => setInput({...input, location: {...input.location, is_near_metro: !input.location.is_near_metro}})} />
                       <Toggle label="Corner Plot" icon={Split} active={input.location.is_corner_property} onClick={() => setInput({...input, location: {...input.location, is_corner_property: !input.location.is_corner_property}})} />
@@ -271,7 +280,7 @@ function DashboardContent() {
                     </div>
                   </PropertyCommandCard>
 
-                  <PropertyCommandCard title="Asset Specs" icon={LayoutPanelLeft} className="min-w-[85vw] sm:min-w-0 snap-center">
+                  <PropertyCommandCard title="Asset Specs" icon={LayoutPanelLeft}>
                     <div className="space-y-6">
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2.5">
                              <Toggle label="Luxury Finish" icon={Crown} active={input.property_features.is_luxury} onClick={() => setInput({...input, property_features: {...input.property_features, is_luxury: !input.property_features.is_luxury}})} />
@@ -321,7 +330,7 @@ function DashboardContent() {
               className="w-full bg-primary text-black font-black text-xs sm:text-sm uppercase tracking-[0.3em] rounded-xl sm:rounded-2xl h-16 sm:h-20 flex items-center justify-center gap-4 hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-              Generate Market Insight
+              SCAN
             </button>
          </div>
         </div>

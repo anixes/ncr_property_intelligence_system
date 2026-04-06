@@ -19,7 +19,7 @@
   --color-on-surface-variant: #adaaab;
   --color-outline: #767576;
   --color-outline-variant: #484849;
-  
+
   --font-headline: "Manrope", sans-serif;
   --font-body: "Inter", sans-serif;
   --font-label: "Inter", sans-serif;
@@ -34,7 +34,7 @@
     --background: 14 14 15;
     --foreground: 255 255 255;
   }
-  
+
   body {
     background-color: #0e0e0f;
     color: #ffffff;
@@ -45,7 +45,11 @@
     overflow-x: hidden;
   }
 
-  h1, h2, h3, h4, .font-manrope {
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-manrope {
     font-family: 'Manrope', sans-serif;
     letter-spacing: -0.04em;
     font-weight: 900;
@@ -62,15 +66,16 @@
     backdrop-filter: blur(12px) saturate(160%);
     background: rgba(19, 19, 20, 0.75);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
+    box-shadow:
       0 4px 30px rgba(0, 0, 0, 0.2),
       inset 0 0 0 1px rgba(255, 255, 255, 0.02);
   }
 
   /* Mobile Decompression Helper: Raw CSS for Build Parity */
   .mobile-decompress {
-     padding: 2.5rem 1.5rem;
+    padding: 2.5rem 1.5rem;
   }
+
   @media (min-width: 640px) {
     .mobile-decompress {
       padding: 3rem 2rem;
@@ -78,13 +83,14 @@
   }
 
   .text-glow-primary {
-      text-shadow: 0 0 40px rgba(189, 157, 255, 0.4);
+    text-shadow: 0 0 40px rgba(189, 157, 255, 0.4);
   }
 
   .premium-card {
     border-radius: 32px;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
   @media (min-width: 640px) {
     .premium-card {
       border-radius: 40px;
@@ -94,6 +100,7 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -105,6 +112,7 @@
     opacity: 0;
     transform: translateY(24px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);

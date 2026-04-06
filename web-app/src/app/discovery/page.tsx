@@ -131,7 +131,7 @@ export default function Discovery() {
                  className="flex items-center gap-2.5 px-4 h-10 rounded-xl bg-white/[0.03] border border-white/5 text-[#adaaab] font-black text-[9px] uppercase tracking-widest hover:bg-white/[0.06] active:scale-95 transition-all outline-none"
                >
                  <Settings2 className="w-3.5 h-3.5" />
-                 <span>More Property Details</span>
+                 <span>Advanced</span>
                  <ChevronDown className={`w-3 h-3 transition-transform duration-500 ${showAdvanced ? 'rotate-180' : ''}`} />
                </button>
             </div>
@@ -236,8 +236,8 @@ export default function Discovery() {
                  exit={{ height: 0, opacity: 0 }}
                  className="overflow-hidden py-4 border-y border-white/5"
                >
-                  <div className="flex overflow-x-auto snap-x snap-mandatory pb-6 -mx-4 px-4 sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 no-scrollbar">
-                     <PropertyCommandCard title="Amenities" icon={Waves} className="min-w-[85vw] sm:min-w-0 snap-center">
+                  <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                     <PropertyCommandCard title="Amenities" icon={Waves}>
                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2.5">
                          <Toggle label="Swimming Pool" icon={Waves} active={filters.amenities.has_pool} onClick={() => setFilters({...filters, amenities: {...filters.amenities, has_pool: !filters.amenities.has_pool}})} />
                          <Toggle label="Health Club/Gym" icon={Dumbbell} active={filters.amenities.has_gym} onClick={() => setFilters({...filters, amenities: {...filters.amenities, has_gym: !filters.amenities.has_gym}})} />
@@ -246,7 +246,7 @@ export default function Discovery() {
                        </div>
                      </PropertyCommandCard>
 
-                     <PropertyCommandCard title="Location Features" icon={MapPin} className="min-w-[85vw] sm:min-w-0 snap-center">
+                     <PropertyCommandCard title="Location Features" icon={MapPin}>
                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2.5">
                          <Toggle label="Near Metro" icon={TrainFront} active={filters.location_features.is_near_metro} onClick={() => setFilters({...filters, location_features: {...filters.location_features, is_near_metro: !filters.location_features.is_near_metro}})} />
                          <Toggle label="Corner Plot" icon={Split} active={filters.location_features.is_corner_property} onClick={() => setFilters({...filters, location_features: {...filters.location_features, is_corner_property: !filters.location_features.is_corner_property}})} />
@@ -255,7 +255,7 @@ export default function Discovery() {
                        </div>
                      </PropertyCommandCard>
 
-                     <PropertyCommandCard title="Asset Specs" icon={LayoutPanelLeft} className="min-w-[85vw] sm:min-w-0 snap-center">
+                     <PropertyCommandCard title="Asset Specs" icon={LayoutPanelLeft}>
                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2.5">
                          <Toggle label="Luxury Finish" icon={Crown} active={filters.property_features.is_luxury} onClick={() => setFilters({...filters, property_features: {...filters.property_features, is_luxury: !filters.property_features.is_luxury}})} />
                          <Toggle label="Brand New Build" icon={Construction} active={filters.property_features.is_new_construction} onClick={() => setFilters({...filters, property_features: {...filters.property_features, is_new_construction: !filters.property_features.is_new_construction}})} />
@@ -277,8 +277,8 @@ export default function Discovery() {
                  className="w-full bg-primary text-black font-black text-xs sm:text-lg uppercase tracking-[0.4em] rounded-xl sm:rounded-2xl h-14 sm:h-24 flex items-center justify-center gap-4 hover:brightness-110 active:scale-[0.98] transition-all shadow-2xl shadow-primary/20 group"
                >
                  {loading ? <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" /> : <Radar className="w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform duration-500" />}
-                 <span className="sm:inline hidden">Initialize Global Scan Protocol</span>
-                 <span className="sm:hidden inline">Run Scan</span>
+                 <span className="sm:inline hidden">SEARCH</span>
+                 <span className="sm:hidden inline">SEARCH</span>
                </button>
             </div>
 

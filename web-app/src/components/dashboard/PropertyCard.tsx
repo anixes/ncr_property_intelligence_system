@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Intent } from '@/types';
-import { MapPin, TrendingUp, ShieldCheck, Zap, Layers, Sparkles, ChevronRight } from 'lucide-react';
+import { MapPin, TrendingUp, ShieldCheck, Zap, Layers, Sparkles, ChevronRight, Compass } from 'lucide-react';
 import { formatNCRPrice, formatArea } from '@/utils/format';
 import Link from 'next/link';
 
@@ -11,20 +11,20 @@ interface CardProps {
   item: any;
   intent: Intent;
   onClick?: (item: any) => void;
-  showDeepDive?: boolean;
+   index?: number;
 }
 
 const MetricHUD = ({ label, value, icon }: any) => (
-  <div className="flex flex-col gap-1.5">
-    <div className="flex items-center gap-1.5 opacity-30">
+  <div className="flex flex-col gap-1.5 shrink-0 min-w-[70px]">
+    <div className="flex items-center gap-1.5 opacity-60 text-primary">
       {icon}
-      <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+      <span className="text-[9px] font-black uppercase tracking-widest leading-none">{label}</span>
     </div>
     <span className="text-[11px] font-black text-white uppercase tracking-wider">{value}</span>
   </div>
 );
 
-export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
+export const PropertyCard = ({ item, intent, onClick, index }: CardProps) => {
   // Mapping logic: Handle both Listing-level assets and Sector-level recommendations
   const name = item.property_name || item.society || item.locality || 'Precision Asset Unit';
   const location = item.locality || item.sector || 'NCR Hub';
@@ -64,23 +64,54 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
       whileHover={{ scale: 1.01, boxShadow: '0 0 30px rgba(189,157,255,0.08)' }}
       viewport={{ once: true }}
       onClick={() => onClick?.(item)}
-      className="premium-card p-4 sm:p-8 group flex flex-col gap-6 sm:gap-8 h-full cursor-pointer 
+      className="premium-card p-5 sm:p-8 group flex flex-col gap-6 sm:gap-8 cursor-pointer 
                  bg-white/[0.03] sm:bg-transparent sm:hover:bg-white/[0.04] 
                  border border-white/5 sm:border-transparent sm:hover:border-white/10
-                 active:scale-[0.98] transition-all relative overflow-hidden shadow-2xl sm:shadow-none"
+                 active:scale-[0.98] transition-all relative shadow-2xl sm:shadow-none"
     >
       {/* BACKGROUND DECOR */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[60px] rounded-full -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[60px] rounded-full -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
       
       {/* Header: Institutional Density */}
-      <div className="flex justify-between items-start gap-4 relative z-10">
-        <div className="space-y-2 flex-1">
-          <h5 className="font-headline font-black text-base sm:text-xl text-white group-hover:text-primary transition-colors leading-tight line-clamp-2">
-            {name}
-          </h5>
-          <div className="flex items-center gap-2 text-[10px] font-black text-[#adaaab] uppercase tracking-[0.2em]">
+      <div className="flex justify-between items-start gap-4 relative z-10 w-full">
+        <div className="space-y-1.5 flex-1 min-w-0">
+          <div className="flex items-start gap-2">
+            {index && (
+              <span className="text-[10px] font-black text-primary/40 font-mono tracking-tighter mt-1">
+                {index.toString().padStart(2, '0')}.
+              </span>
+            )}
+            <h5 className="font-headline font-black text-[13px] sm:text-base text-white group-hover:text-primary transition-colors leading-tight line-clamp-2 min-h-[3.2rem]">
+              {name}
+            </h5>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-black text-[#adaaab] uppercase tracking-[0.2em] mb-3">
             <MapPin className="w-3 h-3 text-primary/60" />
             <span className="truncate">{location}, {item.city || 'NCR'}</span>
+          </div>
+
+          {/* Contextual Intelligence Tags */}
+          <div className="flex flex-wrap gap-2 pt-1">
+            {item.dist_to_metro_km && item.dist_to_metro_km < 1.5 && (
+              <span className="px-2 py-0.5 rounded-md bg-green-500/10 text-green-400 text-[8px] font-black uppercase tracking-widest border border-green-500/20 flex items-center gap-1">
+                <Compass className="w-2.5 h-2.5" /> Metro Link
+              </span>
+            )}
+            {item.features?.amenities?.is_gated_community && (
+              <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[8px] font-black uppercase tracking-widest border border-primary/20 flex items-center gap-1">
+                <ShieldCheck className="w-2.5 h-2.5" /> Gated
+              </span>
+            )}
+             {item.features?.property?.is_luxury && (
+              <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[8px] font-black uppercase tracking-widest border border-amber-500/20 flex items-center gap-1">
+                <Sparkles className="w-2.5 h-2.5" /> Luxury
+              </span>
+            )}
+             {item.features?.amenities?.has_pool && (
+              <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[8px] font-black uppercase tracking-widest border border-blue-500/20">
+                Pool
+              </span>
+            )}
           </div>
         </div>
         <div className={`flex-shrink-0 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-500 shadow-lg ${getScoreColor(score)}`}>
@@ -107,28 +138,24 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
       </div>
 
       {/* Secondary Intel HUD: Dynamic Density */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-6 border-t border-white/5 mt-auto relative z-10">
-        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto scrollbar-hide no-scrollbar pb-1 sm:pb-0">
-          <MetricHUD label="₹/SQFT" value={psqft.toLocaleString()} icon={<TrendingUp className="w-3 h-3" />} />
-          <div className="w-[1px] h-8 bg-white/10 shrink-0" />
-          <MetricHUD 
-            label={intent === 'buy' ? 'EST. YIELD' : 'BHK COUNT'} 
-            value={intent === 'buy' ? `${yield_pct.toFixed(2)}%` : `${bhk} BHK`} 
-            icon={<ShieldCheck className="w-3 h-3" />}
-          />
-          {intent === 'rent' && (
-            <>
-              <div className="w-[1px] h-8 bg-white/10 shrink-0" />
-              <MetricHUD label="FURNISHING" value={furnishing.replace('-', ' ')} icon={<Sparkles className="w-3 h-3" />} />
-            </>
-          )}
+      <div className="flex flex-col gap-6 pt-6 border-t border-white/5 mt-auto relative z-10">
+        {/* Metric Grid: High-Value Reading */}
+        <div className="grid grid-cols-2 xs:flex xs:items-center gap-y-6 gap-x-8">
+           <MetricHUD label="₹/SQFT" value={psqft.toLocaleString()} icon={<TrendingUp className="w-3 h-3" />} />
+           <MetricHUD 
+             label={intent === 'buy' ? 'EST. YIELD' : 'YIELD INDEX'} 
+             value={intent === 'buy' ? `${yield_pct.toFixed(2)}%` : `${yield_pct.toFixed(1)}%`} 
+             icon={<ShieldCheck className="w-3 h-3" />}
+           />
         </div>
         
-        {/* REFINED TACTICAL CTA: Desktop Hover / Mobile Persistent */}
-        <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-primary transition-all duration-500 whitespace-nowrap
-                        opacity-100 translate-x-0 bg-primary/5 px-3 py-1.5 rounded-lg select-none">
-           <span>Institutional Report</span>
-           <ChevronRight className="w-4 h-4 animate-pulse" />
+        {/* REFINED TACTICAL CTA: Persistent High-Alpha Button */}
+        <div className="w-full select-none cursor-pointer group/cta">
+          <div className="flex items-center justify-between px-4 py-3 bg-primary/10 rounded-xl border border-primary/20 
+                        hover:bg-primary/20 hover:border-primary/30 transition-all duration-300">
+             <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Institutional Report</span>
+             <ChevronRight className="w-4 h-4 text-primary animate-pulse" />
+          </div>
         </div>
       </div>
     </motion.div>
