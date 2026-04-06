@@ -71,7 +71,7 @@ export default function Discovery() {
   // if (!mounted) return null;
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24 space-y-16" suppressHydrationWarning>
+    <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-28 pb-12 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24 space-y-16" suppressHydrationWarning>
       
       {/* INSTITUTIONAL HEADER & COMMAND CENTER */}
       <div className="space-y-12 max-w-5xl">
@@ -92,14 +92,14 @@ export default function Discovery() {
                  Discover the best properties across the NCR region based on your budget and needs.
               </p>
             </div>
-         </header>
+          </header>
       </div>
       
       {/* DISCOVERY PORTER (COMMAND CENTER) */}
       <div className="relative group max-w-5xl mx-auto">
         <div className="absolute -inset-1 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-[2.5rem] blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-1000" />
         
-        <div className="relative bg-[#0a0a0a]/80 backdrop-blur-3xl border border-white/5 rounded-2xl sm:rounded-[2rem] lg:rounded-[2.5rem] p-5 sm:p-10 lg:p-12 space-y-10 sm:space-y-12 overflow-hidden">
+        <div className="relative bg-[#0a0a0a]/80 backdrop-blur-3xl border border-white/5 rounded-2xl sm:rounded-[2rem] lg:rounded-[2.5rem] p-4 sm:p-10 lg:p-12 space-y-10 sm:space-y-12 overflow-hidden">
            
            {/* INTENT SELECTOR (TOP LEVEL) */}
            <div className="mb-4 flex justify-start">
@@ -129,7 +129,7 @@ export default function Discovery() {
                   ))}
               </div>
            </div>
-           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 lg:gap-12">
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8 lg:gap-12">
               <InputPorter 
                 label="NCR City"
                 value={filters.city}
@@ -148,7 +148,7 @@ export default function Discovery() {
                 options={['1', '2', '3', '4', '5']}
                 placeholder="Select Targets"
               />
-
+              
               <InputPorter 
                 label="Property Type"
                 value={filters.prop_type}
@@ -184,7 +184,7 @@ export default function Discovery() {
            </div>
 
            {/* SPATIAL RADARS (DOCK) */}
-           <div className="p-4 sm:p-10 bg-white/[0.01] border border-white/5 rounded-2xl sm:rounded-3xl border-dashed">
+           <div className="py-4 px-0.5 sm:p-10 bg-white/[0.01] border border-white/5 rounded-2xl sm:rounded-3xl border-dashed">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16">
                 <InputPorter 
                   label={filters.listing_type === 'buy' ? "Price Range" : "Monthly Rent Range"}
@@ -216,7 +216,7 @@ export default function Discovery() {
               </div>
            </div>
 
-           <div className="flex flex-col items-center gap-6 pt-4">
+           <div className="flex flex-col items-stretch gap-6 pt-4">
               <button 
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 className="w-full h-14 sm:h-20 px-6 sm:px-8 rounded-2xl bg-white/[0.03] border border-white/5 text-[#adaaab] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 sm:gap-4 hover:bg-white/[0.06] active:scale-95 transition-all outline-none"
@@ -229,12 +229,13 @@ export default function Discovery() {
               <button 
                 onClick={handleDiscover}
                 disabled={loading}
-                className="flex-1 w-full bg-primary text-black font-black text-xs sm:text-sm uppercase tracking-[0.3em] rounded-2xl h-16 sm:h-20 flex items-center justify-center gap-4 hover:brightness-110 active:scale-95 transition-all shadow-2xl shadow-primary/20"
+                className="w-full bg-primary text-black font-black text-xs sm:text-sm uppercase tracking-[0.3em] rounded-2xl h-16 sm:h-20 flex items-center justify-center gap-4 hover:brightness-110 active:scale-95 transition-all shadow-2xl shadow-primary/20"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Radar className="w-5 h-5" />}
                 Search Properties
               </button>
            </div>
+
 
            <AnimatePresence>
             {showAdvanced && (

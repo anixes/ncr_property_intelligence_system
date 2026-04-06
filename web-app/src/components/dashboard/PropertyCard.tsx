@@ -64,7 +64,10 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
       whileHover={{ scale: 1.01, boxShadow: '0 0 30px rgba(189,157,255,0.08)' }}
       viewport={{ once: true }}
       onClick={() => onClick?.(item)}
-      className="premium-card p-4 sm:p-8 group flex flex-col gap-6 sm:gap-8 h-full cursor-pointer hover:bg-white/[0.04] active:scale-[0.98] transition-all relative overflow-hidden"
+      className="premium-card p-4 sm:p-8 group flex flex-col gap-6 sm:gap-8 h-full cursor-pointer 
+                 bg-white/[0.03] sm:bg-transparent sm:hover:bg-white/[0.04] 
+                 border border-white/5 sm:border-transparent sm:hover:border-white/10
+                 active:scale-[0.98] transition-all relative overflow-hidden shadow-2xl sm:shadow-none"
     >
       {/* BACKGROUND DECOR */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[60px] rounded-full -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
