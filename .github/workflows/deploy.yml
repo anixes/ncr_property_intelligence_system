@@ -3,6 +3,12 @@ name: Deploy ML App
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'web-app/**'
+      - 'README.md'
+      - 'SPEC.md'
+      - '.gsd/**'
+      - '.stitch/**'
 
 jobs:
   build-and-deploy:
@@ -69,15 +75,15 @@ jobs:
             ghcr.io/${{ env.REPO_LOWER }}-api:${{ env.IMAGE_TAG }}
             ghcr.io/${{ env.REPO_LOWER }}-api:latest
 
-      - name: Build and Push Frontend Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile.frontend
-          push: true
-          tags: |
-            ghcr.io/${{ env.REPO_LOWER }}-frontend:${{ env.IMAGE_TAG }}
-            ghcr.io/${{ env.REPO_LOWER }}-frontend:latest
+#      - name: Build and Push Frontend Image
+#        uses: docker/build-push-action@v5
+#        with:
+#          context: .
+#          file: ./Dockerfile.frontend
+#          push: true
+#          tags: |
+#            ghcr.io/${{ env.REPO_LOWER }}-frontend:${{ env.IMAGE_TAG }}
+#            ghcr.io/${{ env.REPO_LOWER }}-frontend:latest
 
       - name: Copy docker-compose.yml to EC2
         uses: appleboy/scp-action@v0.1.7
