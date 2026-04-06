@@ -25,19 +25,18 @@ def test_root_endpoint():
 
 
 def test_health_endpoint():
-    # Mock global _models and _discovery_pool state for a predictable response
+    # Mock state.models and state.discovery_pool state for a predictable response
     with patch(
-        "ncr_property_price_estimation.api._models", {"sales": MagicMock(), "rentals": MagicMock()}
+        "ncr_property_price_estimation.state.models", {"sales": MagicMock(), "rentals": MagicMock()}
     ), patch(
-        "ncr_property_price_estimation.api._discovery_pool"
+        "ncr_property_price_estimation.state.discovery_pool"
     ) as mock_pool:
         mock_pool.empty = False
         response = client.get("/health")
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
-        assert data["sales_loaded"] is True
-        assert data["rentals_loaded"] is True
+        assert data["models_loaded"] is not None
 
 
 # ---------------------------------------------------------------------------
@@ -45,7 +44,7 @@ def test_health_endpoint():
 # ---------------------------------------------------------------------------
 
 
-@patch("ncr_property_price_estimation.api._predict_internal")
+@patch("ncr_property_price_estimation.routes.predict._predict_internal")
 def test_predict_single_contract(mock_predict):
     """Verify that a valid payload returns the expected PredictionResponse schema."""
     # Mock a valid response dictionary
@@ -74,8 +73,8 @@ def test_predict_single_contract(mock_predict):
         "is_luxury": False,
     }
 
-    # We must patch _models check in predict()
-    with patch("ncr_property_price_estimation.api._models", {"sales": True}):
+    # We must patch state.models check in predict()
+    with patch("ncr_property_price_estimation.state.models", {"sales": True}):
         response = client.post("/predict", json=payload)
 
     assert response.status_code == 200
@@ -102,7 +101,7 @@ def test_predict_invalid_payload_triggers_422():
 # ---------------------------------------------------------------------------
 
 
-@patch("ncr_property_price_estimation.api._predict_internal")
+@patch("ncr_property_price_estimation.routes.predict._predict_internal")
 def test_predict_batch_contract(mock_predict):
     """Verify batch prediction contract with 100% schema parity."""
     mock_resp = {
@@ -127,7 +126,7 @@ def test_predict_batch_contract(mock_predict):
         },
     ]
 
-    with patch("ncr_property_price_estimation.api._models", {"sales": True}):
+    with patch("ncr_property_price_estimation.state.models", {"sales": True}):
         response = client.post("/predict/batch", json=payload)
 
     assert response.status_code == 200

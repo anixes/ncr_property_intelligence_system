@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from typing import Literal
+
+from fastapi import APIRouter, Query
 
 from ncr_property_price_estimation import state
 from ncr_property_price_estimation.config import MLFLOW_EXPERIMENT_NAME
@@ -39,8 +41,9 @@ def get_model_info():
         experiment_name=MLFLOW_EXPERIMENT_NAME
     )
 
+
 @router.get("/hotspots")
-def get_hotspots(listing_type: str = "buy", city: str = None):
+def get_hotspots(listing_type: Literal["buy", "rent"] = "buy", city: str = Query(None)):
     """Institutional spatial discovery of market hotspots and featured assets."""
     # Resilient normalization
     _NORM_MAP = {
