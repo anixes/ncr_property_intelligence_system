@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { discoverProperties } from '@/lib/api';
 import { DiscoverRequest, PropertyAsset, Recommendation } from '@/types';
 import { PropertyCard } from '@/components/dashboard/PropertyCard';
@@ -21,6 +21,15 @@ export default function Discovery() {
   const [results, setResults] = useState<(PropertyAsset | Recommendation)[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const advancedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showAdvanced) {
+      setTimeout(() => {
+        advancedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 150);
+    }
+  }, [showAdvanced]);
 
   useEffect(() => {
     setMounted(true);
@@ -57,10 +66,10 @@ export default function Discovery() {
     }
   };
 
-  // Initial scan
+  // Initial scan & context auto-fetch on intent change
   useEffect(() => {
     handleDiscover();
-  }, []);
+  }, [filters.listing_type]);
 
   const handleCardClick = useCallback((item: any) => {
     setSelectedItem(item);
@@ -228,6 +237,7 @@ export default function Discovery() {
             <AnimatePresence>
              {showAdvanced && (
                <motion.div 
+                 ref={advancedRef}
                  initial={{ height: 0, opacity: 0 }}
                  animate={{ height: 'auto', opacity: 1 }}
                  exit={{ height: 0, opacity: 0 }}

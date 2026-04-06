@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { predictProperty, getLocalities } from '@/lib/api';
 import { PropertyInput, PredictionResponse, PropertyAsset, Recommendation } from '@/types';
@@ -23,6 +23,15 @@ function DashboardContent() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [localities, setLocalities] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
+  const advancedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showAdvanced) {
+      setTimeout(() => {
+        advancedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 150);
+    }
+  }, [showAdvanced]);
 
   useEffect(() => {
     setMounted(true);
@@ -138,6 +147,14 @@ function DashboardContent() {
     setSelectedItem(item);
     setIsDrawerOpen(true);
   }, []);
+
+  // Contextual Auto-fetch when Intent (Buy/Rent) changes after a successful scan
+  useEffect(() => {
+    // Only auto-fetch if we have already calculated a result previously
+    if (mounted && result) {
+      handlePredict();
+    }
+  }, [input.listing_type]);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-28 pb-12 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24 space-y-16" suppressHydrationWarning>
@@ -256,6 +273,7 @@ function DashboardContent() {
          <AnimatePresence>
           {showAdvanced && (
             <motion.div 
+              ref={advancedRef}
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
