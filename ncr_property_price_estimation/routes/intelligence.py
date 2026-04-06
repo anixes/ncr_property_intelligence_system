@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
+
 from ncr_property_price_estimation import state
-from ncr_property_price_estimation.schemas import ModelInfoResponse
 from ncr_property_price_estimation.config import MLFLOW_EXPERIMENT_NAME
+from ncr_property_price_estimation.schemas import ModelInfoResponse
 
 router = APIRouter(prefix="/intelligence", tags=["Institutional Metadata"])
 
@@ -17,15 +18,15 @@ def get_locality_list(city: str):
         "Noida": "Noida",
         "Delhi": "Delhi"
     }
-    
+
     target_key = _NORM_MAP.get(city, city)
     city_data = state.locality_index.get(target_key, {})
-    
+
     if not city_data:
         # Fallback heuristic for space handling
         alt_key = target_key.replace(" ", "_").replace("-", "_")
         city_data = state.locality_index.get(alt_key, {})
-        
+
     # Return normalized, sorted list for the UI
     return {"city": city, "localities": sorted(list(city_data.keys()))}
 
@@ -50,16 +51,16 @@ def get_hotspots(listing_type: str = "buy", city: str = None):
         "Noida": "Noida",
         "Delhi": "Delhi"
     }
-    
+
     target_city = _NORM_MAP.get(city, city) if city else None
-    
+
     hotspots = state.hotspots_cache.get(listing_type, [])
     featured = state.featured_cache.get(listing_type, [])
-    
+
     if target_city:
         hotspots = [h for h in hotspots if h.get("city") == target_city]
         featured = [f for f in featured if f.get("city") == target_city]
-        
+
     return {
         "hotspots": hotspots,
         "featured": featured
@@ -77,14 +78,14 @@ def get_dashboard_summary(city: str = None):
         "Noida": "Noida",
         "Delhi": "Delhi"
     }
-    
+
     target_city = _NORM_MAP.get(city, city) if city else None
-    
+
     # Filter state pool for analytics
     pool = state.discovery_pool
     if target_city:
         pool = pool[pool["city"] == target_city]
-    
+
     if pool.empty:
         return {
             "median_asset_value": "₹0.00Cr",
@@ -98,13 +99,13 @@ def get_dashboard_summary(city: str = None):
     median_val = pool["total_price"].median() / 1e7 # in Cr
     avg_yield = pool["yield_pct"].mean() if "yield_pct" in pool.columns else 3.5
     hotspots = len(state.hotspots_cache.get("buy", [])) if not target_city else 42 # Mock city-specific count
-    
+
     # Extract top localities
     top_df = pool.groupby("sector").agg({
         "total_price": "median",
         "city": "first"
     }).sort_values("total_price", ascending=False).head(5)
-    
+
     top_localities = []
     for sector, row in top_df.iterrows():
         top_localities.append({
@@ -117,7 +118,7 @@ def get_dashboard_summary(city: str = None):
 
     # Ensure institutional floor for resume signal (Prime NCR = ₹2.48Cr+)
     display_median = max(median_val, 2.48)
-    
+
     return {
         "median_asset_value": f"₹{display_median:.2f}Cr",
         "growth_index": f"{80 + avg_yield:.1f}",

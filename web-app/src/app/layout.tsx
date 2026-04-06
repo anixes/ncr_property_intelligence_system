@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${manrope.variable} dark`} suppressHydrationWarning>
-      <body className="bg-background text-on-background font-body min-h-screen antialiased flex flex-col overflow-x-hidden">
+      <body className="bg-background text-on-background font-body min-h-screen antialiased flex flex-col overflow-x-hidden" suppressHydrationWarning>
         <NavShell />
         <main className="flex-grow relative">
           {children}

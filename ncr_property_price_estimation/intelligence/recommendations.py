@@ -33,12 +33,12 @@ class RecommendationEngine:
         Resilient filtering: falls back to wider bands if few results are found.
         """
         city_data = locality_index.get(current_city, {})
-        
+
         # 1. First Pass: Strict (±30% budget, < 10km distance)
         candidates = RecommendationEngine._find_candidates(
             city_data, current_sector, user_budget_sqft, 0.30, 10.0, current_lat, current_lon
         )
-        
+
         # 2. Second Pass: If sparse, loosen budget to ±50% and distance to 20km
         if len(candidates) < 3:
             candidates = RecommendationEngine._find_candidates(
@@ -85,7 +85,7 @@ class RecommendationEngine:
 
             # Fallback yield (City average if missing)
             if y <= 0:
-                y = 2.8 
+                y = 2.8
 
             # Distance check
             dist_km = 999.0
@@ -105,10 +105,10 @@ class RecommendationEngine:
             yield_score = min(y / 8 * 10, 10)
             value_score = max(0, 10 - (abs(price - user_budget_sqft) / (user_budget_sqft + 1)) * 10)
             conf_score = min(count / 300.0, 1.0) * 10
-            
+
             # Penalize distance slightly in score
             dist_penalty = max(0, (dist_km / 10.0)) if dist_km < 500 else 0
-            
+
             composite_score = (yield_score * 0.4) + (value_score * 0.4) + (conf_score * 0.2) - dist_penalty
 
             results.append({
@@ -122,5 +122,5 @@ class RecommendationEngine:
                 "longitude": rec_lon,
                 "h3_index": data.get("h3"),
             })
-        
+
         return results

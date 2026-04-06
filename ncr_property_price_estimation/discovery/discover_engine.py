@@ -112,7 +112,7 @@ class DiscoverEngine:
             geo_median_rent_sqft = loc_data.get("median_rent_sqft", 0)
 
             intent = listing_type.lower()
-            
+
             # Logic to approximate missing values
             if intent == "buy":
                 total_price = price
@@ -130,7 +130,7 @@ class DiscoverEngine:
                 )
 
             y_pct = ROIEngine.calculate_yield(total_price, monthly_rent)
-            
+
             risk_target = total_price if intent == "buy" else monthly_rent
             geo_benchmark = geo_median_price_sqft * area if intent == "buy" else geo_median_rent_sqft * area
             risk = RiskEngine.calculate_risk_score(

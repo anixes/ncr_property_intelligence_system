@@ -6,29 +6,32 @@
 export function formatNCRPrice(value: number | string | undefined | null): string {
   if (value === undefined || value === null || value === '') return '--';
   
-  const num = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.]/g, '')) : value;
+  const rawNum = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.]/g, '')) : value;
+  if (isNaN(rawNum)) return '--';
   
-  if (isNaN(num)) return '--';
+  // High-Alpha Formatting: We round to integers for absolute currency
+  const num = Math.round(rawNum);
 
-  // 1 Crore = 1,00,00,000 (10^7)
-  // 1 Lakh = 1,00,000 (10^5)
-  
   if (num >= 10000000) {
-    return `₹${(num / 10000000).toFixed(2)} Cr`;
+    const cr = num / 10000000;
+    return `₹${cr % 1 === 0 ? cr : cr.toFixed(2)} Cr`;
   } else if (num >= 100000) {
-    return `₹${(num / 100000).toFixed(1)} L`;
+    const l = num / 100000;
+    return `₹${l % 1 === 0 ? l : l.toFixed(1)} L`;
   } else if (num >= 1000) {
-    return `₹${(num / 1000).toFixed(1)} K`;
+    const k = num / 1000;
+    return `₹${k % 1 === 0 ? k : k.toFixed(1)} K`;
   }
   
   return `₹${num.toLocaleString('en-IN')}`;
 }
 
 /**
- * Standardizes area display (Sq.Ft)
+ * Standardizes area display (Sq.Ft) - Always integer precision
  */
 export function formatArea(value: number | string | undefined | null): string {
-  if (!value) return '--';
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  return `${num.toLocaleString('en-IN')} Sq.Ft`;
+  if (value === undefined || value === null) return '--';
+  const rawNum = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(rawNum)) return '--';
+  return `${Math.round(rawNum).toLocaleString('en-IN')} Sq.Ft`;
 }

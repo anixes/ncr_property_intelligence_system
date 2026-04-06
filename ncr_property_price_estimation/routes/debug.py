@@ -1,9 +1,9 @@
 import os
-import pandas as pd
-from typing import Literal
+
 from fastapi import APIRouter
+
 from ncr_property_price_estimation import state
-from ncr_property_price_estimation.config import PROJ_ROOT, DATA_DIR
+from ncr_property_price_estimation.config import PROJ_ROOT
 
 router = APIRouter(prefix="/debug", tags=["Diagnostics & Debug"])
 
@@ -24,7 +24,8 @@ def debug_locality():
 @router.get("/pool")
 def debug_pool():
     """Institutional discovery pool audit."""
-    if state.discovery_pool.empty: return {"status": "empty"}
+    if state.discovery_pool.empty:
+        return {"status": "empty"}
     return {
         "size": len(state.discovery_pool),
         "columns": list(state.discovery_pool.columns),

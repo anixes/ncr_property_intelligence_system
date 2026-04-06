@@ -84,7 +84,7 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
           </div>
         </div>
         <div className={`flex-shrink-0 px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-500 shadow-lg ${getScoreColor(score)}`}>
-           {score > 0 ? `${score.toFixed(1)} / 10` : 'UNRATED'}
+           {score > 0 ? `${score % 1 === 0 ? score : score.toFixed(1)} / 10` : 'UNRATED'}
         </div>
       </div>
 
@@ -126,9 +126,7 @@ export const PropertyCard = ({ item, intent, onClick }: CardProps) => {
         
         {/* REFINED TACTICAL CTA: Desktop Hover / Mobile Persistent */}
         <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-primary transition-all duration-500 whitespace-nowrap
-                        opacity-100 sm:opacity-0 sm:group-hover:opacity-100 
-                        translate-x-0 sm:translate-x-4 sm:group-hover:translate-x-0
-                        bg-primary/5 sm:bg-transparent px-3 py-1.5 sm:p-0 rounded-lg sm:rounded-none select-none">
+                        opacity-100 translate-x-0 bg-primary/5 px-3 py-1.5 rounded-lg select-none">
            <span>Institutional Report</span>
            <ChevronRight className="w-4 h-4 animate-pulse" />
         </div>

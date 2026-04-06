@@ -3,8 +3,8 @@ Unified Modular API Shell — Decoupled NCR Property Intelligence Suite.
 Manages high-performance spatial audits, ML-driven benchmarks, and ROI discovery.
 """
 
-from contextlib import asynccontextmanager
 import os
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, Response
@@ -18,6 +18,7 @@ from ncr_property_price_estimation.routes import (
     intelligence,
     predict,
 )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

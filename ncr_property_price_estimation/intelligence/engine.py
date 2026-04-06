@@ -36,7 +36,7 @@ class IntelligenceEngine:
         Pivots logic based on 'buy' (ROI focus) or 'rent' (Utility focus).
         """
         y_pct = self.roi.calculate_yield(total_price, monthly_rent)
-        
+
         # Risk target depends on intent
         risk_target = total_price if intent == "buy" else monthly_rent
         risk_info = self.risk.calculate_risk_score(risk_target, geo_median, intent=intent)
