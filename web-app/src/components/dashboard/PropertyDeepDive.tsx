@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, TrendingUp, ShieldCheck, Zap, Info, ExternalLink, ChevronRight } from 'lucide-react';
-import { PropertyAsset, Recommendation } from '@/types';
-import { formatNCRPrice, formatArea } from '@/utils/format';
+import { PropertyAsset, Recommendation } from '../../types';
+import { formatNCRPrice, formatArea } from '../../utils/format';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
