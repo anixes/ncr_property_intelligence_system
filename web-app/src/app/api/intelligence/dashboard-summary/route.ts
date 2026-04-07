@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_API_URL || 'http://localhost:8000';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const city = searchParams.get('city');
