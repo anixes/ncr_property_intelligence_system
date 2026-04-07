@@ -2,10 +2,10 @@
 
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { discoverProperties } from '../../lib/api';
-import { DiscoverRequest, PropertyAsset, Recommendation } from '../../types';
-import { PropertyCard } from '../../components/dashboard/PropertyCard';
-import { PropertyDeepDive } from '../../components/dashboard/PropertyDeepDive';
+import { discoverProperties } from '@/lib/api';
+import { DiscoverRequest, PropertyAsset, Recommendation } from '@/types';
+import { PropertyCard } from '@/components/dashboard/PropertyCard';
+import { PropertyDeepDive } from '@/components/dashboard/PropertyDeepDive';
 import { 
   Loader2, Radar, Target, MapPin, Building, Ruler, Settings2, 
   ChevronDown, Sparkles, Waves, Dumbbell, ShieldCheck, Zap, 
