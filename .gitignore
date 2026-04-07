@@ -242,3 +242,13 @@ cython_debug/
 /data
 .vercel
 .env*.local
+
+# Internal Agent & Workspace Metadata
+.gsd/
+.stitch/
+.vscode/
+
+# Build & Cache Persistent Logic
+.pytest_cache/
+.ruff_cache/
+mlruns/

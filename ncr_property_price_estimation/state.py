@@ -94,6 +94,23 @@ async def load_institutional_state():
             "prop_type",
             "furnishing_status",
             "legal_status",
+            "is_servant_room",
+            "is_study_room",
+            "is_standalone",
+            "is_owner_listing",
+            "is_store_room",
+            "is_pooja_room",
+            "ready_to_move",
+            "is_luxury",
+            "is_gated_community",
+            "is_vastu_compliant",
+            "has_pool",
+            "has_gym",
+            "has_lift",
+            "is_near_metro",
+            "has_power_backup",
+            "is_corner_property",
+            "is_park_facing"
         ]
         s_pool = pd.read_parquet(s_path, columns=needed_cols)
         r_pool = pd.read_parquet(r_path, columns=needed_cols)
