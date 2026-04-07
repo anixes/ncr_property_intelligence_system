@@ -6,9 +6,9 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Compass, BarChart3, ChevronRight, X, Sparkles } from 'lucide-react';
-import { formatNCRPrice, formatArea } from '@/utils/format';
+import { formatNCRPrice, formatArea } from '../../utils/format';
 import Link from 'next/link';
-import { PropertyDeepDive } from '@/components/dashboard/PropertyDeepDive';
+import { PropertyDeepDive } from '../dashboard/PropertyDeepDive';
 
 export default function SpatialMap() {
   const [hasMounted, setHasMounted] = useState(false);
