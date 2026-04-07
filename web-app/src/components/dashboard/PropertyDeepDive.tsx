@@ -114,8 +114,8 @@ export const PropertyDeepDive: React.FC<DeepDiveProps> = ({ item, isOpen, onClos
                 </div>
                 
                 <div className="flex gap-3">
-                   <Badge label={`${Number(score).toFixed(1)} / 10`} sub="ALPHA DELTA" primary />
-                   <Badge label="VERIFIED" sub="GEOSPATIAL DATA" />
+                   <Badge label={`${Math.round(Number(score))} / 10`} sub="ANALYSIS SCORE" primary />
+                   <Badge label="VERIFIED" sub="LOCATION VERIFIED" />
                 </div>
               </div>
 
