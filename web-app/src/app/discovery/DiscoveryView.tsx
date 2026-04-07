@@ -57,6 +57,7 @@ export default function DiscoveryView() {
 
   const handleDiscover = async () => {
     setLoading(true);
+    setShowAdvanced(false);
     try {
       const data = await discoverProperties(filters);
       setResults(data);

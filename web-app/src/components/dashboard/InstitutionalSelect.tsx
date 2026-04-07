@@ -70,43 +70,17 @@ export const InstitutionalSelect = ({
         </div>
       </button>
 
-      {/* Dropdown Menu / Mobile Sheet */}
+      {/* Dropdown Menu */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop for mobile */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[140] sm:hidden"
-            />
-            
             <motion.div
-              initial={typeof window !== 'undefined' && window.innerWidth < 640 
-                ? { y: "100%" } 
-                : { opacity: 0, y: 10, scale: 0.95 }
-              }
-              animate={typeof window !== 'undefined' && window.innerWidth < 640 
-                ? { y: 0 } 
-                : { opacity: 1, y: 5, scale: 1 }
-              }
-              exit={typeof window !== 'undefined' && window.innerWidth < 640 
-                ? { y: "100%" } 
-                : { opacity: 0, y: 10, scale: 0.95 }
-              }
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 5, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
               transition={{ type: "spring", damping: 25, stiffness: 300, duration: 0.2 }}
-              className={`
-                z-[150] w-full bg-[#1a1a1c]/95 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden
-                ${typeof window !== 'undefined' && window.innerWidth < 640 
-                  ? 'fixed bottom-0 left-0 rounded-t-[32px] border-b-0' 
-                  : 'absolute mt-2 rounded-2xl'
-                }
-              `}
+              className="absolute z-[150] w-full mt-2 bg-[#1a1a1c]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
             >
-              {/* Handle for mobile sheet */}
-              <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mt-3 mb-1 sm:hidden" />
               
               <div className="max-h-[60vh] sm:max-h-[400px] flex flex-col pb-8 sm:pb-0">
                 {/* Search Header (Only show for high-density lists) */}
