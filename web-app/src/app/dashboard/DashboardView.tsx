@@ -123,6 +123,7 @@ function DashboardContent() {
 
   const handlePredict = async () => {
     setLoading(true);
+    setShowAdvanced(false);
     try {
       const data = await predictProperty(input);
       
