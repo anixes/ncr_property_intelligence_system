@@ -7,7 +7,7 @@ import { Search, ArrowRight, BarChart3, Compass, Globe, Shield } from 'lucide-re
 import dynamic from 'next/dynamic'
 
 // Render the embedded interactive map inside the Spatial Intelligence card
-const MapComponent = dynamic(() => import('../components/map/SpatialMap'), {
+const MapComponent = dynamic(() => import('@/components/map/SpatialMap'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full bg-[#0e0e0f] flex items-center justify-center flex-col gap-2">

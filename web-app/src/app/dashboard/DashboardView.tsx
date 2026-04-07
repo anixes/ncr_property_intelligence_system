@@ -3,10 +3,10 @@
 
 import React, { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { predictProperty, getLocalities } from '../../lib/api';
-import { PropertyInput, PredictionResponse, PropertyAsset, Recommendation } from '../../types';
-import { ValuationHUD } from '../../components/dashboard/ValuationHUD';
-import { PropertyDeepDive } from '../../components/dashboard/PropertyDeepDive';
+import { predictProperty, getLocalities } from '@/lib/api';
+import { PropertyInput, PredictionResponse, PropertyAsset, Recommendation } from '@/types';
+import { ValuationHUD } from '@/components/dashboard/ValuationHUD';
+import { PropertyDeepDive } from '@/components/dashboard/PropertyDeepDive';
 import { 
   Loader2, MapPin, Building, Ruler, Send, Settings2, ChevronDown, Check,
   Waves, Dumbbell, ShieldCheck, Zap, TrainFront, Compass, Trees, 
@@ -14,8 +14,8 @@ import {
   ArrowUpToLine, LayoutPanelLeft, Box, Archive, Flame, Construction, Target
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { InstitutionalSelect } from '../../components/dashboard/InstitutionalSelect';
-import { InputPorter, Toggle, PropertyCommandCard } from '../../components/dashboard/PortalUI';
+import { InstitutionalSelect } from '@/components/dashboard/InstitutionalSelect';
+import { InputPorter, Toggle, PropertyCommandCard } from '@/components/dashboard/PortalUI';
 
 function DashboardContent() {
   const searchParams = useSearchParams();

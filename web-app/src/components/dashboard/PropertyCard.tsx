@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Intent } from '../../types';
+import { Intent } from '@/types';
 import { MapPin, TrendingUp, ShieldCheck, Zap, Layers, Sparkles, ChevronRight, Compass } from 'lucide-react';
-import { formatNCRPrice, formatArea } from '../../utils/format';
+import { formatNCRPrice, formatArea } from '@/utils/format';
 import Link from 'next/link';
 
 interface CardProps {

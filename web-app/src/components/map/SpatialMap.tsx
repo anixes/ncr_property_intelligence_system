@@ -5,8 +5,9 @@ import Map, { Marker, NavigationControl, Popup } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Compass, BarChart3, ChevronRight, X, Sparkles } from 'lucide-react';
-import { formatNCRPrice, formatArea } from '../../utils/format';
+import { MapPin, Building, Ruler, Info, Target, Layers, Navigation, Compass, BarChart3, ChevronRight, X, Sparkles } from 'lucide-react';
+import { PropertyAsset, Recommendation } from '@/types';
+import { formatNCRPrice, formatArea } from '@/utils/format';
 import Link from 'next/link';
 import { PropertyDeepDive } from '../dashboard/PropertyDeepDive';
 

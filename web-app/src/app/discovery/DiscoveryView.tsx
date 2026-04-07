@@ -2,10 +2,10 @@
 
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { discoverProperties } from '../../lib/api';
-import { DiscoverRequest, PropertyAsset, Recommendation } from '../../types';
-import { PropertyCard } from '../../components/dashboard/PropertyCard';
-import { PropertyDeepDive } from '../../components/dashboard/PropertyDeepDive';
+import { discoverProperties } from '@/lib/api';
+import { DiscoverRequest, PropertyAsset, Recommendation } from '@/types';
+import { PropertyCard } from '@/components/dashboard/PropertyCard';
+import { PropertyDeepDive } from '@/components/dashboard/PropertyDeepDive';
 import { 
   Loader2, Radar, Target, MapPin, Building, Ruler, Settings2, 
   ChevronDown, Sparkles, Waves, Dumbbell, ShieldCheck, Zap, 
@@ -14,8 +14,8 @@ import {
   Coins, Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { InstitutionalSelect } from '../../components/dashboard/InstitutionalSelect';
-import { InputPorter, Toggle, PropertyCommandCard } from '../../components/dashboard/PortalUI';
+import { InstitutionalSelect } from '@/components/dashboard/InstitutionalSelect';
+import { InputPorter, Toggle, PropertyCommandCard } from '@/components/dashboard/PortalUI';
 
 export default function DiscoveryView() {
   const [loading, setLoading] = useState(false);
