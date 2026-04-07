@@ -14,8 +14,8 @@ import {
   ArrowUpToLine, LayoutPanelLeft, Box, Archive, Flame, Construction, Target
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { InstitutionalSelect } from '../../components/dashboard/InstitutionalSelect';
-import { InputPorter, Toggle, PropertyCommandCard } from '../../components/dashboard/PortalUI';
+import { InstitutionalSelect } from '@/components/dashboard/InstitutionalSelect';
+import { InputPorter, Toggle, PropertyCommandCard } from '@/components/dashboard/PortalUI';
 
 function DashboardContent() {
   const searchParams = useSearchParams();

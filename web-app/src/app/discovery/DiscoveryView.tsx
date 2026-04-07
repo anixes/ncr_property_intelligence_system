@@ -14,8 +14,8 @@ import {
   Coins, Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { InstitutionalSelect } from '../../components/dashboard/InstitutionalSelect';
-import { InputPorter, Toggle, PropertyCommandCard } from '../../components/dashboard/PortalUI';
+import { InstitutionalSelect } from '@/components/dashboard/InstitutionalSelect';
+import { InputPorter, Toggle, PropertyCommandCard } from '@/components/dashboard/PortalUI';
 
 export default function DiscoveryView() {
   const [loading, setLoading] = useState(false);

@@ -4,7 +4,7 @@ import React from 'react';
 import { PredictionResponse, PropertyAsset, Recommendation } from '@/types';
 import { IndianRupee, ChartBar, Compass, Sparkles, TrendingUp, AlertTriangle } from 'lucide-react';
 import { formatNCRPrice } from '@/utils/format';
-import { PropertyCard } from './PropertyCard';
+import { PropertyCard } from '@/components/dashboard/PropertyCard';
 import { motion } from 'framer-motion';
 
 interface Props {
