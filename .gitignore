@@ -240,3 +240,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 /data
+.vercel
+.env*.local
