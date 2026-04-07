@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { discoverProperties } from '@/lib/api';
 import { DiscoverRequest, PropertyAsset, Recommendation } from '@/types';

@@ -2,12 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   allowedDevOrigins: ['192.168.29.249:3000', '192.168.29.249:3001', '192.168.29.249'],
   experimental: {
     serverActions: {
