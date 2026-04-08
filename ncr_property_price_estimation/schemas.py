@@ -114,7 +114,7 @@ class DiscoverRequest(BaseModel):
     budget_max: float
     area_min: float | None = None
     area_max: float | None = None
-    prop_type: str = "Any"
+    prop_type: str = "All Types"
     sort_by: Literal["yield", "price_low", "price_high", "score", "area"] = "yield"
 
     # Advanced Filters

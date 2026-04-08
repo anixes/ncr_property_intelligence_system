@@ -19,7 +19,7 @@ import { InputPorter, Toggle, PropertyCommandCard } from '@/components/dashboard
 
 const INITIAL_FILTERS: DiscoverRequest = {
   city: 'Noida',
-  sector: 'Any',
+  sector: 'Entire City',
   listing_type: 'buy',
   bhk: [2, 3],
   budget_min: 5000000,
@@ -27,7 +27,7 @@ const INITIAL_FILTERS: DiscoverRequest = {
   area_min: 1000,
   area_max: 5000,
   sort_by: 'score',
-  prop_type: 'Apartment',
+  prop_type: 'All Types',
   amenities: { has_pool: false, has_gym: false, has_lift: true, has_power_backup: true, is_gated_community: true, has_clubhouse: false, has_maintenance: false, has_wifi: false, is_high_ceiling: false },
   location_features: { is_near_metro: false, is_corner_property: false, is_park_facing: false, is_vastu_compliant: false },
   property_features: { is_luxury: false, is_servant_room: false, is_study_room: false, is_store_room: false, is_pooja_room: false, is_new_construction: false },
@@ -41,19 +41,19 @@ export default function DiscoveryView() {
   const [results, setResults] = useState<(PropertyAsset | Recommendation)[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [localities, setLocalities] = useState<string[]>(['Any']);
+  const [localities, setLocalities] = useState<string[]>(['Entire City']);
   const advancedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     getLocalities(filters.city)
       .then((data) => {
-        setLocalities(['Any', ...data]);
-        if (!['Any', ...data].includes(filters.sector || 'Any')) {
-           setFilters(prev => ({...prev, sector: 'Any'}));
+        setLocalities(['Entire City', ...data]);
+        if (!['Entire City', ...data].includes(filters.sector || 'Entire City')) {
+           setFilters(prev => ({...prev, sector: 'Entire City'}));
         }
       })
       .catch(() => {
-        setLocalities(['Any', 'Sector 150', 'Sector 62', 'Sector 18', 'Sector 128']); 
+        setLocalities(['Entire City', 'Sector 150', 'Sector 62', 'Sector 18', 'Sector 128']); 
       });
   }, [filters.city]);
 
@@ -87,7 +87,7 @@ export default function DiscoveryView() {
   };
 
   const handleReset = () => {
-    // Reset to INITIAL_FILTERS (which correctly resets sector to 'Any' too)
+    // Reset to INITIAL_FILTERS (which correctly resets sector to 'Entire City' too)
     setFilters(INITIAL_FILTERS);
     handleDiscover(INITIAL_FILTERS);
   };
@@ -188,7 +188,7 @@ export default function DiscoveryView() {
                
                <InputPorter 
                  label="Locality / Sector"
-                 value={filters.sector || 'Any'}
+                 value={filters.sector || 'Entire City'}
                  onChange={(v) => setFilters({...filters, sector: v})}
                  icon={Target}
                  type="select"
@@ -202,7 +202,7 @@ export default function DiscoveryView() {
                  onChange={(v) => setFilters({...filters, prop_type: v})}
                  icon={Building}
                  type="select"
-                 options={['Any', 'Apartment', 'Builder Floor', 'Independent House']}
+                 options={['All Types', 'Apartment', 'Builder Floor', 'Independent House']}
                  className="col-span-1"
                />
 
@@ -223,7 +223,7 @@ export default function DiscoveryView() {
                  icon={Coins}
                  type="range"
                  min={filters.listing_type === 'buy' ? 2000000 : 5000}
-                 max={filters.listing_type === 'buy' ? 100000000 : 500000}
+                 max={filters.listing_type === 'buy' ? 100000000 : 200000}
                  step={filters.listing_type === 'buy' ? 500000 : 1000}
                  placeholder={
                    filters.listing_type === 'buy' 
