@@ -272,7 +272,9 @@ async def _predict_internal(inputs: list[PropertyInput]):
                     locality_index=state.locality_index,
                     current_city=db_city,
                     current_sector=target_sector,
-                    user_budget_sqft=float(rent_sqft_final) if inp.listing_type == "rent" else float(price_sqft),
+                    user_budget_sqft=float(rent_sqft_final)
+                    if inp.listing_type == "rent"
+                    else float(price_sqft),
                     current_yield=analysis.get("yield_pct", 0),
                     target_bhk=int(inp.bedrooms),
                     current_lat=lat,

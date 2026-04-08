@@ -38,19 +38,43 @@ class RecommendationEngine:
 
         # 1. First Pass: Strict (±30% budget, < 10km distance)
         candidates = RecommendationEngine._find_candidates(
-            city_data, current_sector, user_budget_sqft, 0.30, 10.0, target_bhk, current_lat, current_lon, intent
+            city_data,
+            current_sector,
+            user_budget_sqft,
+            0.30,
+            10.0,
+            target_bhk,
+            current_lat,
+            current_lon,
+            intent,
         )
 
         # 2. Second Pass: If sparse, loosen budget to ±50% and distance to 20km
         if len(candidates) < 3:
             candidates = RecommendationEngine._find_candidates(
-                city_data, current_sector, user_budget_sqft, 0.50, 20.0, target_bhk, current_lat, current_lon, intent
+                city_data,
+                current_sector,
+                user_budget_sqft,
+                0.50,
+                20.0,
+                target_bhk,
+                current_lat,
+                current_lon,
+                intent,
             )
 
         # 3. Third Pass: Final desperation (Same city, any budget within reason, ignore distance)
         if len(candidates) < 1:
             candidates = RecommendationEngine._find_candidates(
-                city_data, current_sector, user_budget_sqft, 0.80, 999.0, target_bhk, current_lat, current_lon, intent
+                city_data,
+                current_sector,
+                user_budget_sqft,
+                0.80,
+                999.0,
+                target_bhk,
+                current_lat,
+                current_lon,
+                intent,
             )
 
         # Sort by composite score and return Top 5

@@ -134,15 +134,21 @@ class ComparablesEngine:
             h3_med_raw = row.get("h3_median_price", 0)
             h3_med = float(h3_med_raw) if pd.notna(h3_med_raw) else 0.0
 
-            benchmark = h3_med if h3_med > 0 else (geo_median_price_sqft if intent == "buy" else geo_median_rent_sqft)
+            benchmark = (
+                h3_med
+                if h3_med > 0
+                else (geo_median_price_sqft if intent == "buy" else geo_median_rent_sqft)
+            )
 
             overval = (price_sqft - benchmark) / benchmark * 100 if benchmark > 0 else 0
-            
+
             risk_target = total_price if intent == "buy" else monthly_rent
             geo_benchmark = (
                 geo_median_price_sqft * area if intent == "buy" else geo_median_rent_sqft * area
             )
-            risk_info = RiskEngine.calculate_risk_score(risk_target, geo_benchmark if geo_benchmark else 0, intent=intent)
+            risk_info = RiskEngine.calculate_risk_score(
+                risk_target, geo_benchmark if geo_benchmark else 0, intent=intent
+            )
 
             # Normalize risk from 0–100 to 0–10 for scoring engine
             normalized_risk = risk_info["score"] / 10.0
@@ -162,7 +168,9 @@ class ComparablesEngine:
                     "city": city,
                     "price": price,
                     "area": area,
-                    "bhk": int(row["bedrooms"]) if pd.notna(row["bedrooms"]) and row["bedrooms"] > 0 else target_bhk,
+                    "bhk": int(row["bedrooms"])
+                    if pd.notna(row["bedrooms"]) and row["bedrooms"] > 0
+                    else target_bhk,
                     "price_per_sqft": float(round(price_sqft, 0)),
                     "yield_pct": float(round(y_pct, 2)),
                     "unified_score": float(listing_score),

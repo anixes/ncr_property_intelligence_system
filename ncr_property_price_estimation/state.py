@@ -110,7 +110,7 @@ async def load_institutional_state():
             "is_near_metro",
             "has_power_backup",
             "is_corner_property",
-            "is_park_facing"
+            "is_park_facing",
         ]
         s_pool = pd.read_parquet(s_path, columns=needed_cols)
         r_pool = pd.read_parquet(r_path, columns=needed_cols)
