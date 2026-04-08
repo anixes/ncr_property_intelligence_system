@@ -89,8 +89,7 @@ export const InstitutionalSelect = ({
                      <div className="relative">
                         <input 
                           type="text"
-                          autoFocus
-                          placeholder="Search options..."
+                          placeholder="Search"
                           className="w-full bg-white/[0.03] border border-white/5 rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white outline-none focus:border-primary/40 transition-all"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}

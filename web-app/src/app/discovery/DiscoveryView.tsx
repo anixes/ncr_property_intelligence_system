@@ -214,7 +214,7 @@ export default function DiscoveryView() {
                     filters.sort_by === 'price_low' ? 'Price: Low-High' :
                     filters.sort_by === 'price_high' ? 'Price: High-Low' : 
                     filters.sort_by === 'area' ? 'Largest Area' :
-                    filters.sort_by === 'price_sqft' ? 'Best Rate / Sq. Ft' : 'Sort Results'
+                    filters.sort_by === 'price_sqft' ? 'Space Value' : 'Sort Results'
                  }
                  onChange={(v) => {
                     const mapping: Record<string, any> = {
