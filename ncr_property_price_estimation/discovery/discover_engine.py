@@ -53,11 +53,7 @@ class DiscoverEngine:
             mask = mask & (pool_df["prop_type"] == prop_type)
 
         sector = req.sector
-        if (
-            sector
-            and sector not in ["Entire City", "Any"]
-            and "sector" in pool_df.columns
-        ):
+        if sector and sector not in ["Entire City", "Any"] and "sector" in pool_df.columns:
             mask = mask & (pool_df["sector"] == sector)
 
         # 2. BHK Matching

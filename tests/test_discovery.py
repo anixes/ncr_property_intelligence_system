@@ -47,18 +47,10 @@ class TestDiscoveryDeduplication:
         )
 
         req = DiscoverRequest(
-            city="Gurgaon",
-            listing_type="buy",
-            bhk=[3],
-            budget_min=10000000,
-            budget_max=20000000
+            city="Gurgaon", listing_type="buy", bhk=[3], budget_min=10000000, budget_max=20000000
         )
 
-        results = DiscoverEngine.discover_properties(
-            pool_df=pool,
-            locality_index={},
-            req=req
-        )
+        results = DiscoverEngine.discover_properties(pool_df=pool, locality_index={}, req=req)
 
         assert len(results) == 1
         assert results[0]["price"] == 12000000
@@ -73,18 +65,10 @@ class TestDiscoveryDeduplication:
         )
 
         req = DiscoverRequest(
-            city="Gurgaon",
-            listing_type="buy",
-            bhk=[3],
-            budget_min=10000000,
-            budget_max=20000000
+            city="Gurgaon", listing_type="buy", bhk=[3], budget_min=10000000, budget_max=20000000
         )
 
-        results = DiscoverEngine.discover_properties(
-            pool_df=pool,
-            locality_index={},
-            req=req
-        )
+        results = DiscoverEngine.discover_properties(pool_df=pool, locality_index={}, req=req)
 
         assert len(results) == 1
 
@@ -98,18 +82,10 @@ class TestDiscoveryDeduplication:
         )
 
         req = DiscoverRequest(
-            city="Gurgaon",
-            listing_type="buy",
-            bhk=[3],
-            budget_min=10000000,
-            budget_max=20000000
+            city="Gurgaon", listing_type="buy", bhk=[3], budget_min=10000000, budget_max=20000000
         )
 
-        results = DiscoverEngine.discover_properties(
-            pool_df=pool,
-            locality_index={},
-            req=req
-        )
+        results = DiscoverEngine.discover_properties(pool_df=pool, locality_index={}, req=req)
 
         assert len(results) == 2
 
@@ -129,14 +105,10 @@ class TestDiscoveryDeduplication:
             bhk=[3],
             budget_min=10000000,
             budget_max=20000000,
-            sort_by="score"
+            sort_by="score",
         )
 
-        results = DiscoverEngine.discover_properties(
-            pool_df=pool,
-            locality_index={},
-            req=req
-        )
+        results = DiscoverEngine.discover_properties(pool_df=pool, locality_index={}, req=req)
 
         if len(results) >= 2:
             scores = [r["unified_score"] for r in results]
@@ -157,14 +129,10 @@ class TestDiscoveryDeduplication:
             bhk=[3],
             budget_min=10000000,
             budget_max=20000000,
-            sort_by="price_low"
+            sort_by="price_low",
         )
 
-        results = DiscoverEngine.discover_properties(
-            pool_df=pool,
-            locality_index={},
-            req=req
-        )
+        results = DiscoverEngine.discover_properties(pool_df=pool, locality_index={}, req=req)
 
         if len(results) >= 2:
             prices = [r["price"] for r in results]
