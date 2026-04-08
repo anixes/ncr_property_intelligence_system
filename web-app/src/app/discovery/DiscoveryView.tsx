@@ -21,18 +21,18 @@ const INITIAL_FILTERS: DiscoverRequest = {
   city: 'Noida',
   sector: 'Entire City',
   listing_type: 'buy',
-  bhk: [2, 3],
+  bhk: [1, 2, 3, 4, 5],
   budget_min: 5000000,
   budget_max: 50000000,
   area_min: 1000,
   area_max: 5000,
   sort_by: 'score',
   prop_type: 'All Types',
-  amenities: { has_pool: false, has_gym: false, has_lift: true, has_power_backup: true, is_gated_community: true, has_clubhouse: false, has_maintenance: false, has_wifi: false, is_high_ceiling: false },
+  amenities: { has_pool: false, has_gym: false, has_lift: false, has_power_backup: false, is_gated_community: false, has_clubhouse: false, has_maintenance: false, has_wifi: false, is_high_ceiling: false },
   location_features: { is_near_metro: false, is_corner_property: false, is_park_facing: false, is_vastu_compliant: false },
   property_features: { is_luxury: false, is_servant_room: false, is_study_room: false, is_store_room: false, is_pooja_room: false, is_new_construction: false },
   furnishing_status: 'Unknown',
-  ready_to_move: false
+  ready_to_move: null
 };
 
 export default function DiscoveryView() {
@@ -209,35 +209,42 @@ export default function DiscoveryView() {
                <InputPorter 
                  label="Sort By"
                  value={
-                   filters.sort_by === 'score' ? 'Best Value' :
-                   filters.sort_by === 'yield' ? 'Investment Yield (%)' :
-                   filters.sort_by === 'price_low' ? 'Price: Low-High' :
-                   filters.sort_by === 'price_high' ? 'Price: High-Low' : 'Sort Results'
+                    filters.sort_by === 'score' ? 'Best Value' :
+                    filters.sort_by === 'yield' ? 'Investment Yield (%)' :
+                    filters.sort_by === 'price_low' ? 'Price: Low-High' :
+                    filters.sort_by === 'price_high' ? 'Price: High-Low' : 
+                    filters.sort_by === 'area' ? 'Largest Area' :
+                    filters.sort_by === 'price_sqft' ? 'Best Rate / Sq. Ft' : 'Sort Results'
                  }
                  onChange={(v) => {
-                   const mapping: Record<string, any> = {
-                     'Best Value': 'score',
-                     'Investment Yield (%)': 'yield',
-                     'Price: Low-High': 'price_low',
-                     'Price: High-Low': 'price_high'
-                   };
-                   setFilters({...filters, sort_by: mapping[v]});
-                 }}
+                    const mapping: Record<string, any> = {
+                      'Best Value': 'score',
+                      'Investment Yield (%)': 'yield',
+                      'Price: Low-High': 'price_low',
+                      'Price: High-Low': 'price_high',
+                      'Largest Area': 'area',
+                      'Best Rate / Sq. Ft': 'price_sqft'
+                    };
+                    setFilters({...filters, sort_by: mapping[v]});
+                  }}
                  icon={ArrowUpDown}
                  type="select"
                  options={filters.listing_type === 'buy' 
-                   ? ['Best Value', 'Investment Yield (%)', 'Price: Low-High', 'Price: High-Low']
-                   : ['Best Value', 'Price: Low-High', 'Price: High-Low']}
+                    ? ['Best Value', 'Investment Yield (%)', 'Price: Low-High', 'Price: High-Low', 'Largest Area', 'Best Rate / Sq. Ft']
+                    : ['Best Value', 'Price: Low-High', 'Price: High-Low', 'Largest Area', 'Best Rate / Sq. Ft']}
                  className="col-span-6 lg:col-span-3"
                />
 
                <InputPorter 
                  label="BHK"
-                 value={(filters.bhk || [2, 3]).map(String)}
-                 onChange={(v) => setFilters({...filters, bhk: Array.isArray(v) ? v.map(Number) : [Number(v)]})}
+                 value={(filters.bhk || [1, 2, 3, 4, 5]).map(v => v === 5 ? '5+' : String(v))}
+                 onChange={(v) => {
+                     const norm = (val: string) => val === '5+' ? 5 : Number(val);
+                     setFilters({...filters, bhk: Array.isArray(v) ? v.map(norm) : [norm(v as string)]});
+                   }}
                  icon={Split}
                  type="segmented"
-                 options={['1', '2', '3', '4', '5']}
+                 options={['1', '2', '3', '4', '5+']}
                  className="col-span-12 lg:col-span-2"
                />
 
@@ -304,7 +311,16 @@ export default function DiscoveryView() {
                      <PropertyCommandCard title="Property Details" icon={LayoutPanelLeft}>
                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2.5">
                          <Toggle label="Luxury Finish" icon={Crown} active={filters.property_features.is_luxury} onClick={() => setFilters({...filters, property_features: {...filters.property_features, is_luxury: !filters.property_features.is_luxury}})} />
-                         <Toggle label="Ready to Move" icon={Construction} active={filters.ready_to_move === true} onClick={() => setFilters({...filters, ready_to_move: !filters.ready_to_move})} />
+                         <Toggle 
+                            label={filters.ready_to_move === true ? "Ready Only" : filters.ready_to_move === false ? "Under Constr." : "Ready Status"} 
+                            icon={Construction} 
+                            active={filters.ready_to_move !== null} 
+                            onClick={() => {
+                              if (filters.ready_to_move === null) setFilters({...filters, ready_to_move: true});
+                              else if (filters.ready_to_move === true) setFilters({...filters, ready_to_move: false});
+                              else setFilters({...filters, ready_to_move: null});
+                            }} 
+                          />
                          <Toggle label="Servant Room" icon={UserPlus} active={filters.property_features.is_servant_room} onClick={() => setFilters({...filters, property_features: {...filters.property_features, is_servant_room: !filters.property_features.is_servant_room}})} />
                          <Toggle label="Study/Office" icon={BookOpen} active={filters.property_features.is_study_room} onClick={() => setFilters({...filters, property_features: {...filters.property_features, is_study_room: !filters.property_features.is_study_room}})} />
                        </div>

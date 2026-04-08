@@ -119,13 +119,13 @@ export interface DiscoverRequest {
   area_min?: number;
   area_max?: number;
   prop_type?: string;
-  sort_by: "yield" | "price_low" | "price_high" | "score" | "area";
+  sort_by: "yield" | "price_low" | "price_high" | "score" | "area" | "price_sqft";
   amenities: AmenitiesSelection;
   location_features: LocationSelection;
   property_features: PropertyFeatures;
   furnishing_status?: string;
   legal_status?: string;
-  ready_to_move?: boolean;
+  ready_to_move?: boolean | null;
 }
 
 export interface DashboardSummary {

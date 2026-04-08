@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Intent } from '../../types';
-import { MapPin, TrendingUp, ShieldCheck, Zap, Layers, Sparkles, ChevronRight, Compass } from 'lucide-react';
+import { MapPin, TrendingUp, ShieldCheck, Zap, Layers, Sparkles, ChevronRight, Compass, Crown } from 'lucide-react';
 import { formatNCRPrice, formatArea } from '../../utils/format';
 import Link from 'next/link';
 
@@ -93,6 +93,11 @@ export const PropertyCard = ({ item, intent, onClick, index }: CardProps) => {
 
           {/* Contextual Intelligence Tags */}
           <div className="flex flex-wrap gap-2 pt-1">
+            {score >= 8.5 && (
+              <span className="px-2 py-0.5 rounded-md bg-white text-black text-[8px] font-black uppercase tracking-widest border border-white flex items-center gap-1 shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                <Crown className="w-2.5 h-2.5" /> Best Value
+              </span>
+            )}
             {item.dist_to_metro_km && item.dist_to_metro_km < 1.5 && (
               <span className="px-2 py-0.5 rounded-md bg-green-500/10 text-green-400 text-[8px] font-black uppercase tracking-widest border border-green-500/20 flex items-center gap-1">
                 <Compass className="w-2.5 h-2.5" /> Metro Link

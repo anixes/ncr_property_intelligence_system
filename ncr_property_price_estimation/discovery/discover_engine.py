@@ -54,11 +54,22 @@ class DiscoverEngine:
 
         sector = req.sector
         if sector and sector not in ["Entire City", "Any"] and "sector" in pool_df.columns:
-            mask = mask & (pool_df["sector"] == sector)
+            # Normalize user input: "Sec 150" -> "Sector 150", "Sector-150" -> "Sector 150"
+            norm_query = re.sub(r"sec\b", "Sector", sector, flags=re.IGNORECASE)
+            norm_query = norm_query.replace("-", " ").strip()
+
+            # Use regex with word boundaries for strict matching (e.g. "Sector 1" won't match "Sector 150")
+            pattern = rf"\b{re.escape(norm_query)}\b"
+            mask = mask & (
+                pool_df["sector"].str.contains(pattern, case=False, na=False, regex=True)
+            )
 
         # 2. BHK Matching
         if bhk_list:
-            mask = mask & (pool_df["bedrooms"].isin(bhk_list))
+            if 5 in bhk_list:
+                mask = mask & ((pool_df["bedrooms"].isin(bhk_list)) | (pool_df["bedrooms"] >= 5))
+            else:
+                mask = mask & (pool_df["bedrooms"].isin(bhk_list))
 
         # 3. Budget & Area Range
         mask = mask & (pool_df["total_price"].between(budget_min, budget_max))
@@ -95,8 +106,8 @@ class DiscoverEngine:
         if legal_status and legal_status != "Unknown" and "legal_status" in pool_df.columns:
             mask = mask & (pool_df["legal_status"] == legal_status)
 
-        if ready_to_move and "ready_to_move" in pool_df.columns:
-            mask = mask & (pool_df["ready_to_move"] == 1)
+        if ready_to_move is not None and "ready_to_move" in pool_df.columns:
+            mask = mask & (pool_df["ready_to_move"] == (1 if ready_to_move else 0))
 
         df = pool_df[mask].copy()
         if df.empty:
@@ -258,5 +269,10 @@ class DiscoverEngine:
             deduped.sort(key=lambda x: x["price"], reverse=True)
         elif sort_by == "area":
             deduped.sort(key=lambda x: x["area"], reverse=True)
+        elif sort_by == "price_sqft":
+            # Treat 0.0 as infinity for "Best Rate" (ascending) to keep data artifacts at bottom
+            deduped.sort(
+                key=lambda x: x["price_per_sqft"] if x["price_per_sqft"] > 0 else float("inf")
+            )
 
         return deduped[:limit]
