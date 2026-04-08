@@ -216,7 +216,7 @@ function DashboardContent() {
             />
 
             <InputPorter 
-              label="Prop Type"
+              label="Property Type"
               value={input.prop_type}
               onChange={(v) => setInput({...input, prop_type: v})}
               icon={Building}

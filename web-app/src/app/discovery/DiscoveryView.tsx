@@ -11,7 +11,7 @@ import {
   ChevronDown, Sparkles, Waves, Dumbbell, ShieldCheck, Zap, 
   TrainFront, Compass, Trees, Split, Crown, BookOpen, Wifi, 
   ArrowUpToLine, LayoutPanelLeft, Box, Construction, UserPlus,
-  Coins, Wallet
+  Coins, Wallet, ArrowUpDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InstitutionalSelect } from '@/components/dashboard/InstitutionalSelect';
@@ -134,7 +134,7 @@ export default function DiscoveryView() {
       <div className="relative group max-w-5xl mx-auto">
         <div className="absolute -inset-1 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-[2.5rem] blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-1000" />
         
-        <div className="relative bg-[#0a0a0a]/80 backdrop-blur-3xl border border-white/5 rounded-2xl sm:rounded-[2rem] lg:rounded-[2.5rem] p-4 sm:p-10 lg:p-12 space-y-6 sm:space-y-8 overflow-hidden">
+        <div className="relative bg-[#0a0a0a]/80 backdrop-blur-3xl border border-white/5 rounded-2xl sm:rounded-[2rem] lg:rounded-[2.5rem] p-4 sm:p-10 lg:p-12 space-y-6 sm:space-y-8">
            
            {/* 1. INTENT SELECTOR & ADVANCED TOGGLE */}
             <div className="flex items-center justify-between gap-4">
@@ -174,8 +174,8 @@ export default function DiscoveryView() {
                </button>
             </div>
 
-            {/* 2. UNIFIED COMMAND GRID - 4 cols on lg to fit City + Locality + Type + BHK */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+            {/* 2. INSTITUTIONAL COMMAND GRID - 12col master grid for precision scaling */}
+            <div className="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
                <InputPorter 
                  label="City"
                  value={filters.city}
@@ -183,7 +183,7 @@ export default function DiscoveryView() {
                  icon={MapPin}
                  type="select"
                  options={['Gurgaon', 'Noida', 'Delhi', 'Ghaziabad', 'Faridabad']}
-                 className="col-span-1"
+                 className="col-span-6 lg:col-span-3"
                />
                
                <InputPorter 
@@ -193,57 +193,17 @@ export default function DiscoveryView() {
                  icon={Target}
                  type="select"
                  options={localities}
-                 className="col-span-1"
+                 className="col-span-6 lg:col-span-3"
                />
                
                <InputPorter 
-                 label="Type"
+                 label="Property Type"
                  value={filters.prop_type}
                  onChange={(v) => setFilters({...filters, prop_type: v})}
                  icon={Building}
                  type="select"
                  options={['All Types', 'Apartment', 'Builder Floor', 'Independent House']}
-                 className="col-span-1"
-               />
-
-               <InputPorter 
-                 label="BHK"
-                 value={(filters.bhk || [2, 3]).map(String)}
-                 onChange={(v) => setFilters({...filters, bhk: Array.isArray(v) ? v.map(Number) : [Number(v)]})}
-                 icon={Split}
-                 type="segmented"
-                 options={['1', '2', '3', '4', '5']}
-                 className="col-span-2 lg:col-span-1"
-               />
-
-               <InputPorter 
-                 label={filters.listing_type === 'buy' ? "Budget" : "Rent"}
-                 value={[filters.budget_min, filters.budget_max]}
-                 onChange={([min, max]) => setFilters({...filters, budget_min: min, budget_max: max})}
-                 icon={Coins}
-                 type="range"
-                 min={filters.listing_type === 'buy' ? 2000000 : 5000}
-                 max={filters.listing_type === 'buy' ? 100000000 : 200000}
-                 step={filters.listing_type === 'buy' ? 500000 : 1000}
-                 placeholder={
-                   filters.listing_type === 'buy' 
-                     ? `${(filters.budget_min / 100000).toFixed(0)}L - ${(filters.budget_max / 10000000).toFixed(1)}Cr`
-                     : `₹${(filters.budget_min / 1000).toFixed(0)}K-₹${(filters.budget_max / 1000).toFixed(0)}K`
-                 }
-                 className="col-span-2 lg:col-span-2"
-               />
-
-               <InputPorter 
-                 label="Area"
-                 value={[filters.area_min, filters.area_max]}
-                 onChange={([min, max]) => setFilters({...filters, area_min: min, area_max: max})}
-                 icon={Ruler}
-                 type="range"
-                 min={500}
-                 max={10000}
-                 step={100}
-                 placeholder={`${filters.area_min}-${filters.area_max} SqFt`}
-                 className="col-span-2 lg:col-span-2"
+                 className="col-span-6 lg:col-span-3"
                />
 
                <InputPorter 
@@ -263,12 +223,52 @@ export default function DiscoveryView() {
                    };
                    setFilters({...filters, sort_by: mapping[v]});
                  }}
-                 icon={Target}
+                 icon={ArrowUpDown}
                  type="select"
                  options={filters.listing_type === 'buy' 
                    ? ['Best Value', 'Investment Yield (%)', 'Price: Low-High', 'Price: High-Low']
                    : ['Best Value', 'Price: Low-High', 'Price: High-Low']}
-                 className="col-span-2 lg:col-span-1"
+                 className="col-span-6 lg:col-span-3"
+               />
+
+               <InputPorter 
+                 label="BHK"
+                 value={(filters.bhk || [2, 3]).map(String)}
+                 onChange={(v) => setFilters({...filters, bhk: Array.isArray(v) ? v.map(Number) : [Number(v)]})}
+                 icon={Split}
+                 type="segmented"
+                 options={['1', '2', '3', '4', '5']}
+                 className="col-span-12 lg:col-span-2"
+               />
+
+               <InputPorter 
+                 label={filters.listing_type === 'buy' ? "Budget" : "Rent"}
+                 value={[filters.budget_min, filters.budget_max]}
+                 onChange={([min, max]) => setFilters({...filters, budget_min: min, budget_max: max})}
+                 icon={Coins}
+                 type="range"
+                 min={filters.listing_type === 'buy' ? 2000000 : 5000}
+                 max={filters.listing_type === 'buy' ? 100000000 : 200000}
+                 step={filters.listing_type === 'buy' ? 500000 : 1000}
+                 placeholder={
+                   filters.listing_type === 'buy' 
+                     ? `${(filters.budget_min / 100000).toFixed(0)}L - ${(filters.budget_max / 10000000).toFixed(1)}Cr`
+                     : `₹${(filters.budget_min / 1000).toFixed(0)}K-₹${(filters.budget_max / 1000).toFixed(0)}K`
+                 }
+                 className="col-span-12 lg:col-span-5"
+               />
+
+               <InputPorter 
+                 label="Area"
+                 value={[filters.area_min, filters.area_max]}
+                 onChange={([min, max]) => setFilters({...filters, area_min: min, area_max: max})}
+                 icon={Ruler}
+                 type="range"
+                 min={500}
+                 max={10000}
+                 step={100}
+                 placeholder={`${filters.area_min}-${filters.area_max} SqFt`}
+                 className="col-span-12 lg:col-span-5"
                />
             </div>
 

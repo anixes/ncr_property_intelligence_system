@@ -48,12 +48,16 @@ class DiscoverEngine:
                 pool_df["listing_type"].str.lower() == listing_type.lower()
             )
 
-        # 1.5 Property Type & Sector Filter (with 'All Types' / 'Entire City' bypass)
-        if prop_type and prop_type != "All Types":
+        # 1.5 Property Type & Sector Filter (with 'All Types' / 'Entire City' / 'Any' bypass)
+        if prop_type and prop_type not in ["All Types", "Any"]:
             mask = mask & (pool_df["prop_type"] == prop_type)
 
         sector = req.sector
-        if sector and sector != "Entire City" and "sector" in pool_df.columns:
+        if (
+            sector
+            and sector not in ["Entire City", "Any"]
+            and "sector" in pool_df.columns
+        ):
             mask = mask & (pool_df["sector"] == sector)
 
         # 2. BHK Matching
