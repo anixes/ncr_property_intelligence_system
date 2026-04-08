@@ -5,6 +5,7 @@ Unit tests for the Discovery Engine — deduplication and sorting.
 import pandas as pd
 
 from ncr_property_price_estimation.discovery.discover_engine import DiscoverEngine
+from ncr_property_price_estimation.schemas import DiscoverRequest
 
 
 class TestDiscoveryDeduplication:
@@ -45,14 +46,18 @@ class TestDiscoveryDeduplication:
             ]
         )
 
+        req = DiscoverRequest(
+            city="Gurgaon",
+            listing_type="buy",
+            bhk=[3],
+            budget_min=10000000,
+            budget_max=20000000
+        )
+
         results = DiscoverEngine.discover_properties(
             pool_df=pool,
             locality_index={},
-            city="Gurgaon",
-            listing_type="buy",
-            bhk_list=[3],
-            budget_min=10000000,
-            budget_max=20000000,
+            req=req
         )
 
         assert len(results) == 1
@@ -67,14 +72,18 @@ class TestDiscoveryDeduplication:
             ]
         )
 
+        req = DiscoverRequest(
+            city="Gurgaon",
+            listing_type="buy",
+            bhk=[3],
+            budget_min=10000000,
+            budget_max=20000000
+        )
+
         results = DiscoverEngine.discover_properties(
             pool_df=pool,
             locality_index={},
-            city="Gurgaon",
-            listing_type="buy",
-            bhk_list=[3],
-            budget_min=10000000,
-            budget_max=20000000,
+            req=req
         )
 
         assert len(results) == 1
@@ -88,14 +97,18 @@ class TestDiscoveryDeduplication:
             ]
         )
 
+        req = DiscoverRequest(
+            city="Gurgaon",
+            listing_type="buy",
+            bhk=[3],
+            budget_min=10000000,
+            budget_max=20000000
+        )
+
         results = DiscoverEngine.discover_properties(
             pool_df=pool,
             locality_index={},
-            city="Gurgaon",
-            listing_type="buy",
-            bhk_list=[3],
-            budget_min=10000000,
-            budget_max=20000000,
+            req=req
         )
 
         assert len(results) == 2
@@ -110,15 +123,19 @@ class TestDiscoveryDeduplication:
             ]
         )
 
+        req = DiscoverRequest(
+            city="Gurgaon",
+            listing_type="buy",
+            bhk=[3],
+            budget_min=10000000,
+            budget_max=20000000,
+            sort_by="score"
+        )
+
         results = DiscoverEngine.discover_properties(
             pool_df=pool,
             locality_index={},
-            city="Gurgaon",
-            listing_type="buy",
-            bhk_list=[3],
-            budget_min=10000000,
-            budget_max=20000000,
-            sort_by="score",
+            req=req
         )
 
         if len(results) >= 2:
@@ -134,15 +151,19 @@ class TestDiscoveryDeduplication:
             ]
         )
 
+        req = DiscoverRequest(
+            city="Gurgaon",
+            listing_type="buy",
+            bhk=[3],
+            budget_min=10000000,
+            budget_max=20000000,
+            sort_by="price_low"
+        )
+
         results = DiscoverEngine.discover_properties(
             pool_df=pool,
             locality_index={},
-            city="Gurgaon",
-            listing_type="buy",
-            bhk_list=[3],
-            budget_min=10000000,
-            budget_max=20000000,
-            sort_by="price_low",
+            req=req
         )
 
         if len(results) >= 2:
