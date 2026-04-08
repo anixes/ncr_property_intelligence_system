@@ -223,15 +223,15 @@ export default function DiscoveryView() {
                       'Price: Low-High': 'price_low',
                       'Price: High-Low': 'price_high',
                       'Largest Area': 'area',
-                      'Best Rate / Sq. Ft': 'price_sqft'
+                      'Space Value': 'price_sqft'
                     };
                     setFilters({...filters, sort_by: mapping[v]});
                   }}
                  icon={ArrowUpDown}
                  type="select"
                  options={filters.listing_type === 'buy' 
-                    ? ['Best Value', 'Investment Yield (%)', 'Price: Low-High', 'Price: High-Low', 'Largest Area', 'Best Rate / Sq. Ft']
-                    : ['Best Value', 'Price: Low-High', 'Price: High-Low', 'Largest Area', 'Best Rate / Sq. Ft']}
+                    ? ['Best Value', 'Investment Yield (%)', 'Price: Low-High', 'Price: High-Low', 'Largest Area', 'Space Value']
+                    : ['Best Value', 'Price: Low-High', 'Price: High-Low', 'Largest Area', 'Space Value']}
                  className="col-span-6 lg:col-span-3"
                />
 
