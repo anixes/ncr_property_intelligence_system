@@ -88,7 +88,7 @@ The system employs a rigorous MLOps pipeline to ensure data reproducibility and 
 * **DVC (Data Version Control):** Tracks massive Parquet datasets and model checkpoints (`.joblib`) without bloating Git.
 * **DagsHub Remote:** Acts as the central storage hub for DVC remotes and experiment tracking.
 * **MLflow:** Integrated for real-time experiment tracking, parameter logging, and model registry.
-* **Automated Ingestion:** Daily scrapers feed into a validation-gate that ensures zero schema drift before training.
+* **Modular Ingestion:** Scrapers feed into a validation-gate that ensures zero schema drift before training (triggered on-demand to optimize EC2 Free Tier resource usage).
 
 ### **Production Infrastructure**
 
