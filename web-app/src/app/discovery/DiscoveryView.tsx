@@ -79,6 +79,23 @@ export default function DiscoveryView() {
     try {
       const data = await discoverProperties(customFilters || filters);
       setResults(data);
+      
+      // Auto-scroll to results area on search completion
+      setTimeout(() => {
+        const element = document.getElementById('discovery-results');
+        if (element) {
+          const offset = 100; // Account for sticky headers
+          const bodyRect = document.body.getBoundingClientRect().top;
+          const elementRect = element.getBoundingClientRect().top;
+          const elementPosition = elementRect - bodyRect;
+          const offsetPosition = elementPosition - offset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
     } catch (e) { 
       console.error("Discovery failed", e); 
     } finally { 
@@ -366,12 +383,12 @@ export default function DiscoveryView() {
       </div>
 
       {/* DISCOVERY RESULTS FEED */}
-      <div className="space-y-10 sm:space-y-12">
+      <div id="discovery-results" className="space-y-10 sm:space-y-12">
          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 border-b border-white/5 pb-10 px-1">
             <div className="flex items-center gap-6">
                <div className="flex items-center gap-3">
                   <Target className="w-5 h-5 text-primary" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#adaaab] blur-[0.2px]">
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#adaaab] blur-[0.2px]">
                     {loading ? 'Searching Market...' : `${results.length} Properties Found`}
                   </span>
                </div>

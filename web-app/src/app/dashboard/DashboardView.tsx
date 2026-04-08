@@ -122,9 +122,21 @@ function DashboardContent() {
 
       setResult(data);
       
-      // Safe Scroll Delay
+      // Auto-scroll to results area on scan arrival
       setTimeout(() => {
-        document.getElementById('valuation-results')?.scrollIntoView({ behavior: 'smooth' });
+        const element = document.getElementById('valuation-results');
+        if (element) {
+          const offset = 100; // Account for sticky headers
+          const bodyRect = document.body.getBoundingClientRect().top;
+          const elementRect = element.getBoundingClientRect().top;
+          const elementPosition = elementRect - bodyRect;
+          const offsetPosition = elementPosition - offset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
+        }
       }, 100);
     } catch (error) {
       console.error('Valuation IQ Error:', error);
