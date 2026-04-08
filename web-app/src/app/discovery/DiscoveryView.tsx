@@ -2,7 +2,7 @@
 
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { discoverProperties } from '@/lib/api';
+import { discoverProperties, getLocalities } from '@/lib/api';
 import { DiscoverRequest, PropertyAsset, Recommendation } from '@/types';
 import { PropertyCard } from '@/components/dashboard/PropertyCard';
 import { PropertyDeepDive } from '@/components/dashboard/PropertyDeepDive';
@@ -17,12 +17,45 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { InstitutionalSelect } from '@/components/dashboard/InstitutionalSelect';
 import { InputPorter, Toggle, PropertyCommandCard } from '@/components/dashboard/PortalUI';
 
+const INITIAL_FILTERS: DiscoverRequest = {
+  city: 'Noida',
+  sector: 'Any',
+  listing_type: 'buy',
+  bhk: [2, 3],
+  budget_min: 5000000,
+  budget_max: 50000000,
+  area_min: 1000,
+  area_max: 5000,
+  sort_by: 'score',
+  prop_type: 'Apartment',
+  amenities: { has_pool: false, has_gym: false, has_lift: true, has_power_backup: true, is_gated_community: true, has_clubhouse: false, has_maintenance: false, has_wifi: false, is_high_ceiling: false },
+  location_features: { is_near_metro: false, is_corner_property: false, is_park_facing: false, is_vastu_compliant: false },
+  property_features: { is_luxury: false, is_servant_room: false, is_study_room: false, is_store_room: false, is_pooja_room: false, is_new_construction: false },
+  furnishing_status: 'Unknown',
+  ready_to_move: false
+};
+
 export default function DiscoveryView() {
+  const [filters, setFilters] = useState<DiscoverRequest>(INITIAL_FILTERS);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<(PropertyAsset | Recommendation)[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [localities, setLocalities] = useState<string[]>(['Any']);
   const advancedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getLocalities(filters.city)
+      .then((data) => {
+        setLocalities(['Any', ...data]);
+        if (!['Any', ...data].includes(filters.sector || 'Any')) {
+           setFilters(prev => ({...prev, sector: 'Any'}));
+        }
+      })
+      .catch(() => {
+        setLocalities(['Any', 'Sector 150', 'Sector 62', 'Sector 18', 'Sector 128']); 
+      });
+  }, [filters.city]);
 
   useEffect(() => {
     if (showAdvanced) {
@@ -40,26 +73,11 @@ export default function DiscoveryView() {
   const [selectedItem, setSelectedItem] = useState<PropertyAsset | Recommendation | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const [filters, setFilters] = useState<DiscoverRequest>({
-    city: 'Noida',
-    listing_type: 'buy',
-    bhk: [2, 3],
-    budget_min: 5000000,
-    budget_max: 50000000,
-    area_min: 1000,
-    area_max: 5000,
-    sort_by: 'score',
-    prop_type: 'Apartment',
-    amenities: { has_pool: false, has_gym: false, has_lift: true, has_power_backup: true, is_gated_community: true, has_clubhouse: false, has_maintenance: false, has_wifi: false, is_high_ceiling: false },
-    location_features: { is_near_metro: false, is_corner_property: false, is_park_facing: false, is_vastu_compliant: false },
-    property_features: { is_luxury: false, is_servant_room: false, is_study_room: false, is_store_room: false, is_pooja_room: false, is_new_construction: false }
-  });
-
-  const handleDiscover = async () => {
+  const handleDiscover = async (customFilters?: DiscoverRequest) => {
     setLoading(true);
     setShowAdvanced(false);
     try {
-      const data = await discoverProperties(filters);
+      const data = await discoverProperties(customFilters || filters);
       setResults(data);
     } catch (e) { 
       console.error("Discovery failed", e); 
@@ -68,9 +86,18 @@ export default function DiscoveryView() {
     }
   };
 
+  const handleReset = () => {
+    // Reset to INITIAL_FILTERS (which correctly resets sector to 'Any' too)
+    setFilters(INITIAL_FILTERS);
+    handleDiscover(INITIAL_FILTERS);
+  };
+
   // Initial scan & context auto-fetch on intent change
+  // BUGFIX: removed handleDiscover from deps — it's stable. Using filters.listing_type only
+  // to avoid the effect re-running on every filter change.
   useEffect(() => {
     handleDiscover();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.listing_type]);
 
   const handleCardClick = useCallback((item: any) => {
@@ -86,7 +113,7 @@ export default function DiscoveryView() {
           <header className="space-y-8">
             <div className="flex justify-start">
               <div className="inline-flex items-center gap-3 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.4em] border border-primary/10 font-body">
-                 Best Deals Search Engine
+                 Property Scout
               </div>
             </div>
             
@@ -147,8 +174,8 @@ export default function DiscoveryView() {
                </button>
             </div>
 
-            {/* 2. UNIFIED COMMAND GRID */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 lg:gap-10">
+            {/* 2. UNIFIED COMMAND GRID - 4 cols on lg to fit City + Locality + Type + BHK */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
                <InputPorter 
                  label="City"
                  value={filters.city}
@@ -156,6 +183,16 @@ export default function DiscoveryView() {
                  icon={MapPin}
                  type="select"
                  options={['Gurgaon', 'Noida', 'Delhi', 'Ghaziabad', 'Faridabad']}
+                 className="col-span-1"
+               />
+               
+               <InputPorter 
+                 label="Locality / Sector"
+                 value={filters.sector || 'Any'}
+                 onChange={(v) => setFilters({...filters, sector: v})}
+                 icon={Target}
+                 type="select"
+                 options={localities}
                  className="col-span-1"
                />
                
@@ -193,7 +230,7 @@ export default function DiscoveryView() {
                      ? `${(filters.budget_min / 100000).toFixed(0)}L - ${(filters.budget_max / 10000000).toFixed(1)}Cr`
                      : `₹${(filters.budget_min / 1000).toFixed(0)}K-₹${(filters.budget_max / 1000).toFixed(0)}K`
                  }
-                 className="col-span-2 lg:col-span-1"
+                 className="col-span-2 lg:col-span-2"
                />
 
                <InputPorter 
@@ -206,7 +243,7 @@ export default function DiscoveryView() {
                  max={10000}
                  step={100}
                  placeholder={`${filters.area_min}-${filters.area_max} SqFt`}
-                 className="col-span-2 lg:col-span-1"
+                 className="col-span-2 lg:col-span-2"
                />
 
                <InputPorter 
@@ -264,12 +301,29 @@ export default function DiscoveryView() {
                        </div>
                      </PropertyCommandCard>
 
-                     <PropertyCommandCard title="Asset Specs" icon={LayoutPanelLeft}>
+                     <PropertyCommandCard title="Property Details" icon={LayoutPanelLeft}>
                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2.5">
                          <Toggle label="Luxury Finish" icon={Crown} active={filters.property_features.is_luxury} onClick={() => setFilters({...filters, property_features: {...filters.property_features, is_luxury: !filters.property_features.is_luxury}})} />
-                         <Toggle label="Brand New Build" icon={Construction} active={filters.property_features.is_new_construction} onClick={() => setFilters({...filters, property_features: {...filters.property_features, is_new_construction: !filters.property_features.is_new_construction}})} />
+                         <Toggle label="Ready to Move" icon={Construction} active={filters.ready_to_move === true} onClick={() => setFilters({...filters, ready_to_move: !filters.ready_to_move})} />
                          <Toggle label="Servant Room" icon={UserPlus} active={filters.property_features.is_servant_room} onClick={() => setFilters({...filters, property_features: {...filters.property_features, is_servant_room: !filters.property_features.is_servant_room}})} />
                          <Toggle label="Study/Office" icon={BookOpen} active={filters.property_features.is_study_room} onClick={() => setFilters({...filters, property_features: {...filters.property_features, is_study_room: !filters.property_features.is_study_room}})} />
+                       </div>
+                       
+                       {/* SECONDARY SPECS */}
+                       <div className="space-y-4 pt-4 mt-2 border-t border-white/5">
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-black uppercase tracking-widest text-[#adaaab]">Furnishing Status</label>
+                             <div className="grid grid-cols-3 gap-2">
+                               {['Unfurnished', 'Semi-Furnished', 'Fully-Furnished'].map(o => (
+                                 <button 
+                                   key={o} onClick={() => setFilters({...filters, furnishing_status: filters.furnishing_status === o ? 'Unknown' : (o as any)})}
+                                   className={`px-2 py-1.5 rounded-lg text-[8px] font-bold uppercase tracking-tight transition-all ${filters.furnishing_status === o ? 'bg-primary/20 text-primary border border-primary/20' : 'bg-white/[0.02] text-[#adaaab] border border-white/5'}`}
+                                 >
+                                   {o.replace('Fully-', '')}
+                                 </button>
+                               ))}
+                             </div>
+                          </div>
                        </div>
                      </PropertyCommandCard>
                   </div>
@@ -281,7 +335,7 @@ export default function DiscoveryView() {
             {/* 4. ACTIONS ROW */}
             <div className="pt-4 sm:pt-6">
                <button 
-                 onClick={handleDiscover}
+                 onClick={() => handleDiscover()}
                  disabled={loading}
                  className="w-full bg-primary text-black font-black text-xs sm:text-lg uppercase tracking-[0.4em] rounded-xl sm:rounded-2xl h-14 sm:h-24 flex items-center justify-center gap-4 hover:brightness-110 active:scale-[0.98] transition-all shadow-2xl shadow-primary/20 group"
                >
@@ -302,7 +356,7 @@ export default function DiscoveryView() {
                <div className="flex items-center gap-3">
                   <Target className="w-5 h-5 text-primary" />
                                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#adaaab] blur-[0.2px]">
-                    {loading ? 'Fleet Scan in Progress...' : `${results.length} Artifacts Scanned`}
+                    {loading ? 'Searching Market...' : `${results.length} Properties Found`}
                   </span>
                </div>
             </div>
@@ -331,23 +385,23 @@ export default function DiscoveryView() {
                     />
                   </motion.div>
                 ))
-              ) : (
+               ) : (
                 <div className="col-span-full py-32 flex flex-col items-center justify-center space-y-8 text-center">
                    <div className="w-24 h-24 rounded-[2rem] bg-white/[0.02] flex items-center justify-center border border-white/5 shadow-2xl relative">
                       <Sparkles className="w-10 h-10 text-white/5" />
                       <div className="absolute inset-0 bg-primary/5 rounded-[2rem] blur-xl" />
                    </div>
                    <div className="space-y-3">
-                      <h4 className="text-2xl font-black font-headline uppercase tracking-tight text-white">No Alpha Signals</h4>
+                      <h4 className="text-2xl font-black font-headline uppercase tracking-tight text-white">No Matches Found</h4>
                       <p className="text-sm text-[#adaaab] font-light max-w-sm mx-auto leading-relaxed">
-                        Adjust your Tactical Discovery Protocol to expand the market horizon.
+                        Try relaxing your filters to discover more properties.
                       </p>
                    </div>
                    <button 
-                     onClick={() => setFilters({...filters, budget_max: 500000000, city: 'Entire NCR'})}
+                     onClick={handleReset}
                      className="px-8 py-3 rounded-xl border border-primary/20 text-primary text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/5 transition-all"
                    >
-                      Reset Signal Parameters
+                      Reset All Filters
                    </button>
                 </div>
               )}

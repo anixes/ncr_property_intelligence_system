@@ -21,18 +21,8 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PredictionResponse | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [localities, setLocalities] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
-  const advancedRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (showAdvanced) {
-      setTimeout(() => {
-        advancedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 150);
-    }
-  }, [showAdvanced]);
 
   useEffect(() => {
     setMounted(true);
@@ -123,7 +113,6 @@ function DashboardContent() {
 
   const handlePredict = async () => {
     setLoading(true);
-    setShowAdvanced(false);
     try {
       const data = await predictProperty(input);
       
@@ -201,14 +190,6 @@ function DashboardContent() {
                 ))}
             </div>
 
-            <button 
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-2.5 px-4 h-10 rounded-xl bg-white/[0.03] border border-white/5 text-[#adaaab] font-black text-[9px] uppercase tracking-widest hover:bg-white/[0.06] active:scale-95 transition-all outline-none"
-            >
-              <Settings2 className="w-3.5 h-3.5" />
-              <span>Advanced</span>
-              <ChevronDown className={`w-3 h-3 transition-transform duration-500 ${showAdvanced ? 'rotate-180' : ''}`} />
-            </button>
          </div>
 
          {/* 2. UNIFIED COMMAND GRID */}
@@ -224,7 +205,7 @@ function DashboardContent() {
             />
             
             <InputPorter 
-              label="Sector"
+              label="Locality / Sector"
               value={input.sector}
               onChange={(v) => setInput({...input, sector: v})}
               icon={Target}
@@ -271,76 +252,7 @@ function DashboardContent() {
             />
          </div>
 
-         {/* 4. ADVANCED FILTERS (EXPANSION) */}
-         <AnimatePresence>
-          {showAdvanced && (
-            <motion.div 
-              ref={advancedRef}
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden py-4 border-y border-white/5"
-            >
-               <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  <PropertyCommandCard title="Amenities" icon={Waves}>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2.5">
-                      <Toggle label="Swimming Pool" icon={Waves} active={input.amenities.has_pool} onClick={() => setInput({...input, amenities: {...input.amenities, has_pool: !input.amenities.has_pool}})} />
-                      <Toggle label="Health Club/Gym" icon={Dumbbell} active={input.amenities.has_gym} onClick={() => setInput({...input, amenities: {...input.amenities, has_gym: !input.amenities.has_gym}})} />
-                      <Toggle label="Gated Community" icon={ShieldCheck} active={input.amenities.is_gated_community} onClick={() => setInput({...input, amenities: {...input.amenities, is_gated_community: !input.amenities.is_gated_community}})} />
-                      <Toggle label="Power Backup" icon={Zap} active={input.amenities.has_power_backup} onClick={() => setInput({...input, amenities: {...input.amenities, has_power_backup: !input.amenities.has_power_backup}})} />
-                    </div>
-                  </PropertyCommandCard>
 
-                  <PropertyCommandCard title="Location Features" icon={MapPin}>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2.5">
-                      <Toggle label="Near Metro" icon={TrainFront} active={input.location.is_near_metro} onClick={() => setInput({...input, location: {...input.location, is_near_metro: !input.location.is_near_metro}})} />
-                      <Toggle label="Corner Plot" icon={Split} active={input.location.is_corner_property} onClick={() => setInput({...input, location: {...input.location, is_corner_property: !input.location.is_corner_property}})} />
-                      <Toggle label="Park Facing" icon={Trees} active={input.location.is_park_facing} onClick={() => setInput({...input, location: {...input.location, is_park_facing: !input.location.is_park_facing}})} />
-                      <Toggle label="Vastu Compliant" icon={Compass} active={input.location.is_vastu_compliant} onClick={() => setInput({...input, location: {...input.location, is_vastu_compliant: !input.location.is_vastu_compliant}})} />
-                    </div>
-                  </PropertyCommandCard>
-
-                  <PropertyCommandCard title="Asset Specs" icon={LayoutPanelLeft}>
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-2.5">
-                             <Toggle label="Luxury Finish" icon={Crown} active={input.property_features.is_luxury} onClick={() => setInput({...input, property_features: {...input.property_features, is_luxury: !input.property_features.is_luxury}})} />
-                             <Toggle label="Brand New Build" icon={Construction} active={input.property_features.is_new_construction} onClick={() => setInput({...input, property_features: {...input.property_features, is_new_construction: !input.property_features.is_new_construction}})} />
-                             <Toggle label="Servant Room" icon={UserPlus} active={input.property_features.is_servant_room} onClick={() => setInput({...input, property_features: {...input.property_features, is_servant_room: !input.property_features.is_servant_room}})} />
-                             <Toggle label="Study/Office" icon={BookOpen} active={input.property_features.is_study_room} onClick={() => setInput({...input, property_features: {...input.property_features, is_study_room: !input.property_features.is_study_room}})} />
-                        </div>
-                        
-                        {/* SECONDARY SPECS */}
-                        <div className="space-y-4 pt-2 border-t border-white/5">
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black uppercase tracking-widest text-[#adaaab]">Furnishing Status</label>
-                             <div className="grid grid-cols-3 gap-2">
-                               {['Unfurnished', 'Semi-Furnished', 'Furnished'].map(o => (
-                                 <button 
-                                   key={o} onClick={() => setInput({...input, furnishing_status: o as any})}
-                                   className={`px-2 py-1.5 rounded-lg text-[8px] font-bold uppercase tracking-tight transition-all ${input.furnishing_status === o ? 'bg-primary/20 text-primary border border-primary/20' : 'bg-white/[0.02] text-[#adaaab] border border-white/5'}`}
-                                 >
-                                   {o}
-                                 </button>
-                               ))}
-                             </div>
-                          </div>
-                           <InputPorter 
-                             label="Age"
-                             value={input.property_age}
-                             onChange={(v) => setInput({...input, property_age: v})}
-                             type="range"
-                             min={0}
-                             max={20}
-                             step={1}
-                             placeholder="New - 20Y"
-                           />
-                        </div>
-                    </div>
-                  </PropertyCommandCard>
-               </div>
-            </motion.div>
-          )}
-         </AnimatePresence>
 
          {/* 5. ACTION ROW */}
          <div className="pt-4 pb-2">

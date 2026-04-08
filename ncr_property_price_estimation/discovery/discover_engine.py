@@ -34,6 +34,8 @@ class DiscoverEngine:
         furnishing_status = req.furnishing_status
         legal_status = req.legal_status
         prop_type = req.prop_type
+        ready_to_move = req.ready_to_move
+
         if pool_df.empty:
             return []
 
@@ -46,9 +48,13 @@ class DiscoverEngine:
                 pool_df["listing_type"].str.lower() == listing_type.lower()
             )
 
-        # 1.5 Property Type Filter (with 'Any' bypass)
+        # 1.5 Property Type & Sector Filter (with 'Any' bypass)
         if prop_type and prop_type != "Any":
             mask = mask & (pool_df["prop_type"] == prop_type)
+
+        sector = req.sector
+        if sector and sector != "Any" and "sector" in pool_df.columns:
+            mask = mask & (pool_df["sector"] == sector)
 
         # 2. BHK Matching
         if bhk_list:
@@ -88,6 +94,9 @@ class DiscoverEngine:
 
         if legal_status and legal_status != "Unknown" and "legal_status" in pool_df.columns:
             mask = mask & (pool_df["legal_status"] == legal_status)
+
+        if ready_to_move and "ready_to_move" in pool_df.columns:
+            mask = mask & (pool_df["ready_to_move"] == 1)
 
         df = pool_df[mask].copy()
         if df.empty:

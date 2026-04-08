@@ -111,6 +111,7 @@ export interface PropertyAsset {
 
 export interface DiscoverRequest {
   city: string;
+  sector?: string;
   listing_type: "buy" | "rent";
   bhk: number[];
   budget_min: number;
@@ -124,6 +125,7 @@ export interface DiscoverRequest {
   property_features: PropertyFeatures;
   furnishing_status?: string;
   legal_status?: string;
+  ready_to_move?: boolean;
 }
 
 export interface DashboardSummary {

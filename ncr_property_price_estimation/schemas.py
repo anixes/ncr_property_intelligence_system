@@ -107,6 +107,7 @@ class HealthResponse(BaseModel):
 class DiscoverRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     city: str
+    sector: str | None = None
     listing_type: Literal["buy", "rent"]
     bhk: list[int]
     budget_min: float
@@ -124,6 +125,7 @@ class DiscoverRequest(BaseModel):
     property_features: PropertyFeatures = Field(default_factory=PropertyFeatures, alias="features")
     furnishing_status: str | None = "Unknown"
     legal_status: str | None = "Unknown"
+    ready_to_move: bool | None = None
 
 
 class ModelInfoResponse(BaseModel):
