@@ -20,6 +20,8 @@ class ComparablesEngine:
         locality_index: dict[str, Any],
         target_sector: str = "",
         target_prop_type: str = "Any",
+        max_listings: int = 5,
+        target_bhk_fallback: int = 3,
     ) -> list[dict[str, Any]]:
         """
         Discover Top 5 real-world historical listings matching the search criteria.
@@ -106,25 +108,41 @@ class ComparablesEngine:
                 continue
 
             # Normalized Yield & ROI for Comparables
-            # If the row is from a Sales dataset, it won't have predicted_monthly_rent.
-            # We must estimate it using the Locality Intelligence Index.
-            rent = float(row.get("predicted_monthly_rent", 0))
-            if rent <= 0:
-                loc_data = locality_index.get(db_city, {}).get(row["sector"], {})
-                rent_sqft = loc_data.get("median_rent_sqft", 0)
-                if rent_sqft > 0:
-                    rent = rent_sqft * area
-                else:
-                    # Generic fallback: 3% annual yield
-                    rent = (price * 0.03) / 12
+            intent = listing_type.lower()
+            loc_data = locality_index.get(db_city, {}).get(row["sector"], {})
+            geo_median_price_sqft = loc_data.get("median_price_sqft", 0)
+            geo_median_rent_sqft = loc_data.get("median_rent_sqft", 0)
 
-            y_pct = ROIEngine.calculate_yield(price, rent)
+            # Logic to approximate missing values
+            if intent == "buy":
+                total_price = price
+                monthly_rent = (
+                    (geo_median_rent_sqft * area)
+                    if geo_median_rent_sqft > 0
+                    else (price * 0.03 / 12)
+                )
+            else:
+                monthly_rent = price
+                total_price = (
+                    (geo_median_price_sqft * area)
+                    if geo_median_price_sqft > 0
+                    else (monthly_rent * 12 / 0.03)
+                )
+
+            y_pct = ROIEngine.calculate_yield(total_price, monthly_rent)
 
             h3_med_raw = row.get("h3_median_price", 0)
             h3_med = float(h3_med_raw) if pd.notna(h3_med_raw) else 0.0
 
-            overval = (price_sqft - h3_med) / h3_med * 100 if h3_med > 0 else 0
-            risk_info = RiskEngine.calculate_risk_score(price, h3_med * area if h3_med > 0 else 0)
+            benchmark = h3_med if h3_med > 0 else (geo_median_price_sqft if intent == "buy" else geo_median_rent_sqft)
+
+            overval = (price_sqft - benchmark) / benchmark * 100 if benchmark > 0 else 0
+            
+            risk_target = total_price if intent == "buy" else monthly_rent
+            geo_benchmark = (
+                geo_median_price_sqft * area if intent == "buy" else geo_median_rent_sqft * area
+            )
+            risk_info = RiskEngine.calculate_risk_score(risk_target, geo_benchmark if geo_benchmark else 0, intent=intent)
 
             # Normalize risk from 0–100 to 0–10 for scoring engine
             normalized_risk = risk_info["score"] / 10.0
@@ -134,6 +152,7 @@ class ComparablesEngine:
                 overvaluation_pct=overval,
                 is_near_metro=False,
                 risk_index=normalized_risk,
+                intent=intent,
             )
 
             results.append(
@@ -143,7 +162,7 @@ class ComparablesEngine:
                     "city": city,
                     "price": price,
                     "area": area,
-                    "bhk": int(row["bedrooms"]) if pd.notna(row["bedrooms"]) else 0,
+                    "bhk": int(row["bedrooms"]) if pd.notna(row["bedrooms"]) and row["bedrooms"] > 0 else target_bhk,
                     "price_per_sqft": float(round(price_sqft, 0)),
                     "yield_pct": float(round(y_pct, 2)),
                     "unified_score": float(listing_score),

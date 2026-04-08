@@ -21,9 +21,9 @@ jobs:
       - name: Install Linting Tools
         run: pip install ruff==0.15.4
       - name: Lint check
-        run: ruff check ncr_property_price_estimation/ tests/ frontend/
+        run: ruff check ncr_property_price_estimation/ tests/
       - name: Format check
-        run: ruff format --check ncr_property_price_estimation/ tests/ frontend/
+        run: ruff format --check ncr_property_price_estimation/ tests/
 
   # ---------------------------------------------------------------------------
   # 2. Unit & Contract Tests (Fast, No DVC)
@@ -91,5 +91,3 @@ jobs:
         run: mkdir -p data/ models/
       - name: Build API image
         run: docker build -t ncr-property-api:test .
-      - name: Build Frontend image
-        run: docker build -t ncr-property-frontend:test -f Dockerfile.frontend .

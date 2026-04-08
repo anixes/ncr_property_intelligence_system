@@ -176,7 +176,7 @@ class DiscoverEngine:
                     "city": city,
                     "price": price,
                     "area": area,
-                    "bhk": int(row["bedrooms"]) if pd.notna(row["bedrooms"]) else 0,
+                    "bhk": int(row["bedrooms"]) if pd.notna(row["bedrooms"]) and row["bedrooms"] > 0 else (bhk_list[0] if bhk_list else 0),
                     "price_per_sqft": float(round(price_sqft, 0)),
                     "yield_pct": float(round(y_pct, 2)),
                     "unified_score": float(unified_score),

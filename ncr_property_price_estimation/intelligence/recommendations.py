@@ -25,8 +25,10 @@ class RecommendationEngine:
         current_sector: str,
         user_budget_sqft: float,
         current_yield: float,
+        target_bhk: int = 3,
         current_lat: float = None,
         current_lon: float = None,
+        intent: str = "buy",
     ) -> list[dict[str, Any]]:
         """
         Suggest Top 5 alternative localities in the same city based on Value, Yield, and Data Confidence.
@@ -36,19 +38,19 @@ class RecommendationEngine:
 
         # 1. First Pass: Strict (±30% budget, < 10km distance)
         candidates = RecommendationEngine._find_candidates(
-            city_data, current_sector, user_budget_sqft, 0.30, 10.0, current_lat, current_lon
+            city_data, current_sector, user_budget_sqft, 0.30, 10.0, target_bhk, current_lat, current_lon, intent
         )
 
         # 2. Second Pass: If sparse, loosen budget to ±50% and distance to 20km
         if len(candidates) < 3:
             candidates = RecommendationEngine._find_candidates(
-                city_data, current_sector, user_budget_sqft, 0.50, 20.0, current_lat, current_lon
+                city_data, current_sector, user_budget_sqft, 0.50, 20.0, target_bhk, current_lat, current_lon, intent
             )
 
         # 3. Third Pass: Final desperation (Same city, any budget within reason, ignore distance)
         if len(candidates) < 1:
             candidates = RecommendationEngine._find_candidates(
-                city_data, current_sector, user_budget_sqft, 0.80, 999.0, current_lat, current_lon
+                city_data, current_sector, user_budget_sqft, 0.80, 999.0, target_bhk, current_lat, current_lon, intent
             )
 
         # Sort by composite score and return Top 5
@@ -62,8 +64,10 @@ class RecommendationEngine:
         user_budget_sqft: float,
         budget_band: float,
         max_dist_km: float,
+        target_bhk: int,
         current_lat: float,
         current_lon: float,
+        intent: str,
     ) -> list[dict[str, Any]]:
         results = []
         min_b = user_budget_sqft * (1 - budget_band)
@@ -73,15 +77,21 @@ class RecommendationEngine:
             if loc == current_sector or loc == "Unknown":
                 continue
 
-            price = data.get("median_price_sqft", 0)
+            if intent == "rent":
+                price = data.get("median_rent_sqft", 0)
+                # Data Quality for rent: ~10 to 100+ per sqft
+                if price <= 0 or price > 500:
+                    continue
+            else:
+                price = data.get("median_price_sqft", 0)
+                # Data Quality for buy: ~1000 to 150000 per sqft
+                if price <= 0 or price < 1000 or price > 150000:
+                    continue
+
             y = data.get("gross_yield_pct", 0)
             count = data.get("listing_count", 0)
             rec_lat = data.get("lat")
             rec_lon = data.get("lon")
-
-            # Data Quality: must have a price
-            if price <= 0 or price < 1000 or price > 150000:
-                continue
 
             # Fallback yield (City average if missing)
             if y <= 0:
@@ -104,7 +114,7 @@ class RecommendationEngine:
             # Composite score calculation
             yield_score = min(y / 8 * 10, 10)
             value_score = max(0, 10 - (abs(price - user_budget_sqft) / (user_budget_sqft + 1)) * 10)
-            conf_score = min(count / 300.0, 1.0) * 10
+            conf_score = min(math.sqrt(count) / math.sqrt(300.0), 1.0) * 10
 
             # Penalize distance slightly in score
             dist_penalty = max(0, (dist_km / 10.0)) if dist_km < 500 else 0
@@ -116,6 +126,7 @@ class RecommendationEngine:
             results.append(
                 {
                     "locality": loc,
+                    "bhk": target_bhk,
                     "median_price_sqft": round(price, 0),
                     "expected_yield_pct": round(y, 2),
                     "distance_km": round(dist_km, 1) if dist_km < 900 else None,
