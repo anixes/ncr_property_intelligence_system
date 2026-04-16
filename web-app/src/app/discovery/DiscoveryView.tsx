@@ -199,7 +199,7 @@ export default function DiscoveryView() {
                  onChange={(v) => setFilters({...filters, city: v})}
                  icon={MapPin}
                  type="select"
-                 options={['Gurgaon', 'Noida', 'Delhi', 'Ghaziabad', 'Faridabad']}
+                 options={['Gurgaon', 'Noida', 'Greater Noida', 'Delhi', 'Ghaziabad', 'Faridabad']}
                  className="col-span-6 lg:col-span-3"
                />
                
