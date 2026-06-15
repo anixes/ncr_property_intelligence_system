@@ -334,7 +334,7 @@ def main():
 
     df = pd.read_parquet(data_path)
     print("=" * 72)
-    print(f"🚀 PURE-ML PIPELINE: {mode.upper()}")
+    print(f"[START] PURE-ML PIPELINE: {mode.upper()}")
     print("=" * 72)
     print(f">> Loaded {len(df):,} rows from {data_path.name}")
 
