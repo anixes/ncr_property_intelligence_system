@@ -27,6 +27,21 @@ The system is fully deployed across a hybrid-production environment:
 
 ---
 
+## 🎬 Live Platform Demo
+
+<div align="center">
+  <img src="docs/assets/ncr_property_intelligence_demo.webp" alt="NCR Property Intelligence System Live Screen Recording" width="100%" style="border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);" />
+  <p><em>Interactive Walkthrough: Algorithmic Valuation HUD, Geospatial Discovery Engine, and Asset Deep-Dive Drawer</em></p>
+</div>
+
+### 🔍 Walkthrough Highlights:
+1. **Interactive Landing Portal:** Live geospatial asset telemetry, network alpha monitoring, and interactive corridor mapping.
+2. **Sub-Second Valuation HUD (`/dashboard`):** Real-time CatBoost predictive engine estimating asset value (₹ Cr), expected monthly rent, ROI yield %, and risk benchmark distribution.
+3. **Spatial Discovery Engine (`/discovery`):** Vectorized multi-criteria filtering over 43,000+ assets with instant Haversine transit hub calculations.
+4. **Asset Deep-Dive Drawer:** High-fidelity single-asset drilldown displaying reconciled amenity states, exact metro distance, and similarity-matrix recommendations.
+
+---
+
 ## 💼 Key Business Capabilities
 
 ### 🏢 1. Algorithmic Market Analyzer (Valuation HUD)
