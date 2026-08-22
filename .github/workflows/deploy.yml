@@ -39,10 +39,17 @@ jobs:
             echo "${repo} -> HTTP ${code}"
             head -c 500 /tmp/probe.json; echo ""
           done
+          echo "--- Branches ---"
+          curl -sS -u "${DH_USER}:${DH_TOKEN}" "${API}/${DH_USER}/ncr_property_price_estimation/branches" | head -c 3000 || true
+          echo ""
+          echo "--- Repo meta ---"
+          curl -sS -u "${DH_USER}:${DH_TOKEN}" "${API}/${DH_USER}/ncr_property_price_estimation" | grep -o '"default_branch":"[^"]*"' || true
           echo "--- Tree listing ---"
-          for dir in "" "models" "data"; do
+          for dir in "" "models"; do
             echo "=== /${dir} ==="
-            curl -sS -u "${DH_USER}:${DH_TOKEN}" "${API}/${DH_USER}/ncr_property_price_estimation/contents/${dir}" | head -c 3000 || true
+            curl -sS -u "${DH_USER}:${DH_TOKEN}" "${API}/${DH_USER}/ncr_property_price_estimation/content/main/${dir}" | head -c 3000 || true
+            echo ""
+            curl -sS -u "${DH_USER}:${DH_TOKEN}" "${API}/${DH_USER}/ncr_property_price_estimation/contents/${dir}?ref=master" | head -c 3000 || true
             echo ""
           done
 
