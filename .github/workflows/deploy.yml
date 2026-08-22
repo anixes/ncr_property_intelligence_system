@@ -27,18 +27,25 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install DVC
-        run: pip install dvc
-
-      - name: Configure DVC Remote (DAGsHub)
+      - name: Fetch ML Assets from DAGsHub
+        env:
+          DH_USER: ${{ secrets.DAGSHUB_USERNAME }}
+          DH_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
         run: |
-          dvc remote modify origin --local user ${{ secrets.DAGSHUB_USERNAME }}
-          dvc remote modify origin --local password ${{ secrets.DAGSHUB_TOKEN }}
-          dvc remote modify origin auth basic
-
-      - name: Pull model from DVC
-        run: |
-          dvc pull -v || { echo "CRITICAL: DVC PULL FAILED"; exit 1; }
+          BASE="https://dagshub.com/${DH_USER}/ncr_property_price_estimation/raw/main"
+          ASSETS=(
+            "models/sales/pipeline_sales.joblib"
+            "models/rentals/pipeline_rentals.joblib"
+            "data/locality_intelligence_index.json"
+            "data/model/model_sales.parquet"
+            "data/model/model_rentals.parquet"
+          )
+          for asset in "${ASSETS[@]}"; do
+            echo "Downloading ${asset}..."
+            mkdir -p "$(dirname "$asset")"
+            curl -fsSL --retry 3 --retry-delay 5 -u "${DH_USER}:${DH_TOKEN}" \
+              -o "$asset" "${BASE}/${asset}" || { echo "CRITICAL: Failed to fetch ${asset}"; exit 1; }
+          done
 
       - name: Verify data integrity & Asset Hash Audit
         run: |
