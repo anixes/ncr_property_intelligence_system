@@ -32,10 +32,17 @@ jobs:
           DH_USER: ${{ secrets.DAGSHUB_USERNAME }}
           DH_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
         run: |
-          API="https://dagshub.com/api/v1/repos/${DH_USER}/ncr_property_price_estimation/contents"
-          for dir in "" "models" "models/sales" "models/rentals" "data" "data/model"; do
+          API="https://dagshub.com/api/v1/repos"
+          echo "--- Repo probes ---"
+          for repo in "${DH_USER}/ncr_property_price_estimation" "${DH_USER}/ncr_property_intelligence_system"; do
+            code=$(curl -sS -o /tmp/probe.json -w "%{http_code}" -u "${DH_USER}:${DH_TOKEN}" "${API}/${repo}")
+            echo "${repo} -> HTTP ${code}"
+            head -c 500 /tmp/probe.json; echo ""
+          done
+          echo "--- Tree listing ---"
+          for dir in "" "models" "data"; do
             echo "=== /${dir} ==="
-            curl -fsSL -u "${DH_USER}:${DH_TOKEN}" "${API}/${dir}" | head -c 3000 || echo "(listing failed)"
+            curl -sS -u "${DH_USER}:${DH_TOKEN}" "${API}/${DH_USER}/ncr_property_price_estimation/contents/${dir}" | head -c 3000 || true
             echo ""
           done
 
