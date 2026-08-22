@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Debug: List DAGsHub repo tree
+      - name: Debug - List DAGsHub repo tree
         env:
           DH_USER: ${{ secrets.DAGSHUB_USERNAME }}
           DH_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
