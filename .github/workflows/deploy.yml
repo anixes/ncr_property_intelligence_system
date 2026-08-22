@@ -27,6 +27,18 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Debug: List DAGsHub repo tree
+        env:
+          DH_USER: ${{ secrets.DAGSHUB_USERNAME }}
+          DH_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          API="https://dagshub.com/api/v1/repos/${DH_USER}/ncr_property_price_estimation/contents"
+          for dir in "" "models" "models/sales" "models/rentals" "data" "data/model"; do
+            echo "=== /${dir} ==="
+            curl -fsSL -u "${DH_USER}:${DH_TOKEN}" "${API}/${dir}" | head -c 3000 || echo "(listing failed)"
+            echo ""
+          done
+
       - name: Fetch ML Assets from DAGsHub
         env:
           DH_USER: ${{ secrets.DAGSHUB_USERNAME }}
